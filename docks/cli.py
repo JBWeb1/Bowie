@@ -60,6 +60,10 @@ def repl(agent: Agent) -> None:
 
 
 def main(argv=None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    if argv[:1] == ["router"]:
+        from .router.cli import main as router_main
+        return router_main(argv[1:])
     parser = argparse.ArgumentParser(prog="docks", description="An AI coding agent that builds anything.")
     parser.add_argument("prompt", nargs="*", help="run this task once and exit (omit for interactive mode)")
     parser.add_argument("-C", "--dir", default=".", help="project directory to work in")
