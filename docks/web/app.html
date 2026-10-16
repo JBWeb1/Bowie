@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docks</title>
+<link rel="icon" href="data:,">
+<style>
+:root {
+  --bg: #f7f7f5; --panel: #ffffff; --fg: #1c1b1a; --muted: #75706a; --line: #e6e3df;
+  --accent: #2557d6; --accent-fg: #ffffff; --ok: #177245; --bad: #b42318; --warn: #a15c07;
+  --code-bg: #f1efec; --user-bg: #eaf0fd;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111110; --panel: #1a1918; --fg: #ecebe9; --muted: #a09b95; --line: #2c2a28;
+    --accent: #7aa2ff; --accent-fg: #0d1117; --ok: #5ad19a; --bad: #ff8a80; --warn: #f0b860;
+    --code-bg: #232120; --user-bg: #1d2740;
+  }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--fg); font: 14px/1.5 system-ui, -apple-system, Segoe UI, sans-serif; display: flex; flex-direction: column; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 11px; cursor: pointer; }
+button:hover { border-color: var(--muted); }
+button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+button.danger { color: var(--bad); }
+button:disabled { opacity: .5; cursor: default; }
+input, select { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }
+
+header { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; }
+header .brand { font-weight: 700; }
+header .root { color: var(--muted); font-family: var(--mono); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 34ch; }
+header .spacer { flex: 1; }
+header label { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 13px; }
+#usage { color: var(--muted); font-size: 12px; }
+
+main { flex: 1; display: grid; grid-template-columns: 220px minmax(0, 1fr) minmax(0, 44%); min-height: 0; }
+.pane { min-height: 0; display: flex; flex-direction: column; border-right: 1px solid var(--line); }
+.pane:last-child { border-right: 0; }
+.pane-head { padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: .04em; }
+
+#files { overflow: auto; padding: 6px 0; font-family: var(--mono); font-size: 12px; }
+#files div { padding: 2px 12px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#files div:hover { background: var(--code-bg); }
+#files .dir { color: var(--muted); cursor: default; }
+#files .dir:hover { background: none; }
+
+#log { flex: 1; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.empty { margin: auto; text-align: center; color: var(--muted); max-width: 420px; }
+.empty h2 { color: var(--fg); margin: 0 0 6px; font-size: 20px; }
+.empty .ideas { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 14px; }
+.msg-user { align-self: flex-end; background: var(--user-bg); padding: 8px 12px; border-radius: 10px; max-width: 85%; white-space: pre-wrap; }
+.msg-text { line-height: 1.6; overflow-wrap: anywhere; }
+.msg-text p { margin: 0 0 8px; }
+.msg-text pre { background: var(--code-bg); padding: 10px; border-radius: 6px; overflow: auto; font-size: 12.5px; }
+.msg-text code { font-family: var(--mono); font-size: .92em; background: var(--code-bg); padding: 1px 4px; border-radius: 4px; }
+.msg-text pre code { background: none; padding: 0; }
+.progress { color: var(--muted); font-style: italic; font-size: 13px; }
+.note { font-size: 13px; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--line); }
+.note.warn { color: var(--warn); } .note.error { color: var(--bad); }
+.tool { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); font-size: 13px; }
+.tool summary { padding: 6px 10px; cursor: pointer; display: flex; gap: 8px; align-items: baseline; list-style: none; }
+.tool summary::-webkit-details-marker { display: none; }
+.tool .name { font-weight: 600; color: var(--accent); flex: none; }
+.tool .sum { font-family: var(--mono); font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tool pre { margin: 0; padding: 8px 10px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 12px; white-space: pre-wrap; max-height: 320px; overflow: auto; }
+.tool pre.err { color: var(--bad); }
+.approval { border: 1px solid var(--warn); border-radius: 8px; padding: 10px; background: var(--panel); }
+.approval .q { font-weight: 600; margin-bottom: 6px; }
+.approval pre { background: var(--code-bg); padding: 8px; border-radius: 6px; font-family: var(--mono); font-size: 12px; white-space: pre-wrap; max-height: 260px; overflow: auto; margin: 0 0 8px; }
+.approval .row { display: flex; gap: 6px; flex-wrap: wrap; }
+.approval.done { border-color: var(--line); opacity: .75; }
+.working { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 1s infinite ease-in-out; }
+@keyframes pulse { 50% { opacity: .25; } }
+
+#composer { border-top: 1px solid var(--line); padding: 10px 16px; display: flex; gap: 8px; align-items: flex-end; background: var(--panel); }
+#input { flex: 1; resize: none; min-height: 42px; max-height: 200px; border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; background: var(--bg); }
+
+.tabs { display: flex; gap: 4px; }
+.tabs button { padding: 2px 9px; font-size: 12px; text-transform: none; letter-spacing: 0; }
+.tabs button.on { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+#preview-bar { display: flex; gap: 6px; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+#preview-path { flex: 1; min-width: 0; font-family: var(--mono); font-size: 12px; }
+#preview { flex: 1; border: 0; background: #fff; width: 100%; }
+#viewer { flex: 1; overflow: auto; margin: 0; padding: 12px; font-family: var(--mono); font-size: 12px; white-space: pre; }
+.hidden { display: none !important; }
+#mobile-tabs { display: none; }
+
+#gate { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px; }
+
+@media (max-width: 900px) {
+  main { grid-template-columns: minmax(0, 1fr); }
+  main > .pane { display: none; border-right: 0; }
+  main > .pane.mobile-on { display: flex; }
+  #mobile-tabs { display: flex; gap: 4px; padding: 6px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  #mobile-tabs button { flex: 1; }
+  header .root { max-width: 100%; }
+}
+</style>
+</head>
+<body>
+<div id="gate" class="hidden"><div><h2>Docks</h2><p>Open the link printed in your terminal when you ran <code>docks web</code>.</p></div></div>
+
+<header>
+  <span class="brand">Docks</span>
+  <span class="root" id="root"></span>
+  <span class="spacer"></span>
+  <label>Model <input id="model" size="16"></label>
+  <label>Effort
+    <select id="effort"><option>low</option><option>medium</option><option>high</option><option>xhigh</option><option>max</option></select>
+  </label>
+  <label title="Run file writes and shell commands without asking"><input type="checkbox" id="auto"> Auto-approve</label>
+  <span id="usage"></span>
+  <button id="clear">New chat</button>
+</header>
+
+<nav id="mobile-tabs">
+  <button data-pane="files-pane">Files</button>
+  <button data-pane="chat-pane" class="primary">Chat</button>
+  <button data-pane="side-pane">Preview</button>
+</nav>
+
+<main>
+  <section class="pane" id="files-pane">
+    <div class="pane-head">Files <span class="spacer" style="flex:1"></span><button id="refresh" title="Refresh">↻</button></div>
+    <div id="files"></div>
+  </section>
+
+  <section class="pane mobile-on" id="chat-pane">
+    <div id="log"></div>
+    <div id="composer">
+      <textarea id="input" rows="1" placeholder="Describe what to build or change…  (Enter to send, Shift+Enter for a new line)"></textarea>
+      <button id="stop" class="danger hidden">Stop</button>
+      <button id="send" class="primary">Send</button>
+    </div>
+  </section>
+
+  <section class="pane" id="side-pane">
+    <div class="pane-head">
+      <div class="tabs"><button id="tab-preview" class="on">Preview</button><button id="tab-file">File</button></div>
+      <span id="file-name" style="text-transform:none;font-weight:400;font-family:var(--mono)"></span>
+    </div>
+    <div id="preview-wrap" style="display:flex;flex-direction:column;flex:1;min-height:0">
+      <div id="preview-bar">
+        <input id="preview-path" value="index.html" aria-label="Page to preview">
+        <button id="preview-go">Reload</button>
+        <button id="preview-open" title="Open in a new tab">↗</button>
+      </div>
+      <iframe id="preview" title="Preview"></iframe>
+    </div>
+    <pre id="viewer" class="hidden"></pre>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+let token = '';
+try {
+  const m = location.hash.match(/token=([\w-]+)/);
+  if (m) { token = m[1]; sessionStorage.setItem('docks-token', token); history.replaceState(null, '', location.pathname); }
+  else token = sessionStorage.getItem('docks-token') || '';
+} catch (e) {}
+
+const api = (path, body) => fetch(path, {
+  method: body ? 'POST' : 'GET',
+  headers: { 'x-docks-token': token, ...(body ? { 'content-type': 'application/json' } : {}) },
+  body: body ? JSON.stringify(body) : undefined,
+});
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// Small, safe markdown: everything is escaped first, then a few patterns are formatted.
+function md(src) {
+  const blocks = [];
+  let s = esc(src).replace(/```(\w*)\n?([\s\S]*?)(```|$)/g, (_, lang, code) => {
+    blocks.push(`<pre><code>${code.replace(/\n$/, '')}</code></pre>`);
+    return `\u0000${blocks.length - 1}\u0000`;
+  });
+  s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>')
+       .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+       .replace(/\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+       .replace(/^#{1,6} (.*)$/gm, '<strong>$1</strong>')
+       .replace(/^[-*] (.*)$/gm, '• $1');
+  s = s.split(/\n{2,}/).map(p => p.includes('\u0000') ? p : `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+  return s.replace(/\u0000(\d+)\u0000/g, (_, i) => blocks[i]);
+}
+
+const log = $('log');
+let state = {}, blocks = {}, lastTool = null, working = null, stickToBottom = true;
+
+log.addEventListener('scroll', () => { stickToBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 80; });
+function add(el) {
+  const empty = log.querySelector('.empty'); if (empty) empty.remove();
+  if (working) log.insertBefore(el, working); else log.appendChild(el);
+  if (stickToBottom) log.scrollTop = log.scrollHeight;
+  return el;
+}
+function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+
+function showEmpty() {
+  log.innerHTML = '';
+  const e = el('div', 'empty', `<h2>What should we build?</h2><div>Docks writes code, runs it and fixes what breaks, right in this project.</div><div class="ideas"></div>`);
+  for (const idea of ['Build a landing page for a coffee shop', 'Make a snake game in the browser', 'Explain how this project works', 'Add tests and make them pass']) {
+    const b = el('button', null, esc(idea)); b.onclick = () => { $('input').value = idea; $('input').focus(); }; e.querySelector('.ideas').appendChild(b);
+  }
+  log.appendChild(e);
+}
+
+function setBusy(busy) {
+  state.busy = busy;
+  $('stop').classList.toggle('hidden', !busy);
+  $('send').disabled = busy;
+  if (busy && !working) { working = el('div', 'working', '<span class="dot"></span> Working…'); log.appendChild(working); }
+  if (!busy && working) { working.remove(); working = null; }
+}
+
+function applyState(s) {
+  state = { ...state, ...s };
+  $('root').textContent = s.root; $('root').title = s.root;
+  $('model').value = s.model; $('effort').value = s.effort; $('auto').checked = s.auto_approve;
+  showUsage(s.usage); setBusy(s.busy);
+}
+function showUsage(u) { if (u) $('usage').textContent = `${(u.input + u.cache_read).toLocaleString()} in · ${u.output.toLocaleString()} out`; }
+
+let refreshTimer = null;
+function handle(ev) {
+  switch (ev.type) {
+    case 'reset': log.innerHTML = ''; blocks = {}; lastTool = null; working = null; applyState(ev.state); if (!log.children.length) showEmpty(); break;
+    case 'cleared': blocks = {}; lastTool = null; showEmpty(); loadFiles(); break;
+    case 'user': add(el('div', 'msg-user')).textContent = ev.text; setBusy(true); break;
+    case 'text': case 'progress': {
+      let b = blocks[ev.id];
+      if (!b) { b = blocks[ev.id] = { el: add(el('div', ev.type === 'text' ? 'msg-text' : 'progress')), text: '' }; }
+      b.text += ev.text;
+      if (ev.type === 'text') b.el.innerHTML = md(b.text); else b.el.textContent = b.text;
+      if (stickToBottom) log.scrollTop = log.scrollHeight;
+      break;
+    }
+    case 'tool_call': {
+      const d = el('details', 'tool', `<summary><span class="name">${esc(ev.name)}</span><span class="sum">${esc(ev.summary)}</span></summary>`);
+      lastTool = add(d);
+      break;
+    }
+    case 'tool_output': {
+      if (lastTool) { const p = el('pre', ev.error ? 'err' : ''); p.textContent = ev.text; lastTool.appendChild(p); if (ev.error) lastTool.open = true; }
+      clearTimeout(refreshTimer); refreshTimer = setTimeout(() => { loadFiles(); if (!$('preview-wrap').classList.contains('hidden')) reloadPreview(); }, 400);
+      break;
+    }
+    case 'approval': {
+      const a = ev.args || {};
+      let detail = ev.name === 'bash' ? a.command : ev.name === 'write_file' ? `${a.path}\n\n${a.content}` :
+        ev.name === 'edit_file' ? `${a.path}\n\n- ${String(a.old_string).replace(/\n/g, '\n- ')}\n+ ${String(a.new_string).replace(/\n/g, '\n+ ')}` : JSON.stringify(a, null, 2);
+      const box = add(el('div', 'approval', `<div class="q">Allow <code>${esc(ev.name)}</code>?</div><pre></pre><div class="row">
+        <button class="primary" data-a="yes">Allow</button><button data-a="always">Always allow ${esc(ev.name)}</button><button class="danger" data-a="no">Deny</button></div>`));
+      box.id = 'ap-' + ev.id; box.querySelector('pre').textContent = detail;
+      box.querySelectorAll('button').forEach(b => b.onclick = () => api('/api/approve', { id: ev.id, answer: b.dataset.a }));
+      break;
+    }
+    case 'approval_done': {
+      const box = $('ap-' + ev.id);
+      if (box) { box.classList.add('done'); box.querySelector('.row').innerHTML = `<span>${ev.answer === 'no' ? 'Denied' : 'Allowed'}</span>`; }
+      break;
+    }
+    case 'warn': add(el('div', 'note warn')).textContent = ev.text; break;
+    case 'error': add(el('div', 'note error')).textContent = ev.text; break;
+    case 'usage': showUsage(ev.usage); break;
+    case 'idle': setBusy(false); loadFiles(); break;
+  }
+}
+
+async function connect() {
+  while (true) {
+    try {
+      const res = await fetch('/api/events', { headers: { 'x-docks-token': token } });
+      if (res.status === 401) { $('gate').classList.remove('hidden'); return; }
+      const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = '';
+      while (true) {
+        const { value, done } = await reader.read(); if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let i;
+        while ((i = buf.indexOf('\n\n')) >= 0) {
+          const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
+          const data = chunk.split('\n').filter(l => l.startsWith('data: ')).map(l => l.slice(6)).join('\n');
+          if (data) handle(JSON.parse(data));
+        }
+      }
+    } catch (e) {}
+    await new Promise(r => setTimeout(r, 1500)); // reconnect; the server replays the conversation
+  }
+}
+
+async function send() {
+  const text = $('input').value.trim();
+  if (!text || state.busy) return;
+  const res = await api('/api/chat', { message: text });
+  if (res.ok) { $('input').value = ''; autosize(); }
+  else { const e = await res.json().catch(() => ({})); add(el('div', 'note error')).textContent = e.error || 'Could not send'; }
+}
+function autosize() { const t = $('input'); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 200) + 'px'; }
+
+$('send').onclick = send;
+$('input').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } });
+$('input').addEventListener('input', autosize);
+$('stop').onclick = () => api('/api/stop', {});
+$('clear').onclick = async () => { const r = await api('/api/clear', {}); if (!r.ok) add(el('div', 'note warn')).textContent = 'Stop the current task first.'; };
+const saveSettings = () => api('/api/settings', { model: $('model').value, effort: $('effort').value, auto_approve: $('auto').checked });
+$('model').onchange = saveSettings; $('effort').onchange = saveSettings; $('auto').onchange = saveSettings;
+
+// Files
+async function loadFiles() {
+  const res = await api('/api/files'); if (!res.ok) return;
+  const { files } = await res.json();
+  const box = $('files'); box.innerHTML = '';
+  if (!files.length) { box.appendChild(el('div', 'dir', 'No files yet')); return; }
+  let prevDirs = [];
+  for (const f of files) {
+    const parts = f.split('/'); const dirs = parts.slice(0, -1);
+    dirs.forEach((d, i) => { if (prevDirs[i] !== d) { prevDirs = prevDirs.slice(0, i); const e = el('div', 'dir'); e.style.paddingLeft = (12 + i * 12) + 'px'; e.textContent = d + '/'; box.appendChild(e); } });
+    prevDirs = dirs;
+    const e = el('div'); e.style.paddingLeft = (12 + dirs.length * 12) + 'px'; e.textContent = parts.at(-1); e.title = f;
+    e.onclick = () => openFile(f); box.appendChild(e);
+  }
+}
+async function openFile(path) {
+  const res = await api('/api/file?path=' + encodeURIComponent(path)); if (!res.ok) return;
+  const { text } = await res.json();
+  $('viewer').textContent = text; $('file-name').textContent = path;
+  showSide('file');
+  if (/\.html?$/.test(path)) $('preview-path').value = path;
+  mobileShow('side-pane');
+}
+$('refresh').onclick = loadFiles;
+
+// Preview and file viewer
+function previewUrl() { const p = state.preview || {}; return `${location.protocol}//${location.hostname}:${p.port}${p.prefix || '/'}${$('preview-path').value.replace(/^\/+/, '')}`; }
+function reloadPreview() { if (state.preview) $('preview').src = previewUrl(); }
+function showSide(which) {
+  $('tab-preview').classList.toggle('on', which === 'preview'); $('tab-file').classList.toggle('on', which === 'file');
+  $('preview-wrap').classList.toggle('hidden', which !== 'preview'); $('viewer').classList.toggle('hidden', which !== 'file');
+  if (which === 'preview') { $('file-name').textContent = ''; reloadPreview(); }
+}
+$('tab-preview').onclick = () => showSide('preview');
+$('tab-file').onclick = () => showSide('file');
+$('preview-go').onclick = reloadPreview;
+$('preview-path').addEventListener('keydown', e => { if (e.key === 'Enter') reloadPreview(); });
+$('preview-open').onclick = () => window.open(previewUrl(), '_blank', 'noopener');
+
+// Mobile: one pane at a time
+function mobileShow(id) {
+  document.querySelectorAll('main > .pane').forEach(p => p.classList.toggle('mobile-on', p.id === id));
+  document.querySelectorAll('#mobile-tabs button').forEach(b => b.classList.toggle('primary', b.dataset.pane === id));
+}
+document.querySelectorAll('#mobile-tabs button').forEach(b => b.onclick = () => mobileShow(b.dataset.pane));
+
+(async () => {
+  const res = await api('/api/state');
+  if (res.status === 401) { $('gate').classList.remove('hidden'); return; }
+  applyState(await res.json());
+  loadFiles(); reloadPreview(); connect();
+})();
+</script>
+</body>
+</html>

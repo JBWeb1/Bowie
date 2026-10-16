@@ -59,11 +59,32 @@ def repl(agent: Agent) -> None:
         print()
 
 
+def web_main(argv) -> int:
+    parser = argparse.ArgumentParser(prog="docks web", description="Use Docks from your browser.")
+    parser.add_argument("-C", "--dir", default=".", help="project directory to work in")
+    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", DEFAULT_MODEL))
+    parser.add_argument("-e", "--effort", default="high", choices=["low", "medium", "high", "xhigh", "max"])
+    parser.add_argument("-y", "--yolo", action="store_true", help="run tools without asking for approval")
+    parser.add_argument("--host", default="127.0.0.1", help="interface to listen on (default: this machine only)")
+    parser.add_argument("--port", type=int, default=8788, help="app port; the preview uses the next one")
+    parser.add_argument("--no-open", action="store_true", help="don't open a browser")
+    args = parser.parse_args(argv)
+    root = Path(args.dir).expanduser().resolve()
+    if not root.is_dir():
+        parser.error(f"not a directory: {root}")
+    from .web.server import serve
+    serve(Agent(root=root, model=args.model, effort=args.effort, auto_approve=args.yolo),
+          host=args.host, port=args.port, open_browser=not args.no_open)
+    return 0
+
+
 def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     if argv[:1] == ["router"]:
         from .router.cli import main as router_main
         return router_main(argv[1:])
+    if argv[:1] == ["web"]:
+        return web_main(argv[1:])
     parser = argparse.ArgumentParser(prog="docks", description="An AI coding agent that builds anything.")
     parser.add_argument("prompt", nargs="*", help="run this task once and exit (omit for interactive mode)")
     parser.add_argument("-C", "--dir", default=".", help="project directory to work in")

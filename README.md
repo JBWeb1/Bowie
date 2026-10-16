@@ -18,6 +18,17 @@ docks "build a snake game in the browser"   # one-shot task
 docks -y "add tests for utils.py and make them pass"   # no approval prompts
 ```
 
+### In the browser
+
+```bash
+docks web                 # opens http://127.0.0.1:8788 with a one-time link
+docks web -C ~/my-site    # work on a specific project
+```
+
+You get a chat with Docks, its work streaming in live (tool calls, outputs, progress notes) with Allow / Always / Deny buttons for each file write or command, a Stop button, a file browser and viewer, and a live **Preview** of the site it's building that reloads after every change. It works on phones too. Model, effort and auto-approve can be changed from the header, and reloading the page restores the conversation.
+
+The browser link contains a one-time token. The API only accepts requests that carry it, so other websites can't reach Docks. The preview is served from a separate port under a secret path, and it never serves dotfiles like `.env` or `.git`. Docks listens only on this machine unless you pass `--host`. Anyone with the link can run commands on your machine, so don't share it.
+
 | Flag | Meaning |
 |---|---|
 | `-C DIR` | project directory (default: current) |
@@ -71,6 +82,7 @@ docks/
   ui.py      terminal rendering and approval prompts
   memory.py  lessons saved by the remember tool
   router/    the gateway: config, engine (failover), translate (formats), server, cli
+  web/       browser UI: server.py (API, live events, preview) and app.html
 ```
 
 Each turn streams from the Claude Messages API with adaptive thinking, progress notes between tool calls, prompt caching and server-side refusal fallback. When Claude calls tools, Docks runs them locally, sends the results back, and loops until Claude finishes.

@@ -1,6 +1,7 @@
 """The agent loop: stream a turn from Claude, run its tools, repeat until done."""
 
 import platform
+import threading
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
@@ -8,7 +9,8 @@ from typing import Callable
 
 import anthropic
 
-from . import memory, ui
+from . import memory
+from . import ui as term
 from .tools import ToolError, is_mutating, run_tool, tool_definitions
 
 DEFAULT_MODEL = "claude-opus-5-5"
@@ -72,7 +74,8 @@ class Agent:
     effort: str = "high"
     auto_approve: bool = False
     web: bool = True
-    confirm: Callable[[str, dict], str] = ui.confirm_tool
+    display: object = field(default_factory=lambda: term.TerminalUI())  # where output goes
+    confirm: Callable[[str, dict], str] | None = None  # overrides display.confirm
     client: anthropic.Anthropic = field(default_factory=anthropic.Anthropic)
     messages: list = field(default_factory=list)
     always_allowed: set = field(default_factory=set)
@@ -81,25 +84,37 @@ class Agent:
     def __post_init__(self):
         self.system = build_system_prompt(self.root)
         self.tools = tool_definitions() + (WEB_TOOLS if self.web else [])
+        self.cancelled = threading.Event()
 
     def reset(self):
         self.messages.clear()
 
+    def stop(self):
+        """Cancel the running turn (safe to call from another thread)."""
+        self.cancelled.set()
+
+    def _check_cancel(self):
+        if self.cancelled.is_set():
+            raise TurnAborted("stopped; this turn was discarded")
+
     def run(self, user_input: str) -> None:
         """Run one user turn to completion. On failure or interrupt, roll the history back."""
         turn_start = len(self.messages)
+        self.cancelled.clear()
         self.messages.append({"role": "user", "content": user_input})
         try:
             self._loop()
         except KeyboardInterrupt:
-            ui.warn("interrupted; this turn was discarded")
+            self.display.warn("interrupted; this turn was discarded")
             del self.messages[turn_start:]
         except TurnAborted as e:
-            ui.error(str(e))
+            self.display.error(str(e))
             del self.messages[turn_start:]
         except anthropic.APIError as e:
-            ui.error(f"API error: {e}")
+            self.display.error(f"API error: {e}")
             del self.messages[turn_start:]
+        finally:
+            self.display.turn_done(self.usage)
 
     def _loop(self) -> None:
         json_retries = 0
@@ -110,7 +125,7 @@ class Agent:
                 json_retries += 1
                 if json_retries > MAX_JSON_RETRIES:
                     raise TurnAborted(f"repeated malformed tool input: {e}")
-                ui.warn("malformed tool input; retrying")
+                self.display.warn("malformed tool input; retrying")
                 continue
 
             self._track_usage(response.usage)
@@ -124,13 +139,13 @@ class Agent:
             if stop == "pause_turn":
                 continue
             if stop == "model_context_window_exceeded":
-                ui.warn("context window is full; use /clear to start fresh")
+                self.display.warn("context window is full; use /clear to start fresh")
                 return
 
             tool_uses = [b for b in response.content if b.type == "tool_use"]
             if not tool_uses:
                 if stop == "max_tokens":
-                    ui.warn("response hit the output limit")
+                    self.display.warn("response hit the output limit")
                 return
 
             results = []
@@ -144,7 +159,7 @@ class Agent:
             self.messages.append({"role": "user", "content": results})
 
     def _stream_once(self):
-        printer = ui.StreamPrinter()
+        printer = self.display.stream()
         with self.client.beta.messages.stream(
             model=self.model,
             max_tokens=64_000,
@@ -158,16 +173,19 @@ class Agent:
             betas=BETAS,
         ) as stream:
             for event in stream:
+                self._check_cancel()
                 printer.handle(event)
             response = stream.get_final_message()
         printer.finish()
         return response
 
     def _execute(self, block) -> dict:
+        self._check_cancel()
         args = block.input
-        ui.tool_call(block.name, args)
+        self.display.tool_call(block.name, args)
         if is_mutating(block.name) and not self.auto_approve and block.name not in self.always_allowed:
-            answer = self.confirm(block.name, args)
+            answer = (self.confirm or self.display.confirm)(block.name, args)
+            self._check_cancel()
             if answer == "always":
                 self.always_allowed.add(block.name)
             elif answer != "yes":
@@ -175,12 +193,12 @@ class Agent:
         try:
             output = run_tool(self.root, block.name, args)
         except ToolError as e:
-            ui.tool_output(str(e), is_error=True)
+            self.display.tool_output(str(e), is_error=True)
             return _error_result(block.id, str(e))
         except Exception as e:  # tool bugs shouldn't kill the session
-            ui.tool_output(repr(e), is_error=True)
+            self.display.tool_output(repr(e), is_error=True)
             return _error_result(block.id, f"{type(e).__name__}: {e}")
-        ui.tool_output(output)
+        self.display.tool_output(output)
         return {"type": "tool_result", "tool_use_id": block.id, "content": output}
 
     def _track_usage(self, usage) -> None:

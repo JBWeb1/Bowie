@@ -13,5 +13,8 @@ dependencies = ["anthropic>=1.15"]
 [project.scripts]
 docks = "docks.cli:main"
 
-[tool.setuptools]
-packages = ["docks"]
+[tool.setuptools.packages.find]
+include = ["docks*"]
+
+[tool.setuptools.package-data]
+"docks.web" = ["*.html"]

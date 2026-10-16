@@ -100,3 +100,17 @@ class StreamPrinter:
     def finish(self) -> None:
         if self.mode is not None:
             print()
+
+
+class TerminalUI:
+    """Agent output for the terminal. The web UI implements the same methods."""
+
+    stream = StreamPrinter
+    tool_call = staticmethod(tool_call)
+    tool_output = staticmethod(tool_output)
+    warn = staticmethod(warn)
+    error = staticmethod(error)
+    confirm = staticmethod(confirm_tool)
+
+    def turn_done(self, usage: dict) -> None:
+        pass
