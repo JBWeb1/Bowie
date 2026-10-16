@@ -12,6 +12,7 @@ HELP = """Commands:
   /help     show this help
   /clear    start a new conversation
   /usage    show token usage for this session
+  /undo     undo the last task: put files back and forget it (repeat to go further back)
   /yolo     toggle auto-approval of file writes and shell commands
   /exit     quit
 End a line with \\ to keep typing on the next line."""
@@ -140,6 +141,18 @@ def repl(agent: Agent) -> None:
             elif cmd == "/usage":
                 u = agent.usage
                 print(ui.dim(f"input {u['input']:,} · cached {u['cache_read']:,} · output {u['output']:,} tokens"))
+            elif cmd == "/undo":
+                from .checkpoints import CheckpointError
+                if not agent.turns:
+                    print(ui.dim("nothing to undo"))
+                    continue
+                try:
+                    text, restored = agent.rewind(len(agent.turns) - 1)
+                except CheckpointError as e:
+                    ui.error(str(e))
+                    continue
+                print(ui.green(f"undid: {text[:80]}"))
+                print(ui.dim(f"restored {len(restored)} file(s): {', '.join(restored[:8])}" if restored else "no files had changed"))
             elif cmd == "/yolo":
                 agent.auto_approve = not agent.auto_approve
                 print(ui.dim(f"auto-approve {'on' if agent.auto_approve else 'off'}"))

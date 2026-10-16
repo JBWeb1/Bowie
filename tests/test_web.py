@@ -97,3 +97,19 @@ def test_image_upload_reaches_claude_and_is_validated(tmp_path):
     assert sent[0] == {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": "iVBORw0KGgo="}}
     assert sent[1] == {"type": "text", "text": "build this"}
     assert session.history[0]["images"] == ["data:image/png;base64,iVBORw0KGgo="]
+
+
+def test_rewind_restores_files_and_trims_history(tmp_path, monkeypatch):
+    monkeypatch.setenv("DOCKS_HOME", str(tmp_path.parent / (tmp_path.name + "-home")))
+    session, url = start(tmp_path, [
+        msg("tool_use", tool_use("t1", "write_file", path="page.html", content="<h1>hi</h1>")),
+        msg("end_turn", NS(type="text", text="Done.")),
+    ])
+    session.agent.auto_approve = True
+    call(url + "/api/chat", {"message": "make a page"})
+    wait_for(lambda: not session.busy)
+    assert (tmp_path / "page.html").exists()
+    out = call(url + "/api/rewind", {"turn": 0})
+    assert out == {"text": "make a page", "restored": ["page.html"]}
+    assert not (tmp_path / "page.html").exists()
+    assert session.history == [] and session.agent.messages == []

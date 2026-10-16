@@ -128,6 +128,13 @@ Set `DOCKS_ROUTER_KEY` to require a key from clients. It's required if you liste
 
 Not supported yet: the OpenAI Responses API, which current Codex CLI requires.
 
+## Big and long tasks
+
+- **Long sessions keep going.** When a conversation gets long, Claude's API summarizes the earlier part on its own (server-side compaction), and Docks carries on instead of stopping at the context limit.
+- **Undo anything.** Before every task, Docks snapshots the project's files. In the terminal, `/undo` puts the files back and forgets the last task (repeat to go further back). In the browser, hover any of your messages and click **Undo from here**: files go back to how they were before that message, and the message reappears in the box so you can edit and resend it. Snapshots are kept in `~/.docks/checkpoints`, never in your repo's own git, and skip ignored files and heavy folders like `node_modules`. Changes outside the project, like installed packages, databases or pushes, can't be undone.
+- **Helpers in parallel.** For big jobs, Claude can hand self-contained pieces to helper agents that run at the same time, each with a fresh context and the same tools. In the browser, each helper's steps appear inside its own card, and its final report goes back to the main agent.
+- **A live plan.** On multi-step tasks, Claude keeps a checklist that's pinned above the message box in the browser (and printed in the terminal), with a progress bar.
+
 ## Project instructions
 
 Put a `DOCKS.md` (or `AGENTS.md` / `CLAUDE.md`) in your project root with conventions, commands, and context. Docks reads it into its system prompt.
@@ -145,6 +152,7 @@ docks/
   action.py  the @docks bot that runs in GitHub Actions
   mcp.py     MCP client (local and remote servers)
   procs.py   background processes such as dev servers
+  checkpoints.py  file snapshots for undo
   router/    the gateway: config, engine (failover), translate (formats), server, cli
   web/       browser UI: server.py (API, live events, preview) and app.html
 ```

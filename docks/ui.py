@@ -44,14 +44,19 @@ def _summarize_args(name: str, args: dict) -> str:
     return json.dumps(args, ensure_ascii=False)
 
 
-def tool_call(name: str, args: dict) -> None:
+def tool_call(name: str, args: dict, id=None, helper=None) -> None:
     summary = _summarize_args(name, args)
+    if name == "delegate":
+        summary = args.get("description", "")
     if len(summary) > 200:
         summary = summary[:200] + "…"
-    print(cyan(f"● {name}") + dim(f"  {summary}"))
+    prefix = dim(f"  ↳ {helper}: ") if helper else ""
+    print(prefix + cyan(f"● {name}") + dim(f"  {summary}"))
 
 
-def tool_output(output: str, is_error: bool = False, max_lines: int = 8) -> None:
+def tool_output(output: str, is_error: bool = False, max_lines: int = 8, id=None, helper=None) -> None:
+    if helper:
+        max_lines = 3
     lines = output.splitlines() or [""]
     shown = lines[:max_lines]
     if len(lines) > max_lines:
@@ -106,6 +111,18 @@ class StreamPrinter:
             print()
 
 
+def notice(msg: str) -> None:
+    print(dim(f"· {msg}"))
+
+
+def plan(items: list) -> None:
+    marks = {"done": green("✓"), "in_progress": yellow("▸"), "pending": dim("○")}
+    print(bold("Plan"))
+    for item in items:
+        text = dim(item["text"]) if item["status"] == "done" else item["text"]
+        print(f"  {marks.get(item['status'], '○')} {text}")
+
+
 class TerminalUI:
     """Agent output for the terminal. The web UI implements the same methods."""
 
@@ -115,6 +132,8 @@ class TerminalUI:
     warn = staticmethod(warn)
     error = staticmethod(error)
     confirm = staticmethod(confirm_tool)
+    notice = staticmethod(notice)
+    plan = staticmethod(plan)
 
     def turn_done(self, usage: dict) -> None:
         pass

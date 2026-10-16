@@ -141,6 +141,30 @@ svg { flex: none; }
 .step-head .detail { font-family: var(--mono); font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .tag { font-size: 11.5px; font-weight: 500; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
 .tag.no { background: var(--bad-soft); color: var(--bad); }
+.tag.helper { background: var(--accent-soft); color: var(--accent-ink); }
+.subs { margin: 2px 0 4px 18px; padding-left: 12px; border-left: 2px dashed var(--line-strong); display: flex; flex-direction: column; gap: 2px; }
+.subs:empty { display: none; }
+.subs .step::before { display: none; }
+.subs .step-head { padding: 3px 8px; }
+.subs .tag.helper { display: none; }
+.msg-user { position: relative; }
+.undo { position: absolute; left: -38px; top: 50%; transform: translateY(-50%); width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); display: grid; place-items: center; cursor: pointer; opacity: 0; transition: opacity .15s; }
+.msg-user:hover .undo, .undo:focus-visible { opacity: 1; }
+.undo:hover { color: var(--fg); border-color: var(--line-strong); }
+@media (hover: none) { .undo { opacity: .7; } }
+.plan { max-width: 760px; margin: 0 auto 8px; border: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(6px); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+.plan summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 9px 14px; font-weight: 600; font-size: 13.5px; }
+.plan summary::-webkit-details-marker { display: none; }
+.plan .bar { flex: 1; height: 5px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.plan .bar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; transition: width .4s ease; }
+.plan .count { font-weight: 500; color: var(--muted); font-size: 12.5px; }
+.plan ul { list-style: none; margin: 0; padding: 0 14px 10px; max-height: 190px; overflow: auto; }
+.plan li { display: flex; gap: 9px; align-items: flex-start; padding: 3px 0; font-size: 13.5px; }
+.plan li .m { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line-strong); flex: none; margin-top: 2px; display: grid; place-items: center; }
+.plan li.done { color: var(--muted); text-decoration: line-through; }
+.plan li.done .m { background: var(--ok); border-color: var(--ok); color: #fff; }
+.plan li.in_progress { font-weight: 600; }
+.plan li.in_progress .m { border-color: var(--accent); box-shadow: inset 0 0 0 3px var(--surface), inset 0 0 0 8px var(--accent); }
 .step-head .chev { margin-left: auto; color: var(--muted); transition: transform .15s; }
 .step.open .chev { transform: rotate(90deg); }
 .step-body { display: none; margin: 2px 0 6px 10px; }
@@ -339,6 +363,7 @@ svg { flex: none; }
     <canvas id="bg" aria-hidden="true"></canvas>
     <div id="log"><div class="thread" id="thread"></div></div>
     <div class="composer-wrap">
+      <details class="plan hidden" id="plan" open><summary><span>Plan</span><span class="bar"><i></i></span><span class="count"></span></summary><ul></ul></details>
       <div class="composer" id="composer">
         <div class="attachments" id="attachments"></div>
         <textarea id="input" rows="1" placeholder="Describe what you want to build or change…" aria-label="Message"></textarea>
@@ -437,6 +462,9 @@ const ICONS = {
   game: '<rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 11v3M5.5 12.5h3M15 12h.01M18 13h.01"/>',
   bug: '<path d="M8 8V6a4 4 0 0 1 8 0v2"/><rect x="6" y="8" width="12" height="12" rx="6"/><path d="M12 12v8M3 13h3M18 13h3M4 7l3 2M20 7l-3 2M4 19l3-2M20 19l-3-2"/>',
   book: '<path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zm0 0a2 2 0 0 0 2 2h13"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18.5 20a6.5 6.5 0 0 0-3-5.5"/>',
+  undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>',
+  check: '<path d="m5 12 5 5L20 7"/>',
   image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>',
   rocket: '<path d="M5 15c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.2 2.2 0 0 0-2.9-.1z"/><path d="m12 15-3-3a22 22 0 0 1 2-4A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.6-3 2-4c1.6-1.1 5 0 5 0M12 15v5s3-.6 4-2c1.1-1.6 0-5 0-5"/>',
   plug: '<path d="M12 22v-5M9 8V2M15 8V2M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8z"/>',
@@ -525,6 +553,7 @@ const TOOL = {
   create_pull_request: { icon: 'pr', run: 'Opening a pull request', done: 'Opened a pull request', d: a => a.title },
   github_comment:      { icon: 'comment', run: a => `Commenting on #${a.number}`, done: a => `Commented on #${a.number}`, d: a => a.body },
   review_pull_request: { icon: 'review', run: a => `Reviewing #${a.number}`, done: a => `Posted a review on #${a.number}`, d: a => a.body },
+  delegate:            { icon: 'users', run: a => `Helper: ${a.description}`, done: a => `Helper finished: ${a.description}`, d: () => '' },
   start_process:       { icon: 'play', run: 'Starting the app', done: 'Started the app', d: a => a.command },
   process_logs:        { icon: 'terminal', run: 'Checking the app output', done: 'Checked the app output', d: a => `process ${a.process_id}` },
   stop_process:        { icon: 'server', run: 'Stopping the app', done: 'Stopped the app', d: a => `process ${a.process_id}` },
@@ -549,6 +578,7 @@ const ASK = {
 // ---------------------------------------------------------------- chat rendering
 const log = $('log'), thread = $('thread');
 let state = {}, blocks = {}, group = null, lastStep = null, typing = null, stick = true, pending = 0;
+let steps = {}, quietCalls = new Set(), userCount = 0, helperSteps = {};
 log.addEventListener('scroll', () => { stick = log.scrollHeight - log.scrollTop - log.clientHeight < 120; });
 const scrollDown = () => { if (stick) log.scrollTop = log.scrollHeight; };
 
@@ -558,7 +588,7 @@ function add(el) {
   scrollDown(); return el;
 }
 function endGroup() { finishRunning(); group = null; }
-function finishRunning() { thread.querySelectorAll('.step.running').forEach(s => { if (!s.dataset.out) markStep(s, 'done'); }); }
+function finishRunning() { thread.querySelectorAll('.step.running').forEach(s => { if (!s.dataset.out && s.dataset.name !== 'delegate' && !s.querySelector('.tag.helper')) markStep(s, 'done'); }); }
 function markStep(s, st) {
   s.classList.remove('running', 'waiting', 'done', 'error'); s.classList.add(st);
   if (st === 'done' || st === 'error') s.querySelector('.label').textContent = tl(s.dataset.name, JSON.parse(s.dataset.args), st === 'error' ? 'run' : 'done') + (st === 'error' ? ' (failed)' : '');
@@ -597,6 +627,32 @@ function welcome() {
   }
   thread.appendChild(w);
   $('chat').classList.remove('busy-convo');
+}
+
+function renderPlan(items) {
+  const box = $('plan');
+  box.classList.toggle('hidden', !items || !items.length);
+  if (!items || !items.length) return;
+  const done = items.filter(i => i.status === 'done').length;
+  box.querySelector('.bar i').style.width = `${Math.round(100 * done / items.length)}%`;
+  box.querySelector('.count').textContent = `${done} of ${items.length}`;
+  if (done === items.length) box.open = false;
+  const ul = box.querySelector('ul'); ul.innerHTML = '';
+  for (const it of items) {
+    const li = h('li', it.status, `<span class="m">${it.status === 'done' ? icon('check', 10) : ''}</span><span></span>`);
+    li.children[1].textContent = it.text; ul.appendChild(li);
+  }
+}
+let rewinding = false;
+async function rewindTo(turn) {
+  if (state.busy) { toast('Stop the current task first'); return; }
+  if (!confirm('Undo from here?\n\nFiles go back to how they were before this message, and this message and everything after it are removed. You can edit and resend it.')) return;
+  rewinding = true;
+  const r = await api('/api/rewind', { turn });
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) { rewinding = false; toast(body.error || 'Could not undo'); return; }
+  try { sessionStorage.setItem('docks-draft', body.text || ''); sessionStorage.setItem('docks-toast', `Restored ${body.restored.length} file${body.restored.length === 1 ? '' : 's'}`); } catch (e) {}
+  location.reload();
 }
 
 function setBusy(busy) {
@@ -645,11 +701,16 @@ function unifiedDiff(text) {
 let refreshTimer = null;
 function handle(ev) {
   switch (ev.type) {
-    case 'reset': thread.innerHTML = ''; blocks = {}; group = null; lastStep = null; typing = null; pending = 0; applyState(ev.state); if (!thread.children.length || (thread.children.length === 1 && typing)) { if (!state.busy) welcome(); } break;
-    case 'cleared': blocks = {}; group = null; lastStep = null; welcome(); refreshAll(); break;
+    case 'reset': thread.innerHTML = ''; blocks = {}; group = null; lastStep = null; typing = null; pending = 0; steps = {}; quietCalls = new Set(); userCount = 0; applyState(ev.state); renderPlan(ev.state.plan); if (!thread.children.length || (thread.children.length === 1 && typing)) { if (!state.busy) welcome(); } break;
+    case 'cleared': blocks = {}; group = null; lastStep = null; steps = {}; userCount = 0; renderPlan([]); welcome(); refreshAll(); break;
+    case 'rewound': if (!rewinding) location.reload(); break;
+    case 'plan': renderPlan(ev.items); break;
     case 'user': {
       endGroup();
       const u = add(h('div', 'msg-user'));
+      const turn = userCount++;
+      const ub = h('button', 'undo', icon('undo', 15)); ub.title = 'Undo from here: restore files and edit this message'; ub.setAttribute('aria-label', ub.title);
+      ub.onclick = () => rewindTo(turn); u.appendChild(ub);
       if (ev.images?.length) { const box = h('div', 'imgs'); for (const src of ev.images) { const im = h('img'); im.src = src; im.alt = 'attached image'; box.appendChild(im); } u.appendChild(box); }
       u.appendChild(document.createTextNode(ev.text)); setBusy(true); $('chat').classList.add('busy-convo');
       break;
@@ -669,25 +730,33 @@ function handle(ev) {
       break;
     }
     case 'tool_call': {
-      finishRunning();
+      if (ev.name === 'update_plan') { quietCalls.add(ev.id); break; }
+      if (!ev.helper) finishRunning();
       if (!group) group = add(h('div', 'activity'));
       const t = toolInfo(ev.name);
-      const s = h('div', 'step running', `<div class="step-head"><span class="ic">${icon(t.icon)}</span><span class="label"></span><span class="detail"></span><span class="chev">${icon('chev', 14)}</span></div><div class="step-body"></div>`);
+      const s = h('div', 'step running', `<div class="step-head"><span class="ic">${icon(t.icon)}</span><span class="label"></span><span class="detail"></span><span class="chev">${icon('chev', 14)}</span></div>${ev.name === 'delegate' ? '<div class="subs"></div>' : ''}<div class="step-body"></div>`);
       s.dataset.name = ev.name; s.dataset.args = JSON.stringify(ev.args || {});
       s.querySelector('.label').textContent = tl(ev.name, ev.args, 'run');
       const detail = t.d(ev.args || {}) || '';
       s.querySelector('.detail').textContent = String(detail).split('\n')[0];
       s.querySelector('.step-head').onclick = () => s.classList.toggle('open');
-      group.appendChild(s); lastStep = s; scrollDown();
+      if (ev.helper) { const tg = h('span', 'tag helper'); tg.textContent = ev.helper; s.querySelector('.chev').before(tg); }
+      if (ev.id) steps[ev.id] = s;
+      if (ev.name === 'delegate') helperSteps[(ev.args || {}).description] = s;
+      const parent = ev.helper && helperSteps[ev.helper];
+      (parent ? parent.querySelector('.subs') : group).appendChild(s); lastStep = s; scrollDown();
       break;
     }
     case 'tool_output': {
-      if (lastStep) {
-        lastStep.dataset.out = '1';
+      if (quietCalls.has(ev.id)) break;
+      const step = (ev.id && steps[ev.id]) || lastStep;
+      if (step) {
+        step.dataset.out = '1';
         const p = h('pre', ev.error ? 'err' : ''); p.textContent = ev.text;
-        lastStep.querySelector('.step-body').appendChild(p);
-        markStep(lastStep, ev.error ? 'error' : 'done');
-        const path = JSON.parse(lastStep.dataset.args).path;
+        if (step.dataset.name === 'delegate' && !ev.error) { const pr = h('div', 'prose'); pr.innerHTML = md(ev.text); pr.style.cssText = 'padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface)'; step.querySelector('.step-body').appendChild(pr); }
+        else step.querySelector('.step-body').appendChild(p);
+        markStep(step, ev.error ? 'error' : 'done');
+        const path = JSON.parse(step.dataset.args).path;
         if (path && path === openPath) openFile(path, true);
       }
       clearTimeout(refreshTimer); refreshTimer = setTimeout(refreshAll, 350);
@@ -705,7 +774,8 @@ function handle(ev) {
       else { const pre = h('pre', 'code-view'); pre.textContent = ev.name === 'bash' || ev.name === 'start_process' ? a.command : ev.name === 'write_file' ? a.content : ev.name === 'create_pull_request' ? `${a.title}\n\n${a.body || ''}` : (a.body || JSON.stringify(a, null, 2)); body.appendChild(pre); }
       box.id = 'ap-' + ev.id;
       box.querySelectorAll('[data-a]').forEach(b => b.onclick = () => { box.querySelectorAll('button').forEach(x => x.disabled = true); api('/api/approve', { id: ev.id, answer: b.dataset.a }); });
-      if (lastStep) { lastStep.classList.remove('running'); lastStep.classList.add('waiting'); lastStep.after(box); } else add(box);
+      const at = (ev.call && steps[ev.call]) || lastStep;
+      if (at) { at.classList.remove('running'); at.classList.add('waiting'); at.after(box); } else add(box);
       scrollDown();
       break;
     }
@@ -1103,6 +1173,11 @@ $('anim').onchange = () => { store.set('docks-anim', $('anim').checked ? 'on' : 
   if (res.status === 401) { $('gate').classList.remove('hidden'); return; }
   applyState(await res.json());
   if (!thread.children.length) welcome();
+  try {
+    const draft = sessionStorage.getItem('docks-draft'), note = sessionStorage.getItem('docks-toast');
+    if (draft !== null) { $('input').value = draft; autosize(); $('input').focus(); sessionStorage.removeItem('docks-draft'); }
+    if (note) { toast(note); sessionStorage.removeItem('docks-toast'); }
+  } catch (e) {}
   await loadFiles(); loadGit(); connect();
 })();
 </script>

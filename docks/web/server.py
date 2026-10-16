@@ -20,6 +20,7 @@ from pathlib import Path
 
 from .. import github
 from ..agent import Agent
+from ..checkpoints import CheckpointError
 from ..tools import SKIP_DIRS
 from ..ui import _summarize_args
 
@@ -94,6 +95,17 @@ class Session:
                 self.busy = False
             self.publish({"type": "idle"})
 
+    def rewind(self, turn: int):
+        """Restore files and conversation to before the user's `turn`-th message, and replay the log to browsers."""
+        text, restored = self.agent.rewind(turn)
+        with self.lock:
+            starts = [i for i, e in enumerate(self.history) if e["type"] == "user"]
+            if turn < len(starts):
+                del self.history[starts[turn]:]
+            for q in self.subscribers:
+                q.put({"type": "rewound"})
+        return text, restored
+
     def answer(self, approval_id: str, answer: str) -> bool:
         entry = self.approvals.get(approval_id)
         if not entry:
@@ -110,7 +122,8 @@ class Session:
     def state(self) -> dict:
         a = self.agent
         return {"root": str(a.root), "model": a.model, "effort": a.effort, "auto_approve": a.auto_approve,
-                "busy": self.busy, "usage": a.usage, "processes": a.procs.list(),
+                "busy": self.busy, "usage": a.usage, "processes": a.procs.list(), "plan": a.plan,
+                "turns": [bool(t["checkpoint"]) for t in a.turns],
                 "mcp": a.mcp.summary() if a.mcp else []}
 
 
@@ -144,16 +157,24 @@ class WebDisplay:
 
     def __init__(self, session: Session):
         self.session = session
+        self.local = threading.local()  # which tool call this thread is on (helpers run in parallel)
 
     def stream(self):
         return WebStream(self.session)
 
-    def tool_call(self, name: str, args: dict) -> None:
+    def tool_call(self, name: str, args: dict, id=None, helper=None) -> None:
+        self.local.id = id
         self.session.publish({"type": "tool_call", "name": name, "summary": _clip(_summarize_args(name, args), 300),
-                              "args": {k: _clip(v) for k, v in args.items()}})
+                              "args": {k: _clip(v) for k, v in args.items()}, "id": id, "helper": helper})
 
-    def tool_output(self, output: str, is_error: bool = False) -> None:
-        self.session.publish({"type": "tool_output", "text": _clip(output, 20_000), "error": is_error})
+    def tool_output(self, output: str, is_error: bool = False, id=None, helper=None) -> None:
+        self.session.publish({"type": "tool_output", "text": _clip(output, 20_000), "error": is_error, "id": id})
+
+    def notice(self, msg: str) -> None:
+        self.session.publish({"type": "notice", "text": msg})
+
+    def plan(self, items: list) -> None:
+        self.session.publish({"type": "plan", "items": items})
 
     def warn(self, msg: str) -> None:
         self.session.publish({"type": "warn", "text": msg})
@@ -165,13 +186,14 @@ class WebDisplay:
         approval_id = uuid.uuid4().hex[:12]
         entry = {"event": threading.Event(), "answer": "no"}
         self.session.approvals[approval_id] = entry
-        self.session.publish({"type": "approval", "id": approval_id, "name": name,
+        self.session.publish({"type": "approval", "id": approval_id, "name": name, "call": getattr(self.local, "id", None),
                               "args": {k: _clip(v, 20_000) for k, v in args.items()}})
         while not entry["event"].wait(0.5):
             if self.session.agent.cancelled.is_set():
                 break
         self.session.approvals.pop(approval_id, None)
-        self.session.publish({"type": "approval_done", "id": approval_id, "answer": entry["answer"]})
+        self.session.publish({"type": "approval_done", "id": approval_id, "answer": entry["answer"],
+                              "call": getattr(self.local, "id", None)})
         return entry["answer"]
 
     def turn_done(self, usage: dict) -> None:
@@ -307,6 +329,17 @@ def make_handler(session: Session, token: str, preview: dict):
                 if not session.start_turn(prompts[action]()):
                     return self._json(409, {"error": "Docks is still working; stop it or wait"})
                 return self._json(202, {"ok": True})
+            if path == "/api/rewind":
+                if session.busy:
+                    return self._json(409, {"error": "stop the current task first"})
+                turn = body.get("turn")
+                if not isinstance(turn, int):
+                    return self._json(400, {"error": "which message?"})
+                try:
+                    text, restored = session.rewind(turn)
+                except CheckpointError as e:
+                    return self._json(409, {"error": str(e)})
+                return self._json(200, {"text": text, "restored": restored})
             if path == "/api/mcp/approve":
                 if session.busy:
                     return self._json(409, {"error": "stop the current task first"})
