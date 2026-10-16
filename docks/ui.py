@@ -31,6 +31,12 @@ def _summarize_args(name: str, args: dict) -> str:
         return args.get("command", "")
     if name in ("write_file", "edit_file", "read_file"):
         return args.get("path", "")
+    if name == "web_search":
+        return args.get("query", "")
+    if name == "web_fetch":
+        return args.get("url", "")
+    if name == "remember":
+        return args.get("note", "")
     return json.dumps(args, ensure_ascii=False)
 
 
@@ -83,9 +89,13 @@ class StreamPrinter:
         elif event.type == "thinking" and event.thinking:
             self._switch("thinking")
             print(dim(event.thinking), end="", flush=True)
-        elif event.type == "content_block_stop" and self.mode is not None:
-            print()
-            self.mode = None
+        elif event.type == "content_block_stop":
+            if self.mode is not None:
+                print()
+                self.mode = None
+            block = event.content_block
+            if block.type == "server_tool_use":  # web search/fetch run on Anthropic's side
+                tool_call(block.name, block.input if isinstance(block.input, dict) else {})
 
     def finish(self) -> None:
         if self.mode is not None:

@@ -6,6 +6,8 @@ import re
 import subprocess
 from pathlib import Path
 
+from . import memory
+
 MAX_OUTPUT = 30_000  # chars returned to the model per tool call
 SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv", "venv", "dist", "build"}
 
@@ -142,6 +144,16 @@ TOOLS = {
         },
         "required": ["path", "old_string", "new_string"],
     }),
+    "remember": (memory.remember, False, {
+        "description": "Save a short lesson for future sessions: a mistake to avoid, a fix that worked, "
+                       "a user preference, how this project builds or tests. Use scope 'global' for lessons "
+                       "that apply to any project. Don't save things that are obvious from the code.",
+        "properties": {
+            "note": {"type": "string"},
+            "scope": {"type": "string", "enum": ["project", "global"]},
+        },
+        "required": ["note"],
+    }),
     "glob": (glob, False, {
         "description": "Find files by glob pattern, e.g. '**/*.py' or '*.md'.",
         "properties": {"pattern": {"type": "string"}, "path": {"type": "string"}},
@@ -191,9 +203,12 @@ def validate(name: str, args: object) -> None:
     for key, value in args.items():
         if key not in spec["properties"]:
             raise ToolError(f"unexpected parameter: {key}")
-        expected = _TYPES[spec["properties"][key]["type"]]
+        prop = spec["properties"][key]
+        expected = _TYPES[prop["type"]]
         if not isinstance(value, expected) or (expected is int and isinstance(value, bool)):
-            raise ToolError(f"parameter {key} must be {spec['properties'][key]['type']}")
+            raise ToolError(f"parameter {key} must be {prop['type']}")
+        if "enum" in prop and value not in prop["enum"]:
+            raise ToolError(f"parameter {key} must be one of {prop['enum']}")
 
 
 def run_tool(root: Path, name: str, args: dict) -> str:

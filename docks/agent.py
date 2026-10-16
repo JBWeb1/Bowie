@@ -8,7 +8,7 @@ from typing import Callable
 
 import anthropic
 
-from . import ui
+from . import memory, ui
 from .tools import ToolError, is_mutating, run_tool, tool_definitions
 
 DEFAULT_MODEL = "claude-opus-5-5"
@@ -18,10 +18,15 @@ BETAS = [
 ]
 MEMORY_FILES = ("DOCKS.md", "AGENTS.md", "CLAUDE.md")
 MAX_JSON_RETRIES = 2
+WEB_TOOLS = [
+    {"type": "web_search_20260209", "name": "web_search"},
+    {"type": "web_fetch_20260209", "name": "web_fetch"},
+]
 
 
 class TurnAborted(Exception):
     pass
+
 
 SYSTEM_PROMPT = """You are Docks, an autonomous coding agent working in the user's terminal.
 You can build anything the user asks for: apps, websites, scripts, APIs, games, tools.
@@ -34,6 +39,9 @@ How to work:
 - Match the existing code style. Don't add features or refactors nobody asked for.
 - For a new project, pick a sensible, mainstream stack unless the user specifies one, and include a README with how to run it.
 - Ask the user only when a decision is genuinely theirs to make; otherwise use good defaults and say what you chose.
+- Use web_search and web_fetch to read current documentation when you're unsure how a library or API works.
+- When you learn something worth keeping (a mistake you made, a fix that worked, a user preference,
+  how this project builds), save it with the remember tool so future sessions do better.
 - Never run destructive commands (rm -rf outside the project, force pushes, dropping databases) unless the user asked.
 - Finish with a short summary of what you did and how to run or check it.
 
@@ -51,6 +59,9 @@ def build_system_prompt(root: Path) -> str:
         if f.is_file():
             prompt += f"\nProject instructions from {name}:\n{f.read_text()[:20_000]}\n"
             break
+    lessons = memory.load(root)
+    if lessons:
+        prompt += f"\n{lessons}\n"
     return prompt
 
 
@@ -60,6 +71,7 @@ class Agent:
     model: str = DEFAULT_MODEL
     effort: str = "high"
     auto_approve: bool = False
+    web: bool = True
     confirm: Callable[[str, dict], str] = ui.confirm_tool
     client: anthropic.Anthropic = field(default_factory=anthropic.Anthropic)
     messages: list = field(default_factory=list)
@@ -68,7 +80,7 @@ class Agent:
 
     def __post_init__(self):
         self.system = build_system_prompt(self.root)
-        self.tools = tool_definitions()
+        self.tools = tool_definitions() + (WEB_TOOLS if self.web else [])
 
     def reset(self):
         self.messages.clear()
