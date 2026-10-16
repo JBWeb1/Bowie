@@ -82,3 +82,18 @@ def test_file_api_stays_inside_project(tmp_path):
         raise AssertionError("expected 404")
     except urllib.error.HTTPError as e:
         assert e.code == 404
+
+
+def test_image_upload_reaches_claude_and_is_validated(tmp_path):
+    session, url = start(tmp_path, [msg("end_turn", NS(type="text", text="Looks like a login page."))])
+    try:
+        call(url + "/api/chat", {"message": "hi", "images": [{"media_type": "application/pdf", "data": "AAA"}]})
+        raise AssertionError("expected 400")
+    except urllib.error.HTTPError as e:
+        assert e.code == 400
+    call(url + "/api/chat", {"message": "build this", "images": [{"media_type": "image/png", "data": "iVBORw0KGgo="}]})
+    wait_for(lambda: not session.busy)
+    sent = session.agent.client.requests[0]["messages"][0]["content"]
+    assert sent[0] == {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": "iVBORw0KGgo="}}
+    assert sent[1] == {"type": "text", "text": "build this"}
+    assert session.history[0]["images"] == ["data:image/png;base64,iVBORw0KGgo="]

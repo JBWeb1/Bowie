@@ -24,6 +24,9 @@ from ..tools import SKIP_DIRS
 from ..ui import _summarize_args
 
 MAX_HISTORY = 20_000
+MAX_IMAGES = 5
+MAX_IMAGE_B64 = 7_000_000  # ~5 MB of image data
+IMAGE_TYPES = {"image/png", "image/jpeg", "image/gif", "image/webp"}
 MAX_FILE_BYTES = 300_000
 
 
@@ -44,6 +47,7 @@ class Session:
         self.approvals = {}
         self.busy = False
         agent.display = WebDisplay(self)
+        agent.procs.on_change = lambda info: self.publish({"type": "process", **info})
 
     def publish(self, event: dict) -> None:
         with self.lock:
@@ -69,18 +73,22 @@ class Session:
             if q in self.subscribers:
                 self.subscribers.remove(q)
 
-    def start_turn(self, text: str) -> bool:
+    def start_turn(self, text: str, images: list | None = None) -> bool:
         with self.lock:
             if self.busy:
                 return False
             self.busy = True
-        self.publish({"type": "user", "text": text})
-        threading.Thread(target=self._run, args=(text,), daemon=True).start()
+        images = images or []
+        self.publish({"type": "user", "text": text,
+                      "images": [f"data:{i['media_type']};base64,{i['data']}" for i in images]})
+        content = [{"type": "image", "source": {"type": "base64", **i}} for i in images]
+        content = content + [{"type": "text", "text": text}] if content else text
+        threading.Thread(target=self._run, args=(content,), daemon=True).start()
         return True
 
-    def _run(self, text: str) -> None:
+    def _run(self, content) -> None:
         try:
-            self.agent.run(text)
+            self.agent.run(content)
         finally:
             with self.lock:
                 self.busy = False
@@ -102,7 +110,8 @@ class Session:
     def state(self) -> dict:
         a = self.agent
         return {"root": str(a.root), "model": a.model, "effort": a.effort, "auto_approve": a.auto_approve,
-                "busy": self.busy, "usage": a.usage}
+                "busy": self.busy, "usage": a.usage, "processes": a.procs.list(),
+                "mcp": a.mcp.summary() if a.mcp else []}
 
 
 class WebStream:
@@ -204,8 +213,11 @@ def make_handler(session: Session, token: str, preview: dict):
             return secrets.compare_digest(self.headers.get("x-docks-token", ""), token)
 
         def _body(self) -> dict:
+            length = int(self.headers.get("content-length", 0))
+            if length > 40_000_000:
+                return {}
             try:
-                return json.loads(self.rfile.read(int(self.headers.get("content-length", 0))) or b"{}")
+                return json.loads(self.rfile.read(length) or b"{}")
             except json.JSONDecodeError:
                 return {}
 
@@ -272,9 +284,15 @@ def make_handler(session: Session, token: str, preview: dict):
             path, body = self.path, self._body()
             if path == "/api/chat":
                 text = str(body.get("message", "")).strip()
-                if not text:
+                images = body.get("images") or []
+                if not text and not images:
                     return self._json(400, {"error": "empty message"})
-                if not session.start_turn(text):
+                if not isinstance(images, list) or len(images) > MAX_IMAGES or not all(
+                        isinstance(i, dict) and i.get("media_type") in IMAGE_TYPES
+                        and isinstance(i.get("data"), str) and len(i["data"]) <= MAX_IMAGE_B64 for i in images):
+                    return self._json(400, {"error": f"up to {MAX_IMAGES} PNG, JPEG, GIF or WebP images, 5 MB each"})
+                images = [{"media_type": i["media_type"], "data": i["data"]} for i in images]
+                if not session.start_turn(text or "Build what's shown in the image.", images):
                     return self._json(409, {"error": "Docks is still working; stop it or wait"})
                 return self._json(202, {"ok": True})
             if path == "/api/github":
@@ -282,12 +300,30 @@ def make_handler(session: Session, token: str, preview: dict):
                 if action in ("fix", "review") and not (isinstance(number, int) and number > 0):
                     return self._json(400, {"error": "enter an issue or pull request number"})
                 prompts = {"fix": lambda: github.fix_issue_prompt(number),
-                           "review": lambda: github.review_pr_prompt(number), "pr": github.open_pr_prompt}
+                           "review": lambda: github.review_pr_prompt(number), "pr": github.open_pr_prompt,
+                           "deploy": github.deploy_prompt}
                 if action not in prompts:
                     return self._json(400, {"error": "unknown action"})
                 if not session.start_turn(prompts[action]()):
                     return self._json(409, {"error": "Docks is still working; stop it or wait"})
                 return self._json(202, {"ok": True})
+            if path == "/api/mcp/approve":
+                if session.busy:
+                    return self._json(409, {"error": "stop the current task first"})
+                mgr = session.agent.mcp
+                if not mgr or body.get("name") not in mgr.servers:
+                    return self._json(404, {"error": "no such MCP server"})
+                mgr.approve(body["name"])
+                session.agent.refresh_tools()
+                return self._json(200, {"mcp": mgr.summary()})
+            if path == "/api/process/stop":
+                session.agent.procs.stop(int(body.get("id", 0)))
+                return self._json(200, {"processes": session.agent.procs.list()})
+            if path == "/api/install-github":
+                from ..action import install
+                written = install(root)
+                session.publish({"type": "notice", "text": f"Added {written.relative_to(root)}"})
+                return self._json(200, {"path": str(written.relative_to(root))})
             if path == "/api/clone":
                 if session.busy:
                     return self._json(409, {"error": "stop the current task first"})

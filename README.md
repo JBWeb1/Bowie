@@ -31,7 +31,7 @@ You get a chat where Docks' work streams in as plain-language steps ("Wrote inde
 - **Code** is a file tree and viewer.
 - **GitHub** has the repo, your changes and one-click GitHub tasks.
 
-It has light and dark themes and works on phones. Settings (model, effort, auto-approve, theme) are under the gear menu. Reloading the page restores the conversation.
+It has an animated code background (turn it off under the gear menu; it stays still if your system asks for reduced motion), light and dark themes, and works on phones. Settings (model, effort, auto-approve, theme, MCP servers) are under the gear menu. Reloading the page restores the conversation.
 
 The browser link contains a one-time token. The API only accepts requests that carry it, so other websites can't reach Docks. The preview is served from a separate port under a secret path, and it never serves dotfiles like `.env` or `.git`. Docks listens only on this machine unless you pass `--host`. Anyone with the link can run commands on your machine, so don't share it.
 
@@ -60,6 +60,45 @@ docks pr                      # commit current changes on a branch and open a PR
 The agent has GitHub tools too, so you can just say "fix issue 42" or "review PR 17" in a chat. It can read issues and PRs (including diffs), open pull requests, comment, and post reviews with inline comments. Pushing, opening PRs and posting comments always ask first unless auto-approve is on. Docks never commits to the default branch or force-pushes. Your token is sent only to GitHub. It goes to git as an environment setting, never on the command line or into `.git/config`.
 
 In the browser, the **GitHub** tab shows the repo, branch and uncommitted changes (with a diff), and has one-click Fix an issue, Review a pull request and Open a pull request. In an empty folder it can clone a repo for you.
+
+### @docks in issues and pull requests
+
+Like `@claude` and `@codex`, you can mention **@docks** right on GitHub and it does the work there:
+
+```bash
+docks install-github     # writes .github/workflows/docks.yml (or use the button in the browser's GitHub tab)
+gh secret set ANTHROPIC_API_KEY
+```
+
+Then, in Settings → Actions → General, allow GitHub Actions to create pull requests, and push the workflow. After that:
+
+- **On an issue**, comment `@docks fix this` (or label it `docks`). Docks makes the change on `docks/issue-N`, runs the tests, and opens a pull request that says `Fixes #N`. Asking again continues the same branch and updates the same PR.
+- **On a pull request**, comment `@docks rename this function` or `@docks why does this fail?`. Docks pushes the changes to the PR branch, or answers or reviews if no code change is needed. On a pull request from a fork it can only answer and review.
+- **Auto review:** set the repo variable `DOCKS_AUTO_REVIEW=true` to have Docks review every new pull request.
+
+Docks replies in the thread with a summary and a link to the run. Only owners, members and collaborators can trigger it, because each run spends your API credits and can push code. One limitation comes from GitHub: pull requests opened with the built-in Actions token don't trigger other workflows (like CI) until someone pushes to them.
+
+## Building websites and apps
+
+Docks covers the core features of prompt-to-app builders like Lovable, Bolt and v0:
+
+- **Templates:** in the browser, start from a landing page, React app, full-stack app (FastAPI + React), dashboard, browser game, mobile app (Expo), Chrome extension, REST API or portfolio.
+- **Live running apps:** Docks starts dev servers (Vite, Next.js, Flask, FastAPI…) in the background. The Preview shows the running app as soon as it prints its URL, and you can switch between or stop running apps from the pills above it.
+- **Build from an image:** attach, paste or drop a screenshot, mockup or design, and Docks builds the UI to match. In the terminal, use `docks -i design.png "build this"`.
+- **Deploy:** the Deploy button publishes the project. It uses Vercel if `VERCEL_TOKEN` is set, Netlify if `NETLIFY_AUTH_TOKEN` is set, and otherwise sets up GitHub Pages.
+
+## MCP servers
+
+Docks connects to [MCP](https://modelcontextprotocol.io) servers, the same plug-ins Claude Code, Claude Desktop and Cursor use, and gives their tools to the agent.
+
+```bash
+docks mcp add files -- npx -y @modelcontextprotocol/server-filesystem .   # a local server
+docks mcp add docs --url https://example.com/mcp --header "Authorization: Bearer \${DOCS_TOKEN}"   # a remote one
+docks mcp list                                                              # status and tools
+docks mcp remove files
+```
+
+Your servers live in `~/.docks/mcp.json`. A project can also ship a `.mcp.json` (the same format Claude Code uses). Because a project's servers run commands on your machine, Docks asks before starting each one, and asks again if its command changes. In the browser, approve them under the gear menu. Read-only tools run freely. Others ask for approval like any change. `${VAR}` in a config is filled in from your environment, so secrets stay out of the file.
 
 ## Docks Router: one endpoint for every coding tool
 
@@ -103,6 +142,9 @@ docks/
   ui.py      terminal rendering and approval prompts
   memory.py  lessons saved by the remember tool
   github.py  GitHub API + git: issues, PRs, reviews, push, clone
+  action.py  the @docks bot that runs in GitHub Actions
+  mcp.py     MCP client (local and remote servers)
+  procs.py   background processes such as dev servers
   router/    the gateway: config, engine (failover), translate (formats), server, cli
   web/       browser UI: server.py (API, live events, preview) and app.html
 ```

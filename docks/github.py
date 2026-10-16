@@ -143,6 +143,10 @@ def github_comment(root: Path, number: int, body: str) -> str:
     return f"commented: {c['html_url']}"
 
 
+def update_comment(repo: str, comment_id: int, body: str) -> None:
+    request("PATCH", f"/repos/{repo}/issues/comments/{comment_id}", {"body": body})
+
+
 def review_pull_request(root: Path, number: int, body: str, comments: list | None = None,
                         verdict: str = "COMMENT") -> str:
     repo = repo_of(root)
@@ -207,3 +211,13 @@ def open_pr_prompt() -> str:
             "default branch, create a descriptively named branch first. Commit the changes with a clear message, "
             "then open the pull request with create_pull_request, with a title and a body that explains what "
             "changed and why.")
+
+
+def deploy_prompt() -> str:
+    return ("Deploy this project so it has a public URL. Work out what kind of project it is and pick the simplest "
+            "fitting option that's available here: if VERCEL_TOKEN is set, use `npx vercel deploy --prod --yes "
+            "--token $VERCEL_TOKEN`; if NETLIFY_AUTH_TOKEN is set, use `npx netlify-cli deploy --prod`; otherwise, if "
+            "this is a GitHub repository and the site is static (or builds to static files), add a GitHub Pages "
+            "workflow under .github/workflows that builds and publishes it, commit it on a branch and open a pull "
+            "request. Build first and fix build errors. Finish with the live URL, or exactly what the user must do "
+            "to finish (for example, which setting to turn on).")

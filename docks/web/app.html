@@ -84,15 +84,25 @@ svg { flex: none; }
 .app.panel-closed .panel { display: none; }
 
 /* Chat */
-.chat { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
-#log { flex: 1; overflow-y: auto; padding: 28px 0 12px; scroll-behavior: smooth; }
+.chat { display: flex; flex-direction: column; min-height: 0; min-width: 0; position: relative; overflow: hidden; }
+#bg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 1; transition: opacity .8s ease; }
+.chat.busy-convo #bg { opacity: .22; }
+#log { flex: 1; overflow-y: auto; padding: 28px 0 12px; scroll-behavior: smooth; position: relative; z-index: 1; }
 .thread { max-width: 760px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 14px; }
 
-.welcome { max-width: 680px; margin: 6vh auto 0; padding: 0 24px; text-align: center; }
+.welcome { position: relative; z-index: 0; max-width: 860px; margin: 5vh auto 0; padding: 0 24px; text-align: center; }
+.welcome h1 .grad { background: linear-gradient(90deg, var(--accent), #c25bd6 55%, #e07a3f); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.section-label { text-shadow: 0 0 4px var(--bg), 0 0 10px var(--bg), 0 0 18px var(--bg); text-align: left; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 22px 2px 10px; }
+.quick { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.stack { display: block; margin-top: 3px; font-size: 11.5px; font-family: var(--mono); color: var(--accent-ink); opacity: .85; }
+.hero { position: relative; padding: 14px 0 4px; }
+.hero::before { content: ""; position: absolute; inset: -40px -120px -30px; z-index: -1; pointer-events: none;
+  background: radial-gradient(closest-side, var(--bg) 55%, color-mix(in srgb, var(--bg) 70%, transparent) 75%, transparent); }
 .welcome .mark { width: 52px; height: 52px; border-radius: 15px; background: var(--accent); color: var(--accent-fg); display: grid; place-items: center; margin: 0 auto 18px; box-shadow: var(--shadow); }
 .welcome h1 { font-size: 30px; letter-spacing: -.025em; margin: 0 0 8px; line-height: 1.2; }
 .welcome p { color: var(--muted); margin: 0 0 26px; font-size: 15.5px; }
-.ideas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; text-align: left; }
+.ideas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; text-align: left; }
+.idea { backdrop-filter: blur(6px); background: color-mix(in srgb, var(--surface) 82%, transparent); }
 .idea { text-align: left; display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
 .idea:hover { border-color: var(--accent); box-shadow: var(--shadow); transform: translateY(-1px); }
 .idea .ic { width: 34px; height: 34px; border-radius: 9px; background: var(--accent-soft); color: var(--accent-ink); display: grid; place-items: center; }
@@ -165,7 +175,28 @@ svg { flex: none; }
 @keyframes bounce { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
 
 /* Composer */
-.composer-wrap { padding: 8px 24px 18px; flex: none; }
+.composer-wrap { padding: 8px 24px 18px; flex: none; position: relative; z-index: 1; }
+.attachments { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.attachments:empty { display: none; }
+.thumb { position: relative; width: 64px; height: 64px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb button { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; border: 0; background: rgba(0,0,0,.65); color: #fff; font-size: 12px; line-height: 20px; cursor: pointer; padding: 0; }
+.msg-user .imgs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+.msg-user .imgs img { max-width: 160px; max-height: 120px; border-radius: 8px; display: block; }
+.composer.drag { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.apps { display: flex; gap: 6px; padding: 6px 10px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.apps:empty { display: none; }
+.app-pill { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 4px 0 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 12.5px; cursor: pointer; font-family: var(--mono); }
+.app-pill.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+.app-pill .live { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+.app-pill .x { width: 22px; height: 22px; border-radius: 50%; border: 0; background: none; cursor: pointer; color: var(--muted); display: grid; place-items: center; }
+.app-pill .x:hover { background: var(--surface-2); color: var(--bad); }
+.mcp-list { display: flex; flex-direction: column; gap: 6px; }
+.mcp-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fg); }
+.mcp-row .d { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.mcp-row .d.running { background: var(--ok); } .mcp-row .d.error { background: var(--bad); } .mcp-row .d.needs-approval { background: var(--warn); }
+.mcp-row small { color: var(--muted); }
+.mcp-row .btn { height: 26px; padding: 0 8px; font-size: 12px; margin-left: auto; }
 .composer { max-width: 760px; margin: 0 auto; border: 1px solid var(--line-strong); background: var(--surface); border-radius: 18px; box-shadow: var(--shadow); padding: 10px 10px 10px 16px; transition: border-color .15s, box-shadow .15s; }
 .composer:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft), var(--shadow); }
 #input { width: 100%; border: 0; outline: 0; resize: none; background: transparent; min-height: 26px; max-height: 220px; padding: 4px 0; line-height: 1.5; font-size: 15px; }
@@ -258,7 +289,7 @@ svg { flex: none; }
   .panel .tabs { display: none; }
   .mobile-nav button { flex: 1; flex-direction: column; height: auto; padding: 6px 0; gap: 2px; font-size: 11.5px; }
   .hide-mobile { display: none !important; }
-  .ideas { grid-template-columns: minmax(0, 1fr); }
+  .ideas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .welcome { margin-top: 3vh; }
   .welcome h1 { font-size: 25px; }
   .thread { padding: 0 16px; }
@@ -269,6 +300,7 @@ svg { flex: none; }
   .top { padding: 0 10px; gap: 8px; }
   .branch { display: none; }
 }
+@media (max-width: 560px) { .ideas { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
@@ -293,6 +325,8 @@ svg { flex: none; }
     <select class="input" id="effort"><option value="low">Low: fastest</option><option value="medium">Medium</option><option value="high">High: recommended</option><option value="xhigh">Extra high</option><option value="max">Max: most thorough</option></select>
   </label>
   <label class="switch-row">Auto-approve changes<span class="switch"><input type="checkbox" id="auto"><i></i></span></label>
+  <label class="switch-row">Animated background<span class="switch"><input type="checkbox" id="anim"><i></i></span></label>
+  <div><div style="font-size:12.5px;font-weight:500;color:var(--muted);margin-bottom:6px">MCP servers</div><div class="mcp-list" id="mcp-list"></div></div>
   <label>Theme
     <select class="input" id="theme"><option value="system">Match system</option><option value="light">Light</option><option value="dark">Dark</option></select>
   </label>
@@ -301,12 +335,16 @@ svg { flex: none; }
 </div>
 
 <div class="app" id="app">
-  <section class="chat">
+  <section class="chat" id="chat">
+    <canvas id="bg" aria-hidden="true"></canvas>
     <div id="log"><div class="thread" id="thread"></div></div>
     <div class="composer-wrap">
-      <div class="composer">
+      <div class="composer" id="composer">
+        <div class="attachments" id="attachments"></div>
         <textarea id="input" rows="1" placeholder="Describe what you want to build or change…" aria-label="Message"></textarea>
         <div class="composer-row">
+          <button class="chip" id="attach" title="Attach a screenshot, mockup or design"><span data-icon="image"></span><span class="hide-mobile">Image</span></button>
+          <input type="file" id="file-input" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
           <button class="chip" id="gh-chip" title="GitHub actions"><span data-icon="github"></span>GitHub</button>
           <button class="chip" id="auto-chip" title="Toggle auto-approve"><span data-icon="shield"></span><span id="auto-chip-text">Ask before changes</span></button>
           <span class="spacer"></span>
@@ -330,7 +368,9 @@ svg { flex: none; }
         <div class="urlbar"><span data-icon="globe"></span><input id="preview-path" spellcheck="false" aria-label="Page to preview"></div>
         <div class="seg hide-mobile"><button class="on" id="dev-desktop" title="Desktop" aria-label="Desktop width"><span data-icon="monitor"></span></button><button id="dev-phone" title="Phone" aria-label="Phone width"><span data-icon="phone"></span></button></div>
         <button class="btn ghost icon-only" id="preview-open" title="Open in new tab" aria-label="Open in new tab"><span data-icon="external"></span></button>
+        <button class="btn primary" id="deploy" title="Publish this project to a public URL"><span data-icon="rocket"></span><span class="hide-mobile">Deploy</span></button>
       </div>
+      <div class="apps" id="apps"></div>
       <div class="stage" id="stage">
         <iframe id="preview" title="Preview" class="hidden"></iframe>
         <div class="empty-state" id="preview-empty"><div class="ic" data-icon="eye"></div><b>Nothing to preview yet</b>When Docks builds a web page, it shows up here and refreshes as it changes.</div>
@@ -397,6 +437,14 @@ const ICONS = {
   game: '<rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 11v3M5.5 12.5h3M15 12h.01M18 13h.01"/>',
   bug: '<path d="M8 8V6a4 4 0 0 1 8 0v2"/><rect x="6" y="8" width="12" height="12" rx="6"/><path d="M12 12v8M3 13h3M18 13h3M4 7l3 2M20 7l-3 2M4 19l3-2M20 19l-3-2"/>',
   book: '<path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zm0 0a2 2 0 0 0 2 2h13"/>',
+  image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>',
+  rocket: '<path d="M5 15c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.2 2.2 0 0 0-2.9-.1z"/><path d="m12 15-3-3a22 22 0 0 1 2-4A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.6-3 2-4c1.6-1.1 5 0 5 0M12 15v5s3-.6 4-2c1.1-1.6 0-5 0-5"/>',
+  plug: '<path d="M12 22v-5M9 8V2M15 8V2M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8z"/>',
+  play: '<path d="m7 4 13 8-13 8z"/>',
+  server: '<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/>',
+  chart: '<path d="M3 3v18h18M7 15l4-4 3 3 5-6"/>',
+  smartphone: '<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/>',
+  puzzle: '<path d="M9 3h6v3a2 2 0 1 0 4 0V9h2v6h-3a2 2 0 1 0 0 4h3v2H9v-3a2 2 0 1 0-4 0v3H3V9h3a2 2 0 1 0 0-4H3V3z"/>',
 };
 const icon = (name, size = 16) => `<svg class="icon" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 document.querySelectorAll('[data-icon]').forEach(e => { e.innerHTML = icon(e.dataset.icon, e.classList.contains('ic') ? 24 : e.classList.contains('logo-mark') ? 18 : 16); });
@@ -477,8 +525,17 @@ const TOOL = {
   create_pull_request: { icon: 'pr', run: 'Opening a pull request', done: 'Opened a pull request', d: a => a.title },
   github_comment:      { icon: 'comment', run: a => `Commenting on #${a.number}`, done: a => `Commented on #${a.number}`, d: a => a.body },
   review_pull_request: { icon: 'review', run: a => `Reviewing #${a.number}`, done: a => `Posted a review on #${a.number}`, d: a => a.body },
+  start_process:       { icon: 'play', run: 'Starting the app', done: 'Started the app', d: a => a.command },
+  process_logs:        { icon: 'terminal', run: 'Checking the app output', done: 'Checked the app output', d: a => `process ${a.process_id}` },
+  stop_process:        { icon: 'server', run: 'Stopping the app', done: 'Stopped the app', d: a => `process ${a.process_id}` },
 };
-const tl = (name, args, which) => { const t = TOOL[name]; if (!t) return name; const v = t[which]; return typeof v === 'function' ? v(args || {}) : v; };
+function toolInfo(name) {
+  if (TOOL[name]) return TOOL[name];
+  const m = String(name).match(/^mcp__(.+?)__(.+)$/);
+  if (m) return { icon: 'plug', run: `Using ${m[2]} (${m[1]})`, done: `Used ${m[2]} (${m[1]})`, d: a => JSON.stringify(a) };
+  return { icon: 'zap', run: name, done: name, d: a => JSON.stringify(a) };
+}
+const tl = (name, args, which) => { const v = toolInfo(name)[which]; return typeof v === 'function' ? v(args || {}) : v; };
 const ASK = {
   bash: 'run a command',
   write_file: a => `create or replace ${base(a.path)}`,
@@ -486,6 +543,7 @@ const ASK = {
   create_pull_request: 'push this branch and open a pull request',
   github_comment: a => `comment on #${a.number}`,
   review_pull_request: a => `post a review on #${a.number}`,
+  start_process: 'start a background process',
 };
 
 // ---------------------------------------------------------------- chat rendering
@@ -506,21 +564,39 @@ function markStep(s, st) {
   if (st === 'done' || st === 'error') s.querySelector('.label').textContent = tl(s.dataset.name, JSON.parse(s.dataset.args), st === 'error' ? 'run' : 'done') + (st === 'error' ? ' (failed)' : '');
 }
 
-const IDEAS = [
-  ['layout', 'A landing page', 'for a coffee shop, with a menu and contact form', 'Build a landing page for a coffee shop called Bean There, with a hero section, a menu with prices, and a contact form. Make it look modern and work on phones.'],
-  ['game', 'A browser game', 'snake with a score and high score', 'Make a snake game that runs in the browser, with arrow-key and swipe controls, a score, and a saved high score.'],
-  ['zap', 'A useful app', 'a to-do list that saves your tasks', 'Build a to-do list web app where I can add, complete, filter and delete tasks. Save them in the browser so they survive a refresh.'],
-  ['book', 'Explain this project', 'what it does and how it fits together', 'Explain what this project does, how it is structured, and how to run it.'],
+const RUN = ' When it works, start it with start_process so I can see it live in the preview.';
+const TEMPLATES = [
+  ['layout', 'Landing page', 'HTML · Tailwind', 'Build a modern, responsive landing page for a coffee shop called Bean There: hero section with a call to action, menu with prices, testimonials, opening hours and a contact form. Use Tailwind via CDN in a single index.html with tasteful animations.'],
+  ['zap', 'React web app', 'Vite · React · Tailwind', 'Create a React + Vite + Tailwind app: a habit tracker where I can add habits, check them off each day, see streaks, and keep data in localStorage. Polished, responsive UI.' + RUN],
+  ['server', 'Full-stack app', 'FastAPI · SQLite · React', 'Build a full-stack notes app: a FastAPI backend with SQLite (create, list, search, edit, delete notes) and a React + Vite frontend that talks to it. Include a README with how to run both.' + RUN],
+  ['chart', 'Dashboard', 'React · Charts', 'Build a sales analytics dashboard with KPI tiles, a revenue line chart, a top-products bar chart and a sortable orders table, using realistic sample data. Clean, responsive design with light and dark mode.' + RUN],
+  ['game', 'Browser game', 'Canvas · JavaScript', 'Make a polished snake game in the browser with a canvas, smooth movement, arrow-key and swipe controls, increasing speed, sound effects, and a saved high score. Put it in index.html.'],
+  ['smartphone', 'Mobile app', 'Expo · React Native', 'Create an Expo (React Native) app: a simple expense tracker with categories, a monthly total and a chart. Explain how to open it on my phone with Expo Go.'],
+  ['puzzle', 'Chrome extension', 'Manifest V3', 'Build a Chrome extension (Manifest V3) that shows a word count and reading time for the current page in a popup, with a clean design. Explain how to load it unpacked.'],
+  ['code', 'REST API', 'FastAPI · OpenAPI', 'Build a REST API with FastAPI for a todo service: CRUD endpoints, validation, SQLite storage, and tests with pytest. Run the tests.' + RUN],
+  ['sparkle', 'Portfolio site', 'HTML · CSS', 'Build a striking personal portfolio site for a developer: hero with an animated background, projects grid, about section, and contact links. Single index.html, no build step.'],
+];
+const QUICK = [
+  ['book', 'Explain this project', 'Explain what this project does, how it is structured, and how to run it.'],
+  ['bug', 'Find and fix bugs', 'Look through this project for bugs, fix the real ones, and run the tests.'],
+  ['review', 'Add tests', 'Add tests for the most important code in this project and make them pass.'],
+  ['rocket', 'Deploy it', null],
 ];
 function welcome() {
   thread.innerHTML = '';
-  const w = h('div', 'welcome', `<div class="mark">${icon('logo', 26)}</div><h1>What do you want to build?</h1><p>Describe it in plain words. Docks writes the code, runs it, and fixes what breaks.</p><div class="ideas"></div>`);
-  for (const [ic, title, sub, prompt] of IDEAS) {
-    const b = h('button', 'idea', `<span class="ic">${icon(ic, 18)}</span><span><b>${esc(title)}</b><span>${esc(sub)}</span></span>`);
+  const w = h('div', 'welcome', `<div class="hero"><div class="mark">${icon('logo', 26)}</div><h1>What do you want to <span class="grad">build</span>?</h1><p>Describe it, paste a screenshot, or start from a template. Docks writes the code, runs it, and fixes what breaks.</p></div><div class="section-label">Start from a template</div><div class="ideas"></div><div class="section-label">Or work on this project</div><div class="quick"></div>`);
+  for (const [ic, title, stack, prompt] of TEMPLATES) {
+    const b = h('button', 'idea', `<span class="ic">${icon(ic, 18)}</span><span><b>${esc(title)}</b><span class="stack">${esc(stack)}</span></span>`);
     b.onclick = () => { $('input').value = prompt; autosize(); $('input').focus(); };
     w.querySelector('.ideas').appendChild(b);
   }
+  for (const [ic, title, prompt] of QUICK) {
+    const b = h('button', 'chip', `${icon(ic)}${esc(title)}`);
+    b.onclick = () => prompt ? send(prompt) : deploy();
+    w.querySelector('.quick').appendChild(b);
+  }
   thread.appendChild(w);
+  $('chat').classList.remove('busy-convo');
 }
 
 function setBusy(busy) {
@@ -541,6 +617,8 @@ function updateStatus() {
 }
 function applyState(s) {
   state = { ...state, ...s };
+  if (s.processes) { processes = {}; s.processes.forEach(onProcess); }
+  if (s.mcp) renderMcp(s.mcp);
   const name = (s.root || '').split('/').filter(Boolean).pop() || s.root;
   $('project-name').textContent = name; $('project-name').title = s.root; $('root-path').textContent = s.root;
   $('model').value = s.model; $('effort').value = s.effort; $('auto').checked = s.auto_approve;
@@ -569,7 +647,13 @@ function handle(ev) {
   switch (ev.type) {
     case 'reset': thread.innerHTML = ''; blocks = {}; group = null; lastStep = null; typing = null; pending = 0; applyState(ev.state); if (!thread.children.length || (thread.children.length === 1 && typing)) { if (!state.busy) welcome(); } break;
     case 'cleared': blocks = {}; group = null; lastStep = null; welcome(); refreshAll(); break;
-    case 'user': endGroup(); add(h('div', 'msg-user')).textContent = ev.text; setBusy(true); break;
+    case 'user': {
+      endGroup();
+      const u = add(h('div', 'msg-user'));
+      if (ev.images?.length) { const box = h('div', 'imgs'); for (const src of ev.images) { const im = h('img'); im.src = src; im.alt = 'attached image'; box.appendChild(im); } u.appendChild(box); }
+      u.appendChild(document.createTextNode(ev.text)); setBusy(true); $('chat').classList.add('busy-convo');
+      break;
+    }
     case 'text': {
       endGroup();
       let b = blocks[ev.id];
@@ -587,11 +671,11 @@ function handle(ev) {
     case 'tool_call': {
       finishRunning();
       if (!group) group = add(h('div', 'activity'));
-      const t = TOOL[ev.name] || { icon: 'zap' };
+      const t = toolInfo(ev.name);
       const s = h('div', 'step running', `<div class="step-head"><span class="ic">${icon(t.icon)}</span><span class="label"></span><span class="detail"></span><span class="chev">${icon('chev', 14)}</span></div><div class="step-body"></div>`);
       s.dataset.name = ev.name; s.dataset.args = JSON.stringify(ev.args || {});
       s.querySelector('.label').textContent = tl(ev.name, ev.args, 'run');
-      const detail = TOOL[ev.name] ? (TOOL[ev.name].d(ev.args || {}) || '') : ev.summary;
+      const detail = t.d(ev.args || {}) || '';
       s.querySelector('.detail').textContent = String(detail).split('\n')[0];
       s.querySelector('.step-head').onclick = () => s.classList.toggle('open');
       group.appendChild(s); lastStep = s; scrollDown();
@@ -612,12 +696,13 @@ function handle(ev) {
     case 'approval': {
       pending++; updateStatus();
       const a = ev.args || {}; const ask = ASK[ev.name];
-      const what = typeof ask === 'function' ? ask(a) : (ask || `use ${ev.name}`);
+      const mm = String(ev.name).match(/^mcp__(.+?)__(.+)$/);
+      const what = typeof ask === 'function' ? ask(a) : (ask || (mm ? `use ${mm[2]} from the ${mm[1]} MCP server` : `use ${ev.name}`));
       const box = h('div', 'approval', `<div class="ap-head">${icon('shield')}<span>Docks wants to ${esc(what)}</span></div><div class="ap-body"></div><div class="ap-actions">
         <button class="btn primary" data-a="yes">Allow</button><button class="btn" data-a="always">Always allow this</button><button class="btn danger" data-a="no">Deny</button></div>`);
       const body = box.querySelector('.ap-body');
       if (ev.name === 'edit_file') body.appendChild(diffView(a.old_string, a.new_string));
-      else { const pre = h('pre', 'code-view'); pre.textContent = ev.name === 'bash' ? a.command : ev.name === 'write_file' ? a.content : ev.name === 'create_pull_request' ? `${a.title}\n\n${a.body || ''}` : (a.body || JSON.stringify(a, null, 2)); body.appendChild(pre); }
+      else { const pre = h('pre', 'code-view'); pre.textContent = ev.name === 'bash' || ev.name === 'start_process' ? a.command : ev.name === 'write_file' ? a.content : ev.name === 'create_pull_request' ? `${a.title}\n\n${a.body || ''}` : (a.body || JSON.stringify(a, null, 2)); body.appendChild(pre); }
       box.id = 'ap-' + ev.id;
       box.querySelectorAll('[data-a]').forEach(b => b.onclick = () => { box.querySelectorAll('button').forEach(x => x.disabled = true); api('/api/approve', { id: ev.id, answer: b.dataset.a }); });
       if (lastStep) { lastStep.classList.remove('running'); lastStep.classList.add('waiting'); lastStep.after(box); } else add(box);
@@ -640,6 +725,7 @@ function handle(ev) {
     case 'error': endGroup(); add(h('div', 'notice error', icon('alert') + esc(ev.text))); break;
     case 'notice': add(h('div', 'notice', icon('sparkle') + esc(ev.text))); refreshAll(); break;
     case 'usage': showUsage(ev.usage); break;
+    case 'process': onProcess(ev); break;
     case 'idle': endGroup(); pending = 0; setBusy(false); refreshAll(); break;
   }
 }
@@ -669,12 +755,50 @@ async function connect() {
 async function send(textOverride) {
   if (state.busy) { api('/api/stop', {}); return; }
   const text = (textOverride ?? $('input').value).trim();
-  if (!text) return;
-  const res = await api('/api/chat', { message: text });
-  if (res.ok) { $('input').value = ''; autosize(); mobile('chat'); }
+  const images = textOverride ? [] : attachments.map(a => ({ media_type: a.type, data: a.data }));
+  if (!text && !images.length) return;
+  const res = await api('/api/chat', { message: text, images });
+  if (res.ok) { if (!textOverride) { $('input').value = ''; attachments = []; renderAttachments(); } autosize(); mobile('chat'); }
   else toast((await res.json().catch(() => ({}))).error || 'Could not send');
 }
-function autosize() { const t = $('input'); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 220) + 'px'; $('send').disabled = !state.busy && !t.value.trim(); }
+function autosize() { const t = $('input'); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 220) + 'px'; $('send').disabled = !state.busy && !t.value.trim() && !attachments.length; }
+
+// Image attachments: click, paste or drop. Build UIs from screenshots and mockups.
+let attachments = [];
+const TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+function addFiles(list) {
+  for (const f of list) {
+    if (!TYPES.includes(f.type)) { toast('Images only: PNG, JPEG, GIF or WebP'); continue; }
+    if (f.size > 5 * 1024 * 1024) { toast(`${f.name} is over 5 MB`); continue; }
+    if (attachments.length >= 5) { toast('Up to 5 images'); break; }
+    const r = new FileReader();
+    r.onload = () => { attachments.push({ type: f.type, url: r.result, data: String(r.result).split(',')[1] }); renderAttachments(); };
+    r.readAsDataURL(f);
+  }
+}
+function renderAttachments() {
+  const box = $('attachments'); box.innerHTML = '';
+  attachments.forEach((a, i) => {
+    const t = h('div', 'thumb', `<img alt="attachment ${i + 1}"><button aria-label="Remove image">×</button>`);
+    t.querySelector('img').src = a.url;
+    t.querySelector('button').onclick = () => { attachments.splice(i, 1); renderAttachments(); };
+    box.appendChild(t);
+  });
+  autosize();
+}
+$('attach').onclick = () => $('file-input').click();
+$('file-input').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
+$('input').addEventListener('paste', e => { const files = [...(e.clipboardData?.files || [])]; if (files.length) { e.preventDefault(); addFiles(files); } });
+const comp = $('composer');
+['dragenter', 'dragover'].forEach(t => comp.addEventListener(t, e => { e.preventDefault(); comp.classList.add('drag'); }));
+['dragleave', 'drop'].forEach(t => comp.addEventListener(t, e => { e.preventDefault(); comp.classList.remove('drag'); }));
+comp.addEventListener('drop', e => addFiles(e.dataTransfer.files));
+
+async function deploy() {
+  const r = await api('/api/github', { action: 'deploy' });
+  if (r.ok) { mobile('chat'); toast('Docks is deploying your project'); } else toast((await r.json()).error);
+}
+$('deploy').onclick = deploy;
 $('send').onclick = () => send();
 $('input').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); if (!state.busy) send(); } });
 $('input').addEventListener('input', autosize);
@@ -686,6 +810,21 @@ async function saveSettings(extra = {}) {
 }
 $('model').onchange = () => saveSettings(); $('effort').onchange = () => saveSettings(); $('auto').onchange = () => saveSettings();
 $('auto-chip').onclick = () => { $('auto').checked = !$('auto').checked; saveSettings(); toast($('auto').checked ? 'Docks will make changes without asking' : 'Docks will ask before changes'); };
+function renderMcp(list) {
+  const box = $('mcp-list'); box.innerHTML = '';
+  if (!list.length) { box.innerHTML = '<div class="mcp-row"><small>None yet. Add one with <code>docks mcp add</code>.</small></div>'; return; }
+  for (const m of list) {
+    const label = { running: `${m.tools.length} tools`, error: 'failed', 'needs-approval': 'needs approval', stopped: 'stopped' }[m.status];
+    const row = h('div', 'mcp-row', `<span class="d ${m.status}"></span><span></span><small>${esc(label)}</small>`);
+    row.children[1].textContent = m.name; row.title = m.error || m.command;
+    if (m.status === 'needs-approval') {
+      const b = h('button', 'btn', 'Approve'); b.title = `Runs: ${m.command}`;
+      b.onclick = async e => { e.stopPropagation(); if (!confirm(`Start MCP server "${m.name}"?\n\nIt runs: ${m.command}`)) return; const r = await api('/api/mcp/approve', { name: m.name }); if (r.ok) renderMcp((await r.json()).mcp); else toast((await r.json()).error); };
+      row.appendChild(b);
+    }
+    box.appendChild(row);
+  }
+}
 async function newChat() {
   const r = await api('/api/clear', {}); if (!r.ok) toast('Stop the current task first'); $('settings').classList.add('hidden');
 }
@@ -747,21 +886,47 @@ async function openFile(path, silent) {
   if (!silent) { showTab('code'); mobile('code'); }
 }
 
-function previewUrl() { const p = state.preview || {}; return `${location.protocol}//${location.hostname}:${p.port}${p.prefix || '/'}${$('preview-path').value.replace(/^\/+/, '')}`; }
+// Preview shows either a project file (static) or a running app (dev server started by Docks).
+let processes = {}, appUrl = null;
+function previewUrl() {
+  if (appUrl) return appUrl.replace('localhost', location.hostname);
+  const p = state.preview || {}; return `${location.protocol}//${location.hostname}:${p.port}${p.prefix || '/'}${$('preview-path').value.replace(/^\/+/, '')}`;
+}
+function onProcess(info) {
+  processes[info.id] = info;
+  if (info.url && info.running && appUrl !== info.url) { appUrl = info.url; $('preview-path').value = info.url; showTab('preview'); }
+  if (!info.running && appUrl === info.url) { appUrl = null; $('preview-path').value = ''; autoPreview(); }
+  renderApps(); reloadPreview();
+}
+function renderApps() {
+  const box = $('apps'); box.innerHTML = '';
+  for (const p of Object.values(processes)) {
+    if (!p.running || !p.url) continue;
+    const pill = h('div', 'app-pill' + (appUrl === p.url ? ' on' : ''), `<span class="live"></span><span></span><button class="x" title="Stop this app" aria-label="Stop">${icon('stop', 12)}</button>`);
+    pill.children[1].textContent = p.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    pill.onclick = e => { if (e.target.closest('.x')) return; appUrl = p.url; $('preview-path').value = p.url; renderApps(); reloadPreview(); };
+    pill.querySelector('.x').onclick = () => api('/api/process/stop', { id: p.id });
+    box.appendChild(pill);
+  }
+}
 function autoPreview() {
-  if (previewPicked) return;
+  if (previewPicked || appUrl) return;
   const html = files.filter(f => /\.html?$/i.test(f));
   const pick = ['index.html', 'public/index.html', 'dist/index.html', 'src/index.html'].find(f => html.includes(f)) || html[0];
   if (pick && $('preview-path').value !== pick) { $('preview-path').value = pick; if (currentTab === 'preview') reloadPreview(); }
 }
 function reloadPreview() {
   const path = $('preview-path').value.trim();
-  const has = path && files.includes(path.replace(/^\/+/, ''));
+  const has = !!appUrl || (path && files.includes(path.replace(/^\/+/, '')));
   $('preview').classList.toggle('hidden', !has); $('preview-empty').classList.toggle('hidden', has);
   if (has && state.preview) $('preview').src = previewUrl();
 }
 $('preview-reload').onclick = reloadPreview;
-$('preview-path').addEventListener('keydown', e => { if (e.key === 'Enter') { previewPicked = true; reloadPreview(); } });
+$('preview-path').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const v = $('preview-path').value.trim();
+  appUrl = /^https?:\/\//.test(v) ? v : null; previewPicked = !appUrl; renderApps(); reloadPreview();
+});
 $('preview-open').onclick = () => { if (state.preview) window.open(previewUrl(), '_blank', 'noopener'); };
 $('dev-desktop').onclick = () => { $('stage').classList.remove('phone'); $('dev-desktop').classList.add('on'); $('dev-phone').classList.remove('on'); };
 $('dev-phone').onclick = () => { $('stage').classList.add('phone'); $('dev-phone').classList.add('on'); $('dev-desktop').classList.remove('on'); };
@@ -808,6 +973,10 @@ async function loadGit() {
   gh.appendChild(action('review', 'Review a pull request', 'Docks reads the changes and posts a review with comments on the exact lines.', 'Pull request #', 'review'));
   gh.appendChild(action('pr', 'Open a pull request', 'Docks commits the current changes on a branch and opens a pull request that explains them.', null, 'pr'));
 
+  const bot = h('div', 'card', `<h3>${icon('sparkle')} @docks on GitHub</h3><p>Let anyone with write access mention <b>@docks</b> in an issue or pull request, like with Claude Code and Codex. Docks runs in GitHub Actions and replies in the thread.</p>${files.includes('.github/workflows/docks.yml') ? `<span class="pill ok">Installed</span><p style="margin:10px 0 0">Add your <code>ANTHROPIC_API_KEY</code> as a repo secret, allow Actions to create pull requests (Settings → Actions → General), then commit and push the workflow.</p>` : '<button class="btn primary">Add to this repo</button>'}`);
+  bot.querySelector('button')?.addEventListener('click', async () => { const r = await api('/api/install-github', {}); if (r.ok) { toast('Workflow added'); refreshAll(); } else toast('Could not add the workflow'); });
+  gh.appendChild(bot);
+
   const ch = h('div', 'card', `<h3>${icon('code')} Changes <span class="pill">${g.changes.length}</span></h3>`);
   if (!g.changes.length) ch.appendChild(h('p', null, 'No uncommitted changes.'));
   else {
@@ -819,6 +988,114 @@ async function loadGit() {
   }
   gh.appendChild(ch);
 }
+
+// ---------------------------------------------------------------- animated background
+// Lines of code drift upward in three depth layers; some type themselves out. Soft colored glows move behind.
+const Background = (() => {
+  const canvas = $('bg'), ctx = canvas.getContext('2d');
+  const SNIPPETS = [
+    "const app = createApp({ name: 'docks' })", "export default function App() {", "  const [todos, setTodos] = useState([])",
+    "return <Layout title=\"Dashboard\">", "async function deploy(site) {", "  await build({ minify: true })",
+    "def create_app():", "    app = FastAPI(title=\"api\")", "@app.get(\"/items/{id}\")", "    return {\"ok\": True}",
+    "git commit -m \"feat: ship it\"", "npm run dev  # localhost:5173", "SELECT * FROM users WHERE active = 1;",
+    "<div className=\"grid gap-4 md:grid-cols-3\">", "fetch('/api/chat', { method: 'POST' })", "for (const f of files) render(f)",
+    "class Agent:", "    def run(self, task):", "        while not done: step()", "// TODO: make it beautiful",
+    "body { display: grid; place-items: center; }", "if (score > best) save(score)", "await page.goto(previewUrl)",
+    "pip install docks", "docks fix 42", "export const config = { runtime: 'edge' }", "router.post('/login', auth)",
+    "const ws = new WebSocket(url)", "useEffect(() => subscribe(), [])", "tests: 128 passed in 2.4s",
+  ];
+  const KW = /^(const|let|var|function|return|export|default|import|from|async|await|def|class|if|else|for|while|of|in|new|SELECT|FROM|WHERE|not)$/;
+  let colors = {}, lines = [], orbs = [], w = 0, hgt = 0, dpr = 1, last = 0, raf = 0, enabled = true;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+
+  function readColors() {
+    const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue(n).trim();
+    const dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light' || document.documentElement.dataset.theme === 'dark';
+    colors = { kw: v('--accent'), str: v('--ok'), num: v('--warn'), cm: v('--muted'), id: v('--fg-2'), pn: v('--muted'),
+               orbs: [v('--accent'), '#c25bd6', '#e07a3f'], strength: dark ? 1 : 0.75 };
+  }
+  function tokenize(src) {
+    const out = [], re = /(\/\/.*|#\s.*$)|("[^"]*"|'[^']*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_]\w*)|(\s+)|(.)/g;
+    let m;
+    while ((m = re.exec(src))) {
+      const [t] = m;
+      out.push([t, m[1] ? 'cm' : m[2] ? 'str' : m[3] ? 'num' : m[4] ? (KW.test(t) ? 'kw' : 'id') : 'pn']);
+    }
+    return out;
+  }
+  function spawn(initial) {
+    const layer = Math.random() < 0.5 ? 0 : Math.random() < 0.6 ? 1 : 2;
+    const size = [11, 13, 15.5][layer];
+    const text = SNIPPETS[Math.floor(Math.random() * SNIPPETS.length)];
+    ctx.font = `${size}px ui-monospace, SFMono-Regular, Menlo, monospace`;
+    const width = ctx.measureText(text).width;
+    return { text, tokens: tokenize(text), size, layer, width,
+             x: Math.random() * Math.max(10, w - width * 0.6) - width * 0.2,
+             y: initial ? Math.random() * hgt : hgt + 20 + Math.random() * 60,
+             speed: [9, 15, 24][layer] * (0.8 + Math.random() * 0.4),
+             alpha: [0.22, 0.34, 0.5][layer],
+             typing: Math.random() < 0.35, typed: 0, cps: 14 + Math.random() * 18 };
+  }
+  function resize() {
+    const r = canvas.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2); w = r.width; hgt = r.height;
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(hgt * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const target = Math.round(Math.min(70, Math.max(18, (w * hgt) / 16000)));
+    while (lines.length < target) lines.push(spawn(true));
+    lines.length = Math.min(lines.length, target);
+    if (!orbs.length) orbs = [0, 1, 2].map(i => ({ i, a: Math.random() * 6.28, r: 0.28 + i * 0.07, s: 0.05 + i * 0.03 }));
+  }
+  function frame(t) {
+    raf = 0;
+    const dt = Math.min(0.05, (t - (last || t)) / 1000); last = t;
+    ctx.clearRect(0, 0, w, hgt);
+    // glows
+    for (const o of orbs) {
+      o.a += o.s * dt;
+      const cx = w * (0.5 + Math.cos(o.a + o.i * 2.1) * 0.35), cy = hgt * (0.45 + Math.sin(o.a * 1.3 + o.i) * 0.3);
+      const rad = Math.max(w, hgt) * o.r;
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+      g.addColorStop(0, colors.orbs[o.i]); g.addColorStop(1, 'transparent');
+      ctx.globalAlpha = 0.10 * colors.strength; ctx.fillStyle = g; ctx.fillRect(0, 0, w, hgt);
+    }
+    // code
+    for (let k = 0; k < lines.length; k++) {
+      const L = lines[k];
+      L.y -= L.speed * dt;
+      if (L.typing) L.typed = Math.min(L.text.length, L.typed + L.cps * dt);
+      if (L.y < -30) { lines[k] = spawn(false); continue; }
+      const edge = Math.min(1, L.y / (hgt * 0.18), (hgt - L.y) / (hgt * 0.12));
+      ctx.globalAlpha = Math.max(0, edge) * L.alpha * colors.strength;
+      ctx.font = `${L.size}px ui-monospace, SFMono-Regular, Menlo, monospace`;
+      let x = L.x, left = L.typing ? Math.floor(L.typed) : Infinity;
+      for (const [txt, kind] of L.tokens) {
+        if (left <= 0) break;
+        const part = txt.slice(0, left); left -= txt.length;
+        ctx.fillStyle = colors[kind]; ctx.fillText(part, x, L.y);
+        x += ctx.measureText(part).width;
+      }
+      if (L.typing && L.typed < L.text.length && Math.floor(t / 450) % 2 === 0) { ctx.fillStyle = colors.kw; ctx.fillRect(x + 1, L.y - L.size * 0.8, 2, L.size); }
+    }
+    ctx.globalAlpha = 1;
+    schedule();
+  }
+  function schedule() { if (!raf && enabled && !document.hidden && !reduced.matches) raf = requestAnimationFrame(frame); }
+  function drawStatic() { cancelAnimationFrame(raf); raf = 0; last = 0; frame(performance.now()); cancelAnimationFrame(raf); raf = 0; }
+  function setEnabled(on) {
+    enabled = on; canvas.classList.toggle('hidden', !on);
+    if (on) { reduced.matches ? drawStatic() : schedule(); } else { cancelAnimationFrame(raf); raf = 0; }
+  }
+  readColors(); resize();
+  new ResizeObserver(() => { resize(); if (reduced.matches && enabled) drawStatic(); }).observe(canvas);
+  document.addEventListener('visibilitychange', () => { last = 0; schedule(); });
+  new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
+  return { setEnabled };
+})();
+$('anim').checked = store.get('docks-anim', 'on') === 'on';
+Background.setEnabled($('anim').checked);
+$('anim').onchange = () => { store.set('docks-anim', $('anim').checked ? 'on' : 'off'); Background.setEnabled($('anim').checked); };
 
 // ---------------------------------------------------------------- start
 (async () => {

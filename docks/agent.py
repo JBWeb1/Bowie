@@ -11,7 +11,9 @@ import anthropic
 
 from . import memory
 from . import ui as term
-from .tools import ToolError, is_mutating, run_tool, tool_definitions
+from .mcp import MCPError
+from .procs import ProcessManager
+from .tools import ToolError, _check, is_mutating, run_tool, tool_definitions
 
 DEFAULT_MODEL = "claude-opus-5-5"
 BETAS = [
@@ -24,6 +26,27 @@ WEB_TOOLS = [
     {"type": "web_search_20260209", "name": "web_search"},
     {"type": "web_fetch_20260209", "name": "web_fetch"},
 ]
+
+
+PROCESS_TOOLS = {
+    "start_process": {
+        "description": "Start a long-running command in the background, such as a dev server (npm run dev, "
+                       "python -m http.server, uvicorn, flask run). Returns its first output and the local URL it "
+                       "serves, which the user sees live in their preview. Use bash for commands that finish.",
+        "properties": {"command": {"type": "string"}},
+        "required": ["command"],
+    },
+    "process_logs": {
+        "description": "Read recent output of a background process (to check for errors after a change).",
+        "properties": {"process_id": {"type": "integer"}, "lines": {"type": "integer"}},
+        "required": ["process_id"],
+    },
+    "stop_process": {
+        "description": "Stop a background process.",
+        "properties": {"process_id": {"type": "integer"}},
+        "required": ["process_id"],
+    },
+}
 
 
 class TurnAborted(Exception):
@@ -41,6 +64,11 @@ How to work:
 - Match the existing code style. Don't add features or refactors nobody asked for.
 - For a new project, pick a sensible, mainstream stack unless the user specifies one, and include a README with how to run it.
 - Ask the user only when a decision is genuinely theirs to make; otherwise use good defaults and say what you chose.
+- To run a web app (Vite, Next.js, Flask, FastAPI, Express…), start its dev server with start_process. The user
+  sees it live in their preview, so prefer real running apps to describing them. Check process_logs after changes.
+- For static sites, an index.html at the project root shows in the preview without a server.
+- If the user attaches images (screenshots, mockups, designs), build the UI to match them closely.
+- Tools named mcp__<server>__<tool> come from MCP servers the user connected; use them when they fit the task.
 - Use web_search and web_fetch to read current documentation when you're unsure how a library or API works.
 - When you learn something worth keeping (a mistake you made, a fix that worked, a user preference,
   how this project builds), save it with the remember tool so future sessions do better.
@@ -77,17 +105,65 @@ class Agent:
     effort: str = "high"
     auto_approve: bool = False
     web: bool = True
+    exclude_tools: tuple = ()  # tool names to leave out, e.g. when a runner handles PRs itself
     display: object = field(default_factory=lambda: term.TerminalUI())  # where output goes
     confirm: Callable[[str, dict], str] | None = None  # overrides display.confirm
     client: anthropic.Anthropic = field(default_factory=anthropic.Anthropic)
     messages: list = field(default_factory=list)
     always_allowed: set = field(default_factory=set)
     usage: dict = field(default_factory=lambda: {"input": 0, "output": 0, "cache_read": 0})
+    mcp: object = None    # an mcp.MCPManager, already started
+    procs: object = None  # a procs.ProcessManager; created if not given
 
     def __post_init__(self):
         self.system = build_system_prompt(self.root)
-        self.tools = tool_definitions() + (WEB_TOOLS if self.web else [])
+        if self.procs is None:
+            self.procs = ProcessManager(self.root)
+        self.refresh_tools()
         self.cancelled = threading.Event()
+
+    def refresh_tools(self) -> None:
+        """Rebuild the tool list (call after MCP servers start or stop)."""
+        process_defs = [{"name": n, "description": spec["description"], "eager_input_streaming": True,
+                         "input_schema": {"type": "object", "properties": spec["properties"],
+                                          "required": spec["required"], "additionalProperties": False}}
+                        for n, spec in PROCESS_TOOLS.items()]
+        mcp_defs = self.mcp.tool_definitions() if self.mcp else []
+        self.tools = [t for t in tool_definitions() + process_defs + mcp_defs + (WEB_TOOLS if self.web else [])
+                      if t["name"] not in self.exclude_tools]
+
+    def _mutating(self, name: str) -> bool:
+        if name in PROCESS_TOOLS:
+            return name == "start_process"
+        if self.mcp and self.mcp.handles(name):
+            return self.mcp.is_mutating(name)
+        return is_mutating(name)
+
+    def _run_tool(self, name: str, args: dict) -> tuple[str, bool]:
+        if name in PROCESS_TOOLS:
+            if not isinstance(args, dict):
+                raise ToolError("tool input must be a JSON object")
+            _check(args, {"type": "object", **PROCESS_TOOLS[name]}, "input")
+            if name == "start_process":
+                return self.procs.start(args["command"]), False
+            if name == "process_logs":
+                return self.procs.logs(args["process_id"], args.get("lines", 100)), False
+            return self.procs.stop(args["process_id"]), False
+        if self.mcp and self.mcp.handles(name):
+            if not isinstance(args, dict):
+                raise ToolError("tool input must be a JSON object")
+            try:
+                return self.mcp.call(name, args)
+            except MCPError as e:
+                raise ToolError(str(e))
+        return run_tool(self.root, name, args), False
+
+    def last_text(self) -> str:
+        """The text of Claude's final reply in the conversation (empty if the last turn failed)."""
+        if not self.messages or self.messages[-1]["role"] != "assistant":
+            return ""
+        return "".join(getattr(b, "text", "") for b in self.messages[-1]["content"]
+                       if getattr(b, "type", None) == "text").strip()
 
     def reset(self):
         self.messages.clear()
@@ -100,8 +176,10 @@ class Agent:
         if self.cancelled.is_set():
             raise TurnAborted("stopped; this turn was discarded")
 
-    def run(self, user_input: str) -> None:
-        """Run one user turn to completion. On failure or interrupt, roll the history back."""
+    def run(self, user_input: str | list) -> None:
+        """Run one user turn to completion. On failure or interrupt, roll the history back.
+
+        user_input is text, or a list of content blocks (e.g. images followed by text)."""
         turn_start = len(self.messages)
         self.cancelled.clear()
         self.messages.append({"role": "user", "content": user_input})
@@ -186,7 +264,7 @@ class Agent:
         self._check_cancel()
         args = block.input
         self.display.tool_call(block.name, args)
-        if is_mutating(block.name) and not self.auto_approve and block.name not in self.always_allowed:
+        if self._mutating(block.name) and not self.auto_approve and block.name not in self.always_allowed:
             answer = (self.confirm or self.display.confirm)(block.name, args)
             self._check_cancel()
             if answer == "always":
@@ -194,15 +272,16 @@ class Agent:
             elif answer != "yes":
                 return _error_result(block.id, "The user declined this tool call. Ask what they want instead.")
         try:
-            output = run_tool(self.root, block.name, args)
+            output, failed = self._run_tool(block.name, args)
         except ToolError as e:
             self.display.tool_output(str(e), is_error=True)
             return _error_result(block.id, str(e))
         except Exception as e:  # tool bugs shouldn't kill the session
             self.display.tool_output(repr(e), is_error=True)
             return _error_result(block.id, f"{type(e).__name__}: {e}")
-        self.display.tool_output(output)
-        return {"type": "tool_result", "tool_use_id": block.id, "content": output}
+        self.display.tool_output(output, is_error=failed)
+        result = {"type": "tool_result", "tool_use_id": block.id, "content": output}
+        return {**result, "is_error": True} if failed else result
 
     def _track_usage(self, usage) -> None:
         self.usage["input"] += usage.input_tokens or 0
