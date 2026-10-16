@@ -6,7 +6,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from . import memory
+from . import github, memory
 
 MAX_OUTPUT = 30_000  # chars returned to the model per tool call
 SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv", "venv", "dist", "build"}
@@ -154,6 +154,45 @@ TOOLS = {
         },
         "required": ["note"],
     }),
+    "github_issue": (github.github_issue, False, {
+        "description": "Read a GitHub issue (title, body, labels, comments) from this repo's origin.",
+        "properties": {"number": {"type": "integer"}},
+        "required": ["number"],
+    }),
+    "github_pr": (github.github_pr, False, {
+        "description": "Read a GitHub pull request: description, comments and the full diff.",
+        "properties": {"number": {"type": "integer"}},
+        "required": ["number"],
+    }),
+    "create_pull_request": (github.create_pull_request, True, {
+        "description": "Push the current branch and open a pull request. Commit all changes on a feature branch first.",
+        "properties": {
+            "title": {"type": "string"},
+            "body": {"type": "string", "description": "Markdown: what changed and why"},
+            "base": {"type": "string", "description": "Target branch; default is the repo's default branch"},
+            "draft": {"type": "boolean"},
+        },
+        "required": ["title"],
+    }),
+    "github_comment": (github.github_comment, True, {
+        "description": "Post a comment on a GitHub issue or pull request.",
+        "properties": {"number": {"type": "integer"}, "body": {"type": "string"}},
+        "required": ["number", "body"],
+    }),
+    "review_pull_request": (github.review_pull_request, True, {
+        "description": "Post a review on a pull request: a summary plus optional inline comments on lines of the new code.",
+        "properties": {
+            "number": {"type": "integer"},
+            "body": {"type": "string", "description": "Review summary"},
+            "comments": {"type": "array", "items": {
+                "type": "object",
+                "properties": {"path": {"type": "string"}, "line": {"type": "integer"}, "body": {"type": "string"}},
+                "required": ["path", "line", "body"],
+            }},
+            "verdict": {"type": "string", "enum": ["COMMENT", "APPROVE", "REQUEST_CHANGES"]},
+        },
+        "required": ["number", "body"],
+    }),
     "glob": (glob, False, {
         "description": "Find files by glob pattern, e.g. '**/*.py' or '*.md'.",
         "properties": {"pattern": {"type": "string"}, "path": {"type": "string"}},
@@ -170,7 +209,7 @@ TOOLS = {
     }),
 }
 
-_TYPES = {"string": str, "integer": int, "boolean": bool}
+_TYPES = {"string": str, "integer": int, "boolean": bool, "array": list, "object": dict}
 
 
 def tool_definitions() -> list[dict]:
@@ -190,6 +229,25 @@ def tool_definitions() -> list[dict]:
     ]
 
 
+def _check(value, schema: dict, label: str) -> None:
+    expected = _TYPES[schema["type"]]
+    if not isinstance(value, expected) or (expected is int and isinstance(value, bool)):
+        raise ToolError(f"{label} must be {schema['type']}")
+    if "enum" in schema and value not in schema["enum"]:
+        raise ToolError(f"{label} must be one of {schema['enum']}")
+    if schema["type"] == "array" and "items" in schema:
+        for i, item in enumerate(value):
+            _check(item, schema["items"], f"{label}[{i}]")
+    if schema["type"] == "object" and "properties" in schema:
+        for key in schema.get("required", []):
+            if key not in value:
+                raise ToolError(f"{label} is missing {key}")
+        for key, item in value.items():
+            if key not in schema["properties"]:
+                raise ToolError(f"{label} has unexpected field {key}")
+            _check(item, schema["properties"][key], f"{label}.{key}")
+
+
 def validate(name: str, args: object) -> None:
     """Inputs stream eagerly, so the API does not validate them; check here."""
     if name not in TOOLS:
@@ -197,23 +255,15 @@ def validate(name: str, args: object) -> None:
     if not isinstance(args, dict):
         raise ToolError("tool input must be a JSON object")
     spec = TOOLS[name][2]
-    for key in spec["required"]:
-        if key not in args:
-            raise ToolError(f"missing required parameter: {key}")
-    for key, value in args.items():
-        if key not in spec["properties"]:
-            raise ToolError(f"unexpected parameter: {key}")
-        prop = spec["properties"][key]
-        expected = _TYPES[prop["type"]]
-        if not isinstance(value, expected) or (expected is int and isinstance(value, bool)):
-            raise ToolError(f"parameter {key} must be {prop['type']}")
-        if "enum" in prop and value not in prop["enum"]:
-            raise ToolError(f"parameter {key} must be one of {prop['enum']}")
+    _check(args, {"type": "object", **spec}, "input")
 
 
 def run_tool(root: Path, name: str, args: dict) -> str:
     validate(name, args)
-    return TOOLS[name][0](root, **args)
+    try:
+        return TOOLS[name][0](root, **args)
+    except github.GitHubError as e:
+        raise ToolError(str(e))
 
 
 def is_mutating(name: str) -> bool:

@@ -44,6 +44,9 @@ How to work:
 - Use web_search and web_fetch to read current documentation when you're unsure how a library or API works.
 - When you learn something worth keeping (a mistake you made, a fix that worked, a user preference,
   how this project builds), save it with the remember tool so future sessions do better.
+- GitHub: when the user mentions an issue or pull request by number, read it with github_issue or github_pr.
+  Do work on a feature branch, never commit straight to the default branch, never force-push, and open
+  pull requests with create_pull_request. Write PR descriptions that explain what changed and why.
 - Never run destructive commands (rm -rf outside the project, force pushes, dropping databases) unless the user asked.
 - Finish with a short summary of what you did and how to run or check it.
 

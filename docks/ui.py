@@ -37,6 +37,10 @@ def _summarize_args(name: str, args: dict) -> str:
         return args.get("url", "")
     if name == "remember":
         return args.get("note", "")
+    if name in ("github_issue", "github_pr", "github_comment", "review_pull_request"):
+        return f"#{args.get('number', '?')}"
+    if name == "create_pull_request":
+        return args.get("title", "")
     return json.dumps(args, ensure_ascii=False)
 
 

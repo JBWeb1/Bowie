@@ -25,7 +25,13 @@ docks web                 # opens http://127.0.0.1:8788 with a one-time link
 docks web -C ~/my-site    # work on a specific project
 ```
 
-You get a chat with Docks, its work streaming in live (tool calls, outputs, progress notes) with Allow / Always / Deny buttons for each file write or command, a Stop button, a file browser and viewer, and a live **Preview** of the site it's building that reloads after every change. It works on phones too. Model, effort and auto-approve can be changed from the header, and reloading the page restores the conversation.
+You get a chat where Docks' work streams in as plain-language steps ("Wrote index.html", "Ran a command"). Each change it wants to make shows an approval card, with a colored diff for edits. Beside the chat are three tabs:
+
+- **Preview** shows the site Docks is building, refreshing after every change, in desktop or phone width.
+- **Code** is a file tree and viewer.
+- **GitHub** has the repo, your changes and one-click GitHub tasks.
+
+It has light and dark themes and works on phones. Settings (model, effort, auto-approve, theme) are under the gear menu. Reloading the page restores the conversation.
 
 The browser link contains a one-time token. The API only accepts requests that carry it, so other websites can't reach Docks. The preview is served from a separate port under a secret path, and it never serves dotfiles like `.env` or `.git`. Docks listens only on this machine unless you pass `--host`. Anyone with the link can run commands on your machine, so don't share it.
 
@@ -39,6 +45,21 @@ The browser link contains a one-time token. The API only accepts requests that c
 In interactive mode: `/clear` starts over, `/usage` shows tokens, `/yolo` toggles auto-approve, `/exit` quits. Ctrl-C cancels the current turn.
 
 By default Docks asks before it writes a file or runs a shell command. Answer `a` to allow that tool for the rest of the session. Reading and searching never ask.
+
+## GitHub
+
+Docks works with GitHub the way Claude Code and Codex do. Connect by setting `GITHUB_TOKEN` (or logging in with `gh auth login`), then:
+
+```bash
+docks clone owner/repo        # clone and start working (add --web for the browser)
+docks fix 42                  # read issue #42, fix it on a branch, run tests, open a PR
+docks review 17               # review PR #17 and post comments on the exact lines
+docks pr                      # commit current changes on a branch and open a PR
+```
+
+The agent has GitHub tools too, so you can just say "fix issue 42" or "review PR 17" in a chat. It can read issues and PRs (including diffs), open pull requests, comment, and post reviews with inline comments. Pushing, opening PRs and posting comments always ask first unless auto-approve is on. Docks never commits to the default branch or force-pushes. Your token is sent only to GitHub. It goes to git as an environment setting, never on the command line or into `.git/config`.
+
+In the browser, the **GitHub** tab shows the repo, branch and uncommitted changes (with a diff), and has one-click Fix an issue, Review a pull request and Open a pull request. In an empty folder it can clone a repo for you.
 
 ## Docks Router: one endpoint for every coding tool
 
@@ -81,6 +102,7 @@ docks/
   tools.py   bash, read_file, write_file, edit_file, glob, grep (+ input validation)
   ui.py      terminal rendering and approval prompts
   memory.py  lessons saved by the remember tool
+  github.py  GitHub API + git: issues, PRs, reviews, push, clone
   router/    the gateway: config, engine (failover), translate (formats), server, cli
   web/       browser UI: server.py (API, live events, preview) and app.html
 ```

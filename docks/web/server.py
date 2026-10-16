@@ -18,6 +18,7 @@ from http.server import BaseHTTPRequestHandler, SimpleHTTPRequestHandler, Thread
 from importlib import resources
 from pathlib import Path
 
+from .. import github
 from ..agent import Agent
 from ..tools import SKIP_DIRS
 from ..ui import _summarize_args
@@ -236,6 +237,8 @@ def make_handler(session: Session, token: str, preview: dict):
                 except UnicodeDecodeError:
                     text = f"(binary file, {target.stat().st_size} bytes, {mimetypes.guess_type(target.name)[0] or 'unknown type'})"
                 return self._json(200, {"path": rel, "text": text})
+            if path == "/api/git":
+                return self._json(200, github.status(root))
             if path == "/api/events":
                 return self._events()
             self._json(404, {"error": "not found"})
@@ -274,6 +277,28 @@ def make_handler(session: Session, token: str, preview: dict):
                 if not session.start_turn(text):
                     return self._json(409, {"error": "Docks is still working; stop it or wait"})
                 return self._json(202, {"ok": True})
+            if path == "/api/github":
+                action, number = body.get("action"), body.get("number")
+                if action in ("fix", "review") and not (isinstance(number, int) and number > 0):
+                    return self._json(400, {"error": "enter an issue or pull request number"})
+                prompts = {"fix": lambda: github.fix_issue_prompt(number),
+                           "review": lambda: github.review_pr_prompt(number), "pr": github.open_pr_prompt}
+                if action not in prompts:
+                    return self._json(400, {"error": "unknown action"})
+                if not session.start_turn(prompts[action]()):
+                    return self._json(409, {"error": "Docks is still working; stop it or wait"})
+                return self._json(202, {"ok": True})
+            if path == "/api/clone":
+                if session.busy:
+                    return self._json(409, {"error": "stop the current task first"})
+                if any(p for p in root.iterdir() if p.name != ".docks"):
+                    return self._json(409, {"error": "this project folder isn't empty; run `docks clone` instead"})
+                try:
+                    github.clone(str(body.get("repo", "")), root)
+                except github.GitHubError as e:
+                    return self._json(400, {"error": str(e)})
+                session.publish({"type": "notice", "text": f"Cloned {github.parse_repo(body['repo'])}"})
+                return self._json(200, github.status(root))
             if path == "/api/approve":
                 answer = body.get("answer") if body.get("answer") in ("yes", "no", "always") else "no"
                 return self._json(200, {"ok": session.answer(str(body.get("id")), answer)})

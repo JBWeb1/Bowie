@@ -78,6 +78,44 @@ def web_main(argv) -> int:
     return 0
 
 
+def clone_main(argv) -> int:
+    from . import github
+    parser = argparse.ArgumentParser(prog="docks clone", description="Clone a GitHub repo and start Docks in it.")
+    parser.add_argument("repo", help="owner/repo or a GitHub URL")
+    parser.add_argument("dir", nargs="?", help="where to clone (default: the repo name)")
+    parser.add_argument("--web", action="store_true", help="open it in the browser UI")
+    args = parser.parse_args(argv)
+    spec = github.parse_repo(args.repo)
+    if not spec:
+        parser.error(f"not a GitHub repository: {args.repo}")
+    dest = Path(args.dir or spec.split("/")[1]).resolve()
+    print(ui.dim(f"cloning {spec} into {dest}…"))
+    try:
+        github.clone(spec, dest)
+    except github.GitHubError as e:
+        ui.error(str(e))
+        return 1
+    return web_main(["-C", str(dest)]) if args.web else main(["-C", str(dest)])
+
+
+def github_task_main(argv) -> int:
+    from . import github
+    parser = argparse.ArgumentParser(prog=f"docks {argv[0]}")
+    if argv[0] != "pr":
+        parser.add_argument("number", type=int, help="issue number" if argv[0] == "fix" else "pull request number")
+    parser.add_argument("-C", "--dir", default=".")
+    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", DEFAULT_MODEL))
+    parser.add_argument("-e", "--effort", default="high", choices=["low", "medium", "high", "xhigh", "max"])
+    parser.add_argument("-y", "--yolo", action="store_true", help="run tools without asking for approval")
+    args = parser.parse_args(argv[1:])
+    root = Path(args.dir).expanduser().resolve()
+    prompt = {"fix": lambda: github.fix_issue_prompt(args.number),
+              "review": lambda: github.review_pr_prompt(args.number),
+              "pr": github.open_pr_prompt}[argv[0]]()
+    Agent(root=root, model=args.model, effort=args.effort, auto_approve=args.yolo).run(prompt)
+    return 0
+
+
 def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     if argv[:1] == ["router"]:
@@ -85,6 +123,10 @@ def main(argv=None) -> int:
         return router_main(argv[1:])
     if argv[:1] == ["web"]:
         return web_main(argv[1:])
+    if argv[:1] == ["clone"]:
+        return clone_main(argv[1:])
+    if argv[:1] in (["fix"], ["review"], ["pr"]):
+        return github_task_main(argv)
     parser = argparse.ArgumentParser(prog="docks", description="An AI coding agent that builds anything.")
     parser.add_argument("prompt", nargs="*", help="run this task once and exit (omit for interactive mode)")
     parser.add_argument("-C", "--dir", default=".", help="project directory to work in")
