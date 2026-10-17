@@ -238,6 +238,9 @@ def github_trigger() -> str:
 
 
 def main(argv=None) -> int:
+    if argv and argv[0] in ("-h", "--help"):
+        print(__doc__.strip() + "\n\nSet it up in a repo with: docks install-github")
+        return 0
     event_path = os.environ.get("GITHUB_EVENT_PATH")
     if not event_path:
         print("docks action runs inside GitHub Actions. To set it up in a repo, run: docks install-github")

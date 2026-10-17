@@ -90,6 +90,8 @@ class Session:
     def _run(self, content) -> None:
         try:
             self.agent.run(content)
+        except Exception as e:  # never let a task die silently in the browser
+            self.publish({"type": "error", "text": f"Something went wrong: {type(e).__name__}: {e}"})
         finally:
             with self.lock:
                 self.busy = False

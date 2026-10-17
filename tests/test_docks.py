@@ -90,3 +90,29 @@ def test_declined_tool_and_refusal_rollback(tmp_path: Path):
     before = len(agent.messages)
     agent.run("something refused")
     assert len(agent.messages) == before  # refused turn rolled back
+
+
+def test_missing_and_rejected_api_key_show_a_clear_message(tmp_path, monkeypatch):
+    import anthropic
+    import httpx2
+
+    shown = []
+    display = NS(stream=lambda: NS(handle=lambda e: None, finish=lambda: None), error=shown.append,
+                 warn=shown.append, turn_done=lambda u: None)
+    for var in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_PROFILE"):
+        monkeypatch.delenv(var, raising=False)
+    for config_dir in (tmp_path / "no-profiles", None):  # SDK reports these two ways
+        if config_dir:
+            monkeypatch.setenv("ANTHROPIC_CONFIG_DIR", str(config_dir))
+        else:
+            monkeypatch.setenv("HOME", str(tmp_path / "empty-home"))
+            monkeypatch.delenv("ANTHROPIC_CONFIG_DIR")
+        agent = Agent(root=tmp_path, display=display)  # Docks creates the client itself
+        agent.run("hi")
+        assert "No API key was found" in shown[-1] and agent.messages == []
+
+    def reject(request):
+        return httpx2.Response(401, json={"type": "error", "error": {"type": "authentication_error", "message": "invalid x-api-key"}})
+    client = anthropic.Anthropic(api_key="bad", max_retries=0, http_client=httpx2.Client(transport=httpx2.MockTransport(reject)))
+    Agent(root=tmp_path, client=client, display=display).run("hi")
+    assert "The API key was rejected" in shown[-1]

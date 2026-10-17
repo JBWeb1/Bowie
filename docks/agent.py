@@ -24,6 +24,9 @@ BETAS = [
     "compact-2026-01-12",  # summarize old context server-side so long sessions keep going
 ]
 MAX_HELPERS = 4
+NO_KEY = ("No API key was found, so Docks can't reach Claude. Get a key at https://console.anthropic.com, "
+          "then set it before starting Docks: export ANTHROPIC_API_KEY=sk-ant-...  (or point ANTHROPIC_BASE_URL "
+          "at Docks Router).")
 MEMORY_FILES = ("DOCKS.md", "AGENTS.md", "CLAUDE.md")
 MAX_JSON_RETRIES = 2
 WEB_TOOLS = [
@@ -145,7 +148,7 @@ class Agent:
     exclude_tools: tuple = ()  # tool names to leave out, e.g. when a runner handles PRs itself
     display: object = field(default_factory=lambda: term.TerminalUI())  # where output goes
     confirm: Callable[[str, dict], str] | None = None  # overrides display.confirm
-    client: anthropic.Anthropic = field(default_factory=anthropic.Anthropic)
+    client: anthropic.Anthropic | None = None  # created from the environment if not given
     messages: list = field(default_factory=list)
     always_allowed: set = field(default_factory=set)
     usage: dict = field(default_factory=lambda: {"input": 0, "output": 0, "cache_read": 0})
@@ -154,6 +157,12 @@ class Agent:
     helper: bool = False  # a helper started by another agent's delegate tool
 
     def __post_init__(self):
+        self.client_error = None
+        if self.client is None:
+            try:
+                self.client = anthropic.Anthropic()
+            except anthropic.AnthropicError as e:  # bad credentials setup: report it when a task runs
+                self.client_error = e
         self.system = build_system_prompt(self.root)
         if self.helper:
             self.system += HELPER_NOTE
@@ -289,8 +298,22 @@ class Agent:
         except TurnAborted as e:
             self.display.error(str(e))
             del self.messages[turn_start:]
+        except anthropic.AuthenticationError:
+            self.display.error(NO_KEY.replace("No API key was found", "The API key was rejected"))
+            del self.messages[turn_start:]
         except anthropic.APIError as e:
             self.display.error(f"API error: {e}")
+            del self.messages[turn_start:]
+        except anthropic.CredentialsError as e:  # e.g. a named profile that doesn't exist
+            self.display.error(f"{NO_KEY} ({e})")
+            del self.messages[turn_start:]
+        except anthropic.AnthropicError as e:
+            self.display.error(f"Error talking to Claude: {e}")
+            del self.messages[turn_start:]
+        except TypeError as e:
+            if "authentication method" not in str(e):
+                raise
+            self.display.error(NO_KEY)  # the SDK found no credentials at all
             del self.messages[turn_start:]
         finally:
             self.display.turn_done(self.usage)
@@ -346,6 +369,8 @@ class Agent:
             self.messages.append({"role": "user", "content": [results[b.id] for b in tool_uses]})
 
     def _stream_once(self):
+        if self.client is None:
+            raise TurnAborted(f"{NO_KEY} ({self.client_error})")
         printer = self.display.stream()
         with self.client.beta.messages.stream(
             model=self.model,
