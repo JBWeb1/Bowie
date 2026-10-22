@@ -7,6 +7,15 @@ Docks is a coding agent for your terminal, powered by Claude. Tell it what to bu
 ```bash
 pip install -e .
 export ANTHROPIC_API_KEY=sk-ant-...   # get one at https://console.anthropic.com
+docks doctor                          # check that everything works
+```
+
+Optional, and worth it:
+
+```bash
+pip install -e ".[browser]" && playwright install chromium   # Claude can open and test the apps it builds
+npm i -g pyright typescript-language-server typescript        # code intelligence for Python and JS/TS
+sudo apt install bubblewrap                                   # sandboxing on Linux (macOS has it built in)
 ```
 
 ## Use
@@ -20,6 +29,9 @@ docks --plan "add user accounts"        # research and propose a plan first
 docks --continue                        # pick up your last conversation here
 docks --resume "todo app"               # or any saved one, by name or id
 docks sessions                          # list saved conversations
+docks -w login "add a login page"       # work in a separate git worktree (see below)
+docks -p "why does the build fail?"     # script mode: answer only, no questions (see below)
+docks --sandbox                         # commands can only write inside the project
 ```
 
 Inside a session, `/help` lists everything. Highlights:
@@ -34,6 +46,16 @@ Inside a session, `/help` lists everything. Highlights:
 | `/undo` | Put files back to before the last task |
 | `/review`, `/feature`, `/commit`, `/commit-push-pr`, `/init` | Built-in workflows (below) |
 | `/commands`, `/agents`, `/skills`, `/hooks` | What's installed |
+| `/permissions`, `/allow RULE`, `/ask RULE`, `/deny RULE` | Permission rules (below) |
+| `/sandbox [on\|off]` | Run commands in a sandbox |
+| `/compact [focus]` | Summarize the conversation to free up room |
+| `/context` | What's filling the context window, and how full it is |
+| `/memory`, `/memory edit` | Instruction files in use |
+| `# note` | Remember something: adds a line to an instruction file |
+| `/output-style NAME` | `explanatory`, `learning`, `concise`, or your own |
+| `/security-review` | Check changes for security holes |
+| `/doctor` | Check your setup |
+| `/vim`, `/statusline` | Vim keys; the status line |
 
 Type `@path/to/file` (or a folder) in a message to attach it. In the browser, `/` and `@` open an autocomplete menu, ↑ in an empty box recalls your last message, an unsent draft survives a reload, and math like `$$E = mc^2$$` is typeset.
 
@@ -45,6 +67,104 @@ Type `@path/to/file` (or a folder) in a message to attach it. In the browser, `/
 - **Full auto** (`-y`): never asks. Use it when you trust the task.
 
 If the API is overloaded or rate-limited, Docks waits and retries on its own (up to 6 times), and tells you it's doing so.
+
+Shift+Tab cycles through the modes, in the terminal and in the browser. A settings file can pick the starting mode with `"permissions": {"defaultMode": "auto"}` (`acceptEdits`, `plan` and `bypassPermissions` work too).
+
+### Permission rules
+
+Rules in `settings.json` (yours in `~/.docks/` or `~/.claude/`, a project's in `.claude/`) decide what runs without asking, what always asks, and what never runs. They use Claude Code's format:
+
+```json
+{"permissions": {
+  "allow": ["Bash(npm test:*)", "Bash(git status)", "Edit(src/**)", "WebFetch(domain:docs.python.org)"],
+  "ask":   ["Bash(git push:*)"],
+  "deny":  ["Read(./.env)", "Read(**/*.pem)", "Bash(curl:*)"]}}
+```
+
+- `Bash(npm test:*)` matches commands starting with `npm test`; `Bash(git status)` matches exactly. For `cmd1 && cmd2`, every part must be allowed, and one denied part blocks the whole command.
+- `Read(...)` and `Edit(...)` take gitignore-style paths. `Edit` covers every tool that changes files; `Read` covers reading and searching.
+- `mcp__server` covers all of an MCP server's tools.
+- deny beats ask beats allow. Ask rules ask even in Full auto.
+
+Answering "always" to a command remembers a narrow rule like `Bash(npm test:*)` for the session. `/allow RULE` saves one in `.claude/settings.local.json`, which is kept out of git. `-p` runs take `--allow` and `--deny` too (`--allowedTools` / `--disallowedTools` work).
+
+A cloned project's own allow rules, start mode, status-line command and language servers could make Docks act or run programs without asking. So, like its hooks and MCP servers, they wait until you approve them once.
+
+### Sandbox
+
+With `docks --sandbox`, `/sandbox`, or `"sandbox": {"enabled": true}` in settings, shell commands run in a sandbox. Everything can be read, but only the project folder (and a private `/tmp`) can be written. Folders with credentials (`~/.ssh`, `~/.aws`, `~/.config/gh` and others) are hidden. It uses bubblewrap on Linux and `sandbox-exec` on macOS. Options:
+
+```json
+{"sandbox": {"enabled": true, "network": false, "allowWrite": ["~/.npm", "~/.cache/pip"],
+             "excludedCommands": ["docker"], "autoAllowBashIfSandboxed": true}}
+```
+
+`network: false` cuts commands off from the internet. Dev servers started in the background keep the network so you can still preview them. In Auto mode, sandboxed commands run without asking unless they look destructive. If settings turn the sandbox on and it can't run, Docks refuses to work rather than run unprotected.
+
+### Testing what it builds, in a real browser
+
+With Playwright installed, Claude gets a browser tool. It opens the dev server (or an HTML file), clicks, types and presses keys, switches to a phone-size screen, and sees a screenshot after each step. Every step also reports new console errors and failed requests, so Claude finds and fixes them before telling you a page works. Screenshots show up in the browser UI's steps. On your own machine (localhost) it doesn't ask; clicking or typing on other websites asks first.
+
+### Code intelligence
+
+When a language server is installed (pyright, basedpyright or pylsp for Python, typescript-language-server, gopls, rust-analyzer, clangd), Claude can look up definitions, find every reference before changing something, see types, outline a file and search symbols across the project. After every edit, the server checks the file, and errors it reports go straight back to Claude. Add other servers in settings (or a plugin's `.lsp.json`):
+
+```json
+{"lspServers": {"elixir": {"command": "elixir-ls", "args": [], "extensionToLanguage": {".ex": "elixir"}}}}
+```
+
+Turn it off with `"codeIntelligence": false`.
+
+### Parallel work in worktrees
+
+`docks -w NAME` (also `docks web -w NAME`) works in a git worktree of its own: a separate copy of the repo in `.docks/worktrees/NAME` on branch `docks/NAME`. Run several at once for different tasks, then keep the ones you like:
+
+```bash
+docks worktree list               # each one, with its commits and uncommitted files
+docks worktree merge NAME         # commits leftover changes, merges into your current branch
+docks worktree remove NAME        # --force also throws away unmerged work
+```
+
+### Script mode
+
+`docks -p "task"` runs with nobody to ask, for CI, git hooks or other programs. Anything that would need approval is refused and reported, so allow what the task needs:
+
+```bash
+docks -p "fix the lint errors" --allow Edit --allow "Bash(npm run lint:*)"
+cat error.log | docks -p "why does this fail?"
+docks -p "list the TODOs" --output-format json | jq -r .result
+docks -p "add tests" -y --output-format stream-json     # one JSON event per line as it works
+```
+
+`text` prints only the answer. `json` prints one result object: `result`, `is_error`, `session_id`, `num_turns`, `duration_ms`, `usage`, `denied`. `stream-json` prints `init`, `text`, `tool_use`, `tool_result`, `permission_denied` and other events, then the result. The exit code is 1 if the task failed.
+
+### Memory and instructions
+
+- `DOCKS.md` (or `AGENTS.md` / `CLAUDE.md`) in the project root is shared with your team.
+- `DOCKS.local.md` (or `CLAUDE.local.md`) is just for you, and kept out of git.
+- `~/.docks/DOCKS.md` and `~/.claude/CLAUDE.md` apply to every project.
+- A `DOCKS.md` in a subfolder is read the first time Docks works in that folder.
+- Inside any of them, `@docs/style.md` pulls in another file.
+
+Start a message with `#` to add a line. The terminal asks which file. In the browser, `#` goes to the project file and `##` to your local one. `/memory` lists them and `/memory edit` opens one in your editor.
+
+`/compact` replaces the conversation with Claude's summary of it (`/compact keep the API decisions` says what to focus on). `/context` shows how full the context window is and what's using it. Very long sessions are also summarized automatically.
+
+### Output styles
+
+`/output-style` (or Output style in the browser's settings) changes how Docks talks to you:
+- `explanatory` adds short notes on why it made its choices.
+- `learning` explains as it goes and leaves small pieces for you to write, marked `TODO(human)`.
+- `concise` keeps answers to a sentence or two.
+
+Write your own in `output-styles/NAME.md` (Claude Code's format), or set a default with `"outputStyle": "explanatory"`.
+
+### Terminal extras
+
+- **Status line.** Above the prompt: the model, branch, mode and how full the context is. To use your own, add `{"statusLine": {"type": "command", "command": "~/status.sh"}}`; the script gets the session as JSON on stdin. `"type": "none"` hides it.
+- **Notifications.** When Docks needs you, or finishes a task that took over 30 seconds, the terminal rings and shows a desktop notification (iTerm2, kitty, WezTerm, Ghostty, Windows Terminal and more). In the browser, turn on "Notify me" in settings. `"notifications": false` turns them off.
+- **Keys.** `/vim` switches to vi keys. Shortcuts go in `~/.docks/keybindings.json`: `{"ctrl+g": "/commit", "alt+r": "/review"}`. Shift+Tab cycles modes.
+- **`docks doctor`** checks Python, the SDK, your API key, git, the browser tool, language servers, the sandbox, settings files and MCP servers, and says how to fix what's wrong.
 
 ### In the browser
 
@@ -72,7 +192,7 @@ The browser link contains a one-time token. The API only accepts requests that c
 
 In interactive mode: `/clear` starts over, `/usage` shows tokens, `/yolo` toggles auto-approve, `/exit` quits. Ctrl-C cancels the current turn.
 
-By default Docks asks before it writes a file or runs a shell command. Answer `a` to allow that tool for the rest of the session. Reading and searching never ask.
+By default Docks asks before it writes a file or runs a shell command. Answer `a` to stop asking: for a command, about that kind of command (like `npm test`); for a file tool, for the rest of the session. Reading and searching never ask.
 
 ## GitHub
 
@@ -165,7 +285,7 @@ Not supported yet: the OpenAI Responses API, which current Codex CLI requires.
 
 ## Plugins, commands, agents, skills and hooks
 
-Docks reads the same file layout as Claude Code, so existing plugins and `.claude/` folders work as they are.
+Docks reads the same file layout as Claude Code, so existing plugins and `.claude/` folders work as they are. That includes commands, agents, skills, hooks, output styles, `.mcp.json` and `.lsp.json`.
 
 ```bash
 docks plugin install anthropics/claude-code --plugin commit-commands   # from a git repo or marketplace
@@ -176,7 +296,7 @@ docks plugin list | enable NAME | disable NAME | remove NAME
 - **Commands**: `commands/NAME.md` becomes `/NAME`. Supports frontmatter, `$ARGUMENTS`, `$1`…`$9`, and `` !`git status` `` to inline command output (only for commands from your home folder or plugins, never from a project you just cloned). Plugin commands are `/plugin:NAME`, or just `/NAME` when no other command shares it.
 - **Agents**: `agents/NAME.md` (with `name`, `description`, `tools`, `model`) defines a specialist helper Claude can delegate to. Helpers can also run **in the background** while you keep working; their report arrives when they finish.
 - **Skills**: `skills/NAME/SKILL.md` is loaded only when a task needs it.
-- **Hooks**: `hooks/hooks.json`, or `"hooks"` in `.claude/settings.json`, run your scripts on `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `SessionStart` and `Stop`. Exit code 2 (or `{"decision": "block"}`) blocks the action and tells Claude why. A project's own hooks run only after you approve them once.
+- **Hooks**: `hooks/hooks.json`, or `"hooks"` in `.claude/settings.json`, run your scripts on `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `SessionStart`, `Stop`, `SubagentStop` (a helper finished; block to send it back), `Notification` (Docks is waiting for you), `PreCompact` and `SessionEnd`. Exit code 2 (or `{"decision": "block"}`) blocks the action and tells Claude why. A project's own hooks run only after you approve them once.
 
 Docks looks in `~/.claude`, `~/.docks`, enabled plugins, and the project's `.claude/` and `.docks/` folders.
 
@@ -185,10 +305,11 @@ Built-in workflows:
 - `/feature IDEA`: explore the code, ask questions, design, build, then review.
 - `/commit`, `/commit-push-pr`: a good commit message (and a PR) in one go.
 - `/init`: write a `DOCKS.md` that teaches Docks your project.
+- `/security-review`: trace real attack paths through your changes and report only the ones that hold up.
 
 ## Project instructions
 
-Put a `DOCKS.md` (or `AGENTS.md` / `CLAUDE.md`) in your project root with conventions, commands, and context. Docks reads it into its system prompt.
+Put a `DOCKS.md` (or `AGENTS.md` / `CLAUDE.md`) in your project root with conventions, commands, and context. Docks reads it into its system prompt. See "Memory and instructions" above for personal, local and folder files.
 
 ## How it works
 
@@ -204,6 +325,18 @@ docks/
   mcp.py     MCP client (local and remote servers)
   procs.py   background processes such as dev servers
   checkpoints.py  file snapshots for undo
+  plugins.py      plugins, commands, agents, skills, hooks, output styles, settings
+  permissions.py  allow / ask / deny rules
+  automode.py     what Auto mode may run on its own
+  sandbox.py      bubblewrap / sandbox-exec wrapping for commands
+  browser.py      the Playwright browser tool
+  lsp.py          language server client (code intelligence)
+  worktrees.py    parallel work in git worktrees
+  instructions.py DOCKS.md files, imports and # notes
+  script.py       docks -p (text, json, stream-json)
+  sessions.py     saved conversations
+  terminal.py     status line, notifications, vim mode, keybindings
+  doctor.py       docks doctor
   router/    the gateway: config, engine (failover), translate (formats), server, cli
   web/       browser UI: server.py (API, live events, preview) and app.html
 ```
