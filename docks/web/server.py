@@ -21,6 +21,7 @@ from pathlib import Path
 from .. import github
 from ..agent import Agent
 from ..checkpoints import CheckpointError
+from ..sandbox import SandboxUnavailable, engine as sandbox_engine, unavailable_reason as sandbox_reason
 from ..tools import SKIP_DIRS
 from ..ui import _summarize_args
 
@@ -148,7 +149,13 @@ class Session:
                 "mode": a.active_mode, "busy": self.busy, "usage": a.usage, "processes": a.procs.list(),
                 "plan": a.plan, "turns": [bool(t["checkpoint"]) for t in a.turns],
                 "mcp": a.mcp.summary() if a.mcp else [], "extensions": a.ext.summary(),
-                "session": {"id": a.session_id, "name": a.session_name}, "bookmarks": a.bookmarks}
+                "session": {"id": a.session_id, "name": a.session_name}, "bookmarks": a.bookmarks,
+                "output_style": a.output_style,
+                "output_styles": [{"name": "default", "description": "Docks as usual"}] +
+                                 [{"name": k, "description": v.description} for k, v in a.ext.output_styles.items()],
+                "sandbox": {"on": a.sandbox is not None, "available": sandbox_engine() is not None,
+                            "reason": "" if sandbox_engine() else sandbox_reason()},
+                "permissions": a.ext.permissions.summary(), "context_used": a.context_used}
 
 
 def history_from_messages(messages: list, turns: list) -> list[dict]:
@@ -166,10 +173,14 @@ def history_from_messages(messages: list, turns: list) -> list[dict]:
                 events.append({"type": "user", "text": text, "images": images})
             for b in blocks:
                 if _block(b, "type") == "tool_result":
-                    out = _block(b, "content")
-                    out = out if isinstance(out, str) else "".join(_block(x, "text", "") for x in out or [])
+                    raw = _block(b, "content")
+                    out = raw if isinstance(raw, str) else "".join(_block(x, "text", "") for x in raw or [])
                     events.append({"type": "tool_output", "text": _clip(out, 20_000), "error": bool(_block(b, "is_error")),
                                    "id": _block(b, "tool_use_id")})
+                    for x in ([] if isinstance(raw, str) else raw or []):  # browser screenshots
+                        if _block(x, "type") == "image" and _block(x, "source", {}).get("type") == "base64":
+                            events.append({"type": "tool_image", "data": _block(x, "source")["data"],
+                                           "media": _block(x, "source")["media_type"], "id": _block(b, "tool_use_id")})
         else:
             for b in blocks:
                 kind = _block(b, "type")
@@ -365,6 +376,18 @@ def make_handler(session: Session, token: str, preview: dict):
                                          "current": session.agent.session_id})
             if path == "/api/git":
                 return self._json(200, github.status(root))
+            if path == "/api/context":
+                return self._json(200, session.agent.context_report())
+            if path == "/api/doctor":
+                from .. import doctor
+                a = session.agent
+                return self._json(200, {"results": doctor.check(a.root, a.ext, a.mcp, a)})
+            if path == "/api/memory":
+                from .. import instructions
+                files = [*instructions.user_files(), instructions.project_file(root), instructions.local_file(root),
+                         *sorted(session.agent._folders_read)]
+                return self._json(200, {"files": [{"path": str(f), "text": f.read_text(errors="replace")[:20_000]}
+                                                  for f in files if f]})
             if path == "/api/events":
                 return self._events()
             self._json(404, {"error": "not found"})
@@ -496,8 +519,46 @@ def make_handler(session: Session, token: str, preview: dict):
                     return self._json(409, {"error": "stop the current task first"})
                 session.new_chat()
                 return self._json(200, {"ok": True})
+            if path == "/api/memory":
+                from .. import instructions
+                text = str(body.get("text", "")).strip()
+                if not text.lstrip("#").strip():
+                    return self._json(400, {"error": "nothing to remember"})
+                scope = body.get("scope") if body.get("scope") in ("project", "local", "user") else "project"
+                saved = instructions.add_note(root, text, scope)
+                session.agent.reload_instructions()
+                return self._json(200, {"path": str(saved), "name": saved.name})
+            if path == "/api/compact":
+                if session.busy:
+                    return self._json(409, {"error": "Docks is working; wait for it to finish first"})
+                try:
+                    session.agent.compact(str(body.get("focus", "")))
+                except ValueError as e:
+                    return self._json(400, {"error": str(e)})
+                except Exception as e:  # API trouble
+                    return self._json(502, {"error": f"couldn't summarize: {e}"})
+                session.publish({"type": "notice", "text": "Summarized the conversation to free up room; "
+                                                           "earlier messages can no longer be undone."})
+                return self._json(200, session.state())
+            if path == "/api/permissions":
+                from ..permissions import parse
+                kind, rule = body.get("kind"), str(body.get("rule", "")).strip()
+                if kind not in ("allow", "ask", "deny") or not parse(rule, root):
+                    return self._json(400, {"error": "a rule looks like Bash(npm test:*), Edit(src/**) or Read(./.env)"})
+                session.agent.ext.save_rule(kind, rule)
+                return self._json(200, session.state())
             if path == "/api/settings":
                 a = session.agent
+                if isinstance(body.get("output_style"), str):
+                    try:
+                        a.set_output_style(body["output_style"])
+                    except ValueError as e:
+                        return self._json(400, {"error": str(e)})
+                if isinstance(body.get("sandbox"), bool):
+                    try:
+                        a.set_sandbox(body["sandbox"])
+                    except SandboxUnavailable as e:
+                        return self._json(400, {"error": str(e)})
                 if isinstance(body.get("auto_approve"), bool):
                     a.set_mode("yolo" if body["auto_approve"] else "ask")
                 if body.get("mode") in ("ask", "auto", "plan", "yolo"):

@@ -403,6 +403,16 @@ svg { flex: none; }
 @media (max-width: 560px) { .ideas { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
 .step-body img.shot { display: block; max-width: min(100%, 520px); border: 1px solid var(--line); border-radius: 9px; margin: 6px 0; cursor: zoom-in; }
+.syscard { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); margin: 10px 0 16px; padding: 10px 14px; font-size: 13.5px; }
+.syscard-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.syscard .muted { color: var(--muted); font-size: 12.5px; margin: 4px 0; }
+.ctx-row { display: grid; grid-template-columns: minmax(120px, 34%) 1fr auto; gap: 10px; align-items: center; margin: 4px 0; }
+.ctx-row i { display: block; height: 8px; border-radius: 4px; background: var(--accent); }
+.ctx-row small, .doc-row small { color: var(--muted); }
+.doc-row { display: grid; grid-template-columns: 18px minmax(110px, 30%) 1fr; gap: 8px; margin: 3px 0; overflow-wrap: anywhere; }
+.doc-row.ok > span { color: var(--green, #16a34a); } .doc-row.warn > span { color: #ca8a04; } .doc-row.fail > span { color: #dc2626; }
+.syscard pre { white-space: pre-wrap; max-height: 260px; overflow: auto; font-size: 12px; }
+#perm-info code { font-size: 12px; overflow-wrap: anywhere; }
 </style>
 </head>
 <body>
@@ -429,6 +439,12 @@ svg { flex: none; }
   <label>Mode
     <select class="input" id="mode-select"><option value="ask">Ask first: confirm each change</option><option value="auto">Auto: only risky changes ask</option><option value="plan">Plan first: change nothing until approved</option><option value="yolo">Full auto: never ask</option></select>
   </label>
+  <label>Output style
+    <select class="input" id="style-select"></select>
+  </label>
+  <label class="switch-row" id="sandbox-row">Sandbox commands (writes only inside the project)<span class="switch"><input type="checkbox" id="sandbox"><i></i></span></label>
+  <label class="switch-row">Notify me when Docks needs me<span class="switch"><input type="checkbox" id="notify"><i></i></span></label>
+  <div><div style="font-size:12.5px;font-weight:500;color:var(--muted);margin-bottom:6px">Permission rules</div><div class="ext-info" id="perm-info"></div></div>
   <label class="switch-row">Animated background<span class="switch"><input type="checkbox" id="anim"><i></i></span></label>
   <div><div style="font-size:12.5px;font-weight:500;color:var(--muted);margin-bottom:6px">MCP servers</div><div class="mcp-list" id="mcp-list"></div></div>
   <div><div style="font-size:12.5px;font-weight:500;color:var(--muted);margin-bottom:6px">Plugins and extensions</div><div class="ext-info" id="ext-info"></div></div>
@@ -786,7 +802,29 @@ function applyState(s) {
   $('model').value = s.model; $('effort').value = s.effort;
   if (s.mode) showMode(s.mode);
   if (s.extensions) renderExt(s.extensions);
+  if (s.output_styles) {
+    $('style-select').innerHTML = s.output_styles.map(o => `<option value="${esc(o.name)}">${esc(o.name[0].toUpperCase() + o.name.slice(1))}: ${esc(o.description)}</option>`).join('');
+    $('style-select').value = s.output_style;
+  }
+  if (s.sandbox) {
+    $('sandbox').checked = s.sandbox.on; $('sandbox').disabled = !s.sandbox.available;
+    $('sandbox-row').title = s.sandbox.available ? '' : s.sandbox.reason;
+  }
+  if (s.permissions) renderPermissions(s.permissions);
   showUsage(s.usage); setBusy(s.busy);
+}
+function renderPermissions(p) {
+  const box = $('perm-info'); box.innerHTML = '';
+  const rows = ['deny', 'ask', 'allow'].flatMap(k => p[k].map(r => [k, r]));
+  if (!rows.length) box.appendChild(h('div', null, 'None yet. "Always allow" on a command saves one for this session.'));
+  for (const [k, r] of rows) box.appendChild(h('div', 'mcp-row', `<span class="tag ${k === 'deny' ? 'no' : ''}">${k}</span><code>${esc(r)}</code>`));
+  const add = h('div', 'rename-row', `<input class="input" placeholder="Bash(npm test:*)"><select class="input" style="width:auto"><option>allow</option><option>ask</option><option>deny</option></select><button class="btn">Add</button>`);
+  add.querySelector('button').onclick = async () => {
+    const rule = add.querySelector('input').value.trim(); if (!rule) return;
+    const r = await api('/api/permissions', { kind: add.querySelector('select').value, rule });
+    if (r.ok) { applyState(await r.json()); toast('Rule saved'); } else toast((await r.json()).error);
+  };
+  box.appendChild(add);
 }
 const MODES = {
   ask:  { label: 'Ask first', short: 'Ask', icon: 'shield', desc: 'Confirm each change before it happens' },
@@ -919,7 +957,7 @@ function handle(ev) {
       break;
     }
     case 'approval': {
-      pending++; updateStatus();
+      pending++; updateStatus(); alertUser('Docks needs your OK to continue');
       const a = ev.args || {}; const ask = ASK[ev.name];
       const mm = String(ev.name).match(/^mcp__(.+?)__(.+)$/);
       const what = typeof ask === 'function' ? ask(a) : (ask || (mm ? `use ${mm[2]} from the ${mm[1]} MCP server` : `use ${ev.name}`));
@@ -948,6 +986,7 @@ function handle(ev) {
       break;
     }
     case 'question': {
+      alertUser('Docks has a question for you');
       pending++; updateStatus();
       const card = h('div', 'qcard', `<div class="q-head">${icon('question')}<span>Docks has ${ev.questions.length > 1 ? 'some questions' : 'a question'}</span></div>`);
       card.id = 'q-' + ev.id;
@@ -985,6 +1024,7 @@ function handle(ev) {
       card.replaceWith(done); break;
     }
     case 'plan_review': {
+      alertUser('Docks has a plan for you to review');
       pending++; updateStatus();
       const card = h('div', 'plancard', `<div class="q-head">${icon('book')}<span>Docks has a plan. Review it before anything changes</span></div><div class="prose"></div><textarea placeholder="What should change? (only needed for Request changes)"></textarea><div class="q-actions"><button class="btn primary" data-d="approve">Approve</button><button class="btn" data-d="approve_auto">Approve and auto mode</button><button class="btn" data-d="reject">Request changes</button></div>`);
       card.id = 'pr-' + ev.id; card.querySelector('.prose').innerHTML = md(ev.plan); scheduleMath(card.querySelector('.prose'));
@@ -1015,7 +1055,7 @@ function handle(ev) {
     case 'notice': add(h('div', 'notice', icon('sparkle') + esc(ev.text))); refreshAll(); break;
     case 'usage': showUsage(ev.usage); break;
     case 'process': onProcess(ev); break;
-    case 'idle': endGroup(); pending = 0; setBusy(false); refreshAll(); break;
+    case 'idle': if (state.busy) alertUser('Docks finished'); endGroup(); pending = 0; setBusy(false); refreshAll(); break;
   }
 }
 
@@ -1046,6 +1086,13 @@ async function send(textOverride) {
   const text = (textOverride ?? $('input').value).trim();
   const uiCmd = UI_COMMANDS.find(c => text === '/' + c.name);
   if (uiCmd) { $('input').value = ''; store.set('docks-draft', ''); hidePalette(); autosize(); uiCmd.ui(); return; }
+  if (/^#(?!!)/.test(text) && !textOverride) {  // "# use pnpm" -> remembered in the project's instruction file
+    const scope = text.startsWith('##') ? 'local' : 'project';
+    const r = await api('/api/memory', { text: text.replace(/^#+/, ''), scope });
+    if (r.ok) { const j = await r.json(); $('input').value = ''; store.set('docks-draft', ''); autosize(); toast(`Remembered in ${j.name}`); }
+    else toast((await r.json()).error);
+    return;
+  }
   const images = textOverride ? [] : attachments.map(a => ({ media_type: a.type, data: a.data }));
   if (!text && !images.length) return;
   const res = await api('/api/chat', { message: text, images });
@@ -1098,6 +1145,7 @@ $('send').onclick = () => send();
 // On touch keyboards Enter makes a new line and the send button sends; elsewhere Enter sends.
 $('input').addEventListener('keydown', e => {
   if (paletteKeys(e)) return;
+  if (e.key === 'Tab' && e.shiftKey) { e.preventDefault(); const order = Object.keys(MODES); setMode(order[(order.indexOf(state.mode) + 1) % order.length]); return; }
   if (e.key === 'ArrowUp' && !$('input').value) { const last = store.get('docks-last', ''); if (last) { e.preventDefault(); $('input').value = last; autosize(); } return; }
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !matchMedia('(pointer: coarse)').matches) { e.preventDefault(); if (!state.busy) send(); }
 });
@@ -1112,7 +1160,50 @@ const UI_COMMANDS = [
   { name: 'mode', description: 'Choose how Docks asks before changes', ui: () => { renderModeMenu(); $('mode-menu').classList.remove('hidden'); fitModeMenu(); } },
   { name: 'resume', description: 'Open saved conversations', ui: () => openDrawer('sessions') },
   { name: 'bookmarks', description: 'Show bookmarked replies', ui: () => openDrawer('bookmarks') },
+  { name: 'context', description: "What's filling the context window", ui: () => showContext() },
+  { name: 'compact', description: 'Summarize the conversation to free up room', ui: () => compactChat() },
+  { name: 'doctor', description: 'Check your setup', ui: () => showDoctor() },
+  { name: 'memory', description: 'Instruction files in use (start a message with # to add a line)', ui: () => showMemory() },
+  { name: 'style', description: 'Choose an output style', ui: () => { $('open-settings').click(); $('style-select').focus(); } },
 ];
+function sysCard(title, body) {
+  const card = h('div', 'syscard', `<div class="syscard-head"><b></b><button class="btn ghost icon-only" aria-label="Close">✕</button></div><div class="syscard-body"></div>`);
+  card.querySelector('b').textContent = title;
+  card.querySelector('button').onclick = () => card.remove();
+  card.querySelector('.syscard-body').appendChild(body);
+  thread.appendChild(card); card.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+async function showContext() {
+  const r = await api('/api/context'); if (!r.ok) return toast('Could not read the context');
+  const c = await r.json(), total = c.measured || c.estimated, body = h('div');
+  body.appendChild(h('div', 'muted', `${total.toLocaleString()} tokens` + (c.window ? ` of ${c.window.toLocaleString()} (${Math.round(100 * total / c.window)}%)` : '') + (c.measured ? '' : ' (estimated)')));
+  const max = Math.max(...Object.values(c.parts), 1);
+  for (const [name, n] of Object.entries(c.parts).sort((a, b) => b[1] - a[1])) {
+    if (n <= 0) continue;
+    body.appendChild(h('div', 'ctx-row', `<span>${esc(name)}</span><i style="width:${Math.max(2, 100 * n / max)}%"></i><small>~${n.toLocaleString()}</small>`));
+  }
+  body.appendChild(h('div', 'muted', 'Long sessions are summarized automatically. /compact does it now; /clear starts over.'));
+  sysCard('Context', body);
+}
+async function compactChat() {
+  toast('Summarizing the conversation…');
+  const r = await api('/api/compact', {});
+  if (r.ok) { applyState(await r.json()); toast('Conversation summarized'); } else toast((await r.json()).error);
+}
+async function showDoctor() {
+  const r = await api('/api/doctor'); if (!r.ok) return toast('Could not run the checks');
+  const body = h('div'), marks = { ok: '✓', warn: '!', fail: '✗' };
+  for (const [status, what, detail] of (await r.json()).results)
+    body.appendChild(h('div', 'doc-row ' + status, `<span>${marks[status]}</span><b>${esc(what)}</b><small>${esc(detail)}</small>`));
+  sysCard('Setup check', body);
+}
+async function showMemory() {
+  const r = await api('/api/memory'); if (!r.ok) return;
+  const { files } = await r.json(), body = h('div');
+  if (!files.length) body.appendChild(h('div', 'muted', 'No instruction files yet. Start a message with # to add one, or run /init.'));
+  for (const f of files) { const d = h('details', null, `<summary><code></code></summary><pre></pre>`); d.querySelector('code').textContent = f.path; d.querySelector('pre').textContent = f.text; body.appendChild(d); }
+  sysCard('Instruction files', body);
+}
 function updatePalette() {
   const t = $('input'), before = t.value.slice(0, t.selectionStart);
   let m;
@@ -1186,6 +1277,23 @@ async function saveSettings(extra = {}) {
 async function refreshState() { const r = await api('/api/state'); if (r.ok) { const s = await r.json(); showMode(s.mode); state.bookmarks = s.bookmarks; } }
 $('model').onchange = () => saveSettings(); $('effort').onchange = () => saveSettings();
 $('mode-select').onchange = () => setMode($('mode-select').value);
+$('style-select').onchange = async () => { const r = await api('/api/settings', { output_style: $('style-select').value }); if (r.ok) { applyState(await r.json()); toast('Output style: ' + $('style-select').value); } };
+$('sandbox').onchange = async () => {
+  const r = await api('/api/settings', { sandbox: $('sandbox').checked });
+  if (r.ok) { applyState(await r.json()); toast($('sandbox').checked ? 'Commands now run in a sandbox' : 'Sandbox off'); }
+  else { $('sandbox').checked = false; toast((await r.json()).error); }
+};
+$('notify').checked = store.get('docks-notify', '') === '1' && 'Notification' in window && Notification.permission === 'granted';
+$('notify').onchange = async () => {
+  if ($('notify').checked && 'Notification' in window && Notification.permission !== 'granted') {
+    if (await Notification.requestPermission() !== 'granted') { $('notify').checked = false; toast('Your browser blocked notifications'); }
+  }
+  store.set('docks-notify', $('notify').checked ? '1' : '');
+};
+function alertUser(text) {  // only when the tab is in the background
+  if (!document.hidden || store.get('docks-notify', '') !== '1' || !('Notification' in window) || Notification.permission !== 'granted') return;
+  try { const n = new Notification('Docks', { body: text, tag: 'docks' }); n.onclick = () => { window.focus(); n.close(); }; } catch (e) {}
+}
 function fitModeMenu() {  // keep the menu on screen when the chip sits far right (phones)
   const menu = $('mode-menu'); menu.style.left = '0px';
   const over = menu.getBoundingClientRect().right - (innerWidth - 16);
