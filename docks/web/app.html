@@ -299,6 +299,56 @@ svg { flex: none; }
 .switch input:checked + i { background: var(--accent); }
 .switch input:checked + i::after { transform: translateX(16px); }
 
+/* Modes, questions, plan review, palette, drawer, message actions */
+.mode-wrap { position: relative; }
+.mode-menu { position: absolute; bottom: calc(100% + 8px); left: 0; width: 290px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-lg); padding: 6px; z-index: 15; }
+.mode-opt { display: flex; gap: 10px; align-items: flex-start; width: 100%; text-align: left; padding: 9px 10px; border: 0; background: none; border-radius: 9px; cursor: pointer; }
+.mode-opt:hover, .mode-opt.on { background: var(--surface-2); }
+.mode-opt .ic { color: var(--accent-ink); display: grid; margin-top: 2px; }
+.mode-opt b { display: block; font-size: 13.5px; } .mode-opt small { color: var(--muted); font-size: 12.5px; }
+.chip.mode-auto { background: var(--accent-soft); color: var(--accent-ink); border-color: transparent; }
+.chip.mode-plan { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+.chip.mode-yolo { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+.qcard, .plancard { margin: 6px 0 4px; border: 1px solid var(--accent); background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.qcard .q-head, .plancard .q-head { display: flex; align-items: center; gap: 9px; padding: 11px 14px; background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; font-size: 14px; }
+.qcard .q { padding: 12px 14px 4px; }
+.qcard .q > b { display: block; margin-bottom: 8px; }
+.qopts { display: flex; flex-direction: column; gap: 6px; }
+.qopt { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 9px 12px; cursor: pointer; }
+.qopt small { display: block; color: var(--muted); font-size: 12.5px; }
+.qopt.sel { border-color: var(--accent); background: var(--accent-soft); }
+.qcard .other { width: 100%; margin-top: 6px; }
+.qcard .q-actions, .plancard .q-actions { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 14px 14px; }
+.plancard .prose { padding: 12px 14px 0; max-height: 380px; overflow: auto; }
+.plancard textarea { width: calc(100% - 28px); margin: 10px 14px 0; min-height: 60px; border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; background: var(--bg); resize: vertical; }
+.answered { margin: 4px 0; font-size: 13px; color: var(--muted); padding: 6px 10px; border-left: 3px solid var(--accent); background: var(--surface); border-radius: 0 8px 8px 0; white-space: pre-wrap; }
+.tag.auto { background: var(--accent-soft); color: var(--accent-ink); }
+.composer { position: relative; }
+.palette { position: absolute; left: 8px; right: 8px; bottom: calc(100% + 6px); max-height: 280px; overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-lg); padding: 5px; z-index: 12; }
+.pal-item { display: flex; gap: 10px; align-items: baseline; padding: 7px 10px; border-radius: 8px; cursor: pointer; font-size: 13.5px; }
+.pal-item.active, .pal-item:hover { background: var(--surface-2); }
+.pal-item code { font-family: var(--mono); font-size: 12.5px; color: var(--accent-ink); background: none; border: 0; padding: 0; flex: none; }
+.pal-item span { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 380px; max-width: 100%; background: var(--surface); border-left: 1px solid var(--line); box-shadow: var(--shadow-lg); z-index: 25; display: flex; flex-direction: column; }
+.drawer-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.drawer-head b { flex: 1; font-size: 15px; }
+.drawer-body { flex: 1; overflow: auto; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.srow { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; background: var(--surface); text-align: left; }
+@media (hover: hover) { .srow:hover { border-color: var(--accent); } }
+.srow.current { border-color: var(--accent); background: var(--accent-soft); }
+.srow b { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.srow small { color: var(--muted); font-size: 12px; }
+.bm { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 13.5px; }
+.bm .bm-actions { display: flex; gap: 6px; margin-top: 8px; }
+.rename-row { display: flex; gap: 6px; }
+.rename-row .input { flex: 1; }
+.msg-actions { display: flex; gap: 4px; margin-top: 6px; opacity: 0; transition: opacity .15s; }
+.msg-ai:hover .msg-actions, .msg-actions:focus-within { opacity: 1; }
+@media (hover: none) { .msg-actions { opacity: .8; } }
+.msg-actions button { height: 26px; padding: 0 8px; font-size: 12px; border-radius: 7px; }
+.ext-info { font-size: 12.5px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+.notice.auto { background: var(--accent-soft); color: var(--accent-ink); }
+.katex { font-size: 1.05em; }
 .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 9px 16px; border-radius: 10px; font-size: 13.5px; box-shadow: var(--shadow-lg); z-index: 30; }
 .hidden { display: none !important; }
 #gate { position: fixed; inset: 0; background: var(--bg); display: grid; place-items: center; text-align: center; padding: 24px; z-index: 40; }
@@ -347,6 +397,8 @@ svg { flex: none; }
   #bg { opacity: .7; }
   .chat.busy-convo #bg { opacity: .1; }
   .composer-wrap .hint { display: none; }
+  .drawer { width: 100%; }
+  .mode-menu { width: min(290px, calc(100vw - 32px)); }
 }
 @media (max-width: 560px) { .ideas { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
@@ -364,6 +416,7 @@ svg { flex: none; }
   <span class="spacer"></span>
   <button class="btn ghost hide-mobile" id="new-chat"><span data-icon="plus"></span>New chat</button>
   <button class="btn ghost icon-only hide-mobile" id="toggle-panel" title="Show or hide the side panel" aria-label="Toggle side panel"><span data-icon="panel"></span></button>
+  <button class="btn ghost icon-only" id="open-history" title="Conversations and bookmarks" aria-label="Conversations and bookmarks"><span data-icon="history"></span></button>
   <button class="btn ghost icon-only" id="open-settings" title="Settings" aria-label="Settings"><span data-icon="gear"></span></button>
 </header>
 
@@ -372,15 +425,23 @@ svg { flex: none; }
   <label>Effort
     <select class="input" id="effort"><option value="low">Low: fastest</option><option value="medium">Medium</option><option value="high">High: recommended</option><option value="xhigh">Extra high</option><option value="max">Max: most thorough</option></select>
   </label>
-  <label class="switch-row">Auto-approve changes<span class="switch"><input type="checkbox" id="auto"><i></i></span></label>
+  <label>Mode
+    <select class="input" id="mode-select"><option value="ask">Ask first: confirm each change</option><option value="auto">Auto: only risky changes ask</option><option value="plan">Plan first: change nothing until approved</option><option value="yolo">Full auto: never ask</option></select>
+  </label>
   <label class="switch-row">Animated background<span class="switch"><input type="checkbox" id="anim"><i></i></span></label>
   <div><div style="font-size:12.5px;font-weight:500;color:var(--muted);margin-bottom:6px">MCP servers</div><div class="mcp-list" id="mcp-list"></div></div>
+  <div><div style="font-size:12.5px;font-weight:500;color:var(--muted);margin-bottom:6px">Plugins and extensions</div><div class="ext-info" id="ext-info"></div></div>
   <label>Theme
     <select class="input" id="theme"><option value="system">Match system</option><option value="light">Light</option><option value="dark">Dark</option></select>
   </label>
   <button class="btn" id="new-chat-2"><span data-icon="plus"></span>New chat</button>
   <div class="meta"><div id="usage">No usage yet</div><div id="root-path" style="margin-top:4px"></div></div>
 </div>
+
+<aside class="drawer hidden" id="drawer" aria-label="Conversations and bookmarks">
+  <div class="drawer-head"><div class="tabs" style="padding:0;border:0"><button class="tab on" data-dtab="sessions">Conversations</button><button class="tab" data-dtab="bookmarks">Bookmarks</button></div><span class="spacer"></span><button class="btn ghost icon-only" id="close-drawer" aria-label="Close">✕</button></div>
+  <div class="drawer-body" id="drawer-body"></div>
+</aside>
 
 <div class="app" id="app">
   <section class="chat" id="chat">
@@ -389,13 +450,14 @@ svg { flex: none; }
     <div class="composer-wrap">
       <details class="plan hidden" id="plan" open><summary><span>Plan</span><span class="bar"><i></i></span><span class="count"></span></summary><ul></ul></details>
       <div class="composer" id="composer">
+        <div class="palette hidden" id="palette" role="listbox"></div>
         <div class="attachments" id="attachments"></div>
         <textarea id="input" rows="1" placeholder="Describe what you want to build or change…" aria-label="Message"></textarea>
         <div class="composer-row">
           <button class="chip" id="attach" title="Attach a screenshot, mockup or design"><span data-icon="image"></span><span class="hide-mobile">Image</span></button>
           <input type="file" id="file-input" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
           <button class="chip" id="gh-chip" title="GitHub actions"><span data-icon="github"></span>GitHub</button>
-          <button class="chip" id="auto-chip" title="Toggle auto-approve"><span data-icon="shield"></span><span id="auto-chip-text">Ask before changes</span></button>
+          <span class="mode-wrap"><button class="chip" id="mode-chip" title="How Docks asks before changes"><span id="mode-icon"></span><span id="mode-text">Ask first</span></button><div class="mode-menu hidden" id="mode-menu" role="menu"></div></span>
           <span class="spacer"></span>
           <button class="send" id="send" aria-label="Send"><span data-icon="arrow-up"></span></button>
         </div>
@@ -486,6 +548,10 @@ const ICONS = {
   game: '<rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 11v3M5.5 12.5h3M15 12h.01M18 13h.01"/>',
   bug: '<path d="M8 8V6a4 4 0 0 1 8 0v2"/><rect x="6" y="8" width="12" height="12" rx="6"/><path d="M12 12v8M3 13h3M18 13h3M4 7l3 2M20 7l-3 2M4 19l3-2M20 19l-3-2"/>',
   book: '<path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zm0 0a2 2 0 0 0 2 2h13"/>',
+  history: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>',
+  star: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+  copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/>',
+  question: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17h.01"/>',
   users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18.5 20a6.5 6.5 0 0 0-3-5.5"/>',
   undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>',
   check: '<path d="m5 12 5 5L20 7"/>',
@@ -577,7 +643,10 @@ const TOOL = {
   create_pull_request: { icon: 'pr', run: 'Opening a pull request', done: 'Opened a pull request', d: a => a.title },
   github_comment:      { icon: 'comment', run: a => `Commenting on #${a.number}`, done: a => `Commented on #${a.number}`, d: a => a.body },
   review_pull_request: { icon: 'review', run: a => `Reviewing #${a.number}`, done: a => `Posted a review on #${a.number}`, d: a => a.body },
-  delegate:            { icon: 'users', run: a => `Helper: ${a.description}`, done: a => `Helper finished: ${a.description}`, d: () => '' },
+  delegate:            { icon: 'users', run: a => `Helper${a.background ? ' (background)' : ''}: ${a.description}`, done: a => a.background ? `Started in background: ${a.description}` : `Helper finished: ${a.description}`, d: a => a.agent || '' },
+  ask_user:            { icon: 'question', run: 'Asking you a question', done: 'Asked you a question', d: () => '' },
+  exit_plan_mode:      { icon: 'book', run: 'Proposing a plan', done: 'Proposed a plan', d: () => '' },
+  load_skill:          { icon: 'sparkle', run: a => `Loading skill ${a.name}`, done: a => `Loaded skill: ${a.name}`, d: () => '' },
   start_process:       { icon: 'play', run: 'Starting the app', done: 'Started the app', d: a => a.command },
   process_logs:        { icon: 'terminal', run: 'Checking the app output', done: 'Checked the app output', d: a => `process ${a.process_id}` },
   stop_process:        { icon: 'server', run: 'Stopping the app', done: 'Stopped the app', d: a => `process ${a.process_id}` },
@@ -703,13 +772,47 @@ function applyState(s) {
   if (s.mcp) renderMcp(s.mcp);
   const name = (s.root || '').split('/').filter(Boolean).pop() || s.root;
   $('project-name').textContent = name; $('project-name').title = s.root; $('root-path').textContent = s.root;
-  $('model').value = s.model; $('effort').value = s.effort; $('auto').checked = s.auto_approve;
-  showAuto(s.auto_approve); showUsage(s.usage); setBusy(s.busy);
+  $('model').value = s.model; $('effort').value = s.effort;
+  if (s.mode) showMode(s.mode);
+  if (s.extensions) renderExt(s.extensions);
+  showUsage(s.usage); setBusy(s.busy);
 }
-function showAuto(on) {
-  const small = matchMedia('(max-width: 560px)').matches;
-  $('auto-chip').classList.toggle('on', on);
-  $('auto-chip-text').textContent = on ? (small ? 'Auto' : 'Auto-approve on') : (small ? 'Ask first' : 'Ask before changes');
+const MODES = {
+  ask:  { label: 'Ask first', short: 'Ask', icon: 'shield', desc: 'Confirm each change before it happens' },
+  auto: { label: 'Auto', short: 'Auto', icon: 'zap', desc: 'Safe changes run on their own; risky ones ask' },
+  plan: { label: 'Plan first', short: 'Plan', icon: 'book', desc: 'Research and propose a plan; change nothing until you approve' },
+  yolo: { label: 'Full auto', short: 'Full', icon: 'rocket', desc: 'Never ask. Use when you trust the task' },
+};
+function showMode(mode) {
+  state.mode = mode;
+  const m = MODES[mode] || MODES.ask, small = matchMedia('(max-width: 560px)').matches;
+  $('mode-chip').className = 'chip mode-' + mode;
+  $('mode-icon').innerHTML = icon(m.icon); $('mode-text').textContent = small ? m.short : m.label;
+  $('mode-select').value = mode;
+}
+async function setMode(mode) {
+  const r = await api('/api/settings', { mode });
+  if (r.ok) { showMode((await r.json()).mode); toast(MODES[mode].label + ': ' + MODES[mode].desc); }
+}
+function renderModeMenu() {
+  const menu = $('mode-menu'); menu.innerHTML = '';
+  for (const [key, m] of Object.entries(MODES)) {
+    const b = h('button', 'mode-opt' + (state.mode === key ? ' on' : ''), `<span class="ic">${icon(m.icon)}</span><span><b>${esc(m.label)}</b><small>${esc(m.desc)}</small></span>`);
+    b.onclick = e => { e.stopPropagation(); menu.classList.add('hidden'); setMode(key); };
+    menu.appendChild(b);
+  }
+}
+function renderExt(x) {
+  const box = $('ext-info'); box.innerHTML = '';
+  box.appendChild(h('div', null, `${x.commands.length} commands · ${x.agents.length} helper types · ${x.skills.length} skills · ${x.hooks} hooks` +
+    (x.plugins.length ? `<br>Plugins: ${esc(x.plugins.join(', '))}` : '<br>Add plugins with <code>docks plugin install owner/repo</code>')));
+  for (const file of x.pending_hooks || []) {
+    const row = h('div', 'mcp-row', `<span class="d needs-approval"></span><small>Project hooks in ${esc(file.split('/').slice(-2).join('/'))} need approval</small>`);
+    const b = h('button', 'btn', 'Approve');
+    b.onclick = async e => { e.stopPropagation(); if (!confirm('These hooks run commands automatically while Docks works. Approve them?\n\n' + file)) return; const r = await api('/api/hooks/approve', { file }); if (r.ok) renderExt(await r.json()); };
+    row.appendChild(b); box.appendChild(row);
+  }
+  commands = x.commands;
 }
 function showUsage(u) { if (u && (u.input || u.output)) $('usage').textContent = `Tokens this session: ${(u.input + u.cache_read).toLocaleString()} in, ${u.output.toLocaleString()} out`; }
 
@@ -737,6 +840,7 @@ function handle(ev) {
     case 'plan': renderPlan(ev.items); break;
     case 'user': {
       endGroup();
+      if (ev.auto) { userCount++; add(h('div', 'notice auto', icon('users') + 'Continuing with a background helper\'s report')); setBusy(true); break; }
       const u = add(h('div', 'msg-user'));
       const turn = userCount++;
       const ub = h('button', 'undo', icon('undo', 15)); ub.title = 'Undo from here: restore files and edit this message'; ub.setAttribute('aria-label', ub.title);
@@ -748,8 +852,14 @@ function handle(ev) {
     case 'text': {
       endGroup();
       let b = blocks[ev.id];
-      if (!b) { const wrap = add(h('div', 'msg-ai', `<span class="avatar">${icon('logo')}</span><div class="prose"></div>`)); b = blocks[ev.id] = { el: wrap.querySelector('.prose'), text: '' }; }
-      b.text += ev.text; b.el.innerHTML = md(b.text); scrollDown();
+      if (!b) {
+        const wrap = add(h('div', 'msg-ai', `<span class="avatar">${icon('logo')}</span><div style="flex:1;min-width:0"><div class="prose"></div><div class="msg-actions"><button class="btn ghost" data-act="copy">${icon('copy', 13)} Copy</button><button class="btn ghost" data-act="star">${icon('star', 13)} Bookmark</button></div></div>`));
+        b = blocks[ev.id] = { el: wrap.querySelector('.prose'), text: '' };
+        const bb = b;
+        wrap.querySelector('[data-act="copy"]').onclick = () => navigator.clipboard?.writeText(bb.text).then(() => toast('Copied'));
+        wrap.querySelector('[data-act="star"]').onclick = async () => { const r = await api('/api/bookmark', { text: bb.text }); if (r.ok) { state.bookmarks = (await r.json()).bookmarks; toast('Bookmarked'); } };
+      }
+      b.text += ev.text; b.el.innerHTML = md(b.text); scheduleMath(b.el); scrollDown();
       break;
     }
     case 'progress': {
@@ -821,6 +931,69 @@ function handle(ev) {
       }
       break;
     }
+    case 'question': {
+      pending++; updateStatus();
+      const card = h('div', 'qcard', `<div class="q-head">${icon('question')}<span>Docks has ${ev.questions.length > 1 ? 'some questions' : 'a question'}</span></div>`);
+      card.id = 'q-' + ev.id;
+      const picks = ev.questions.map(() => new Set()), others = [];
+      ev.questions.forEach((q, i) => {
+        const qe = h('div', 'q', `<b></b><div class="qopts"></div>`); qe.querySelector('b').textContent = q.question;
+        for (const opt of q.options || []) {
+          const o = h('button', 'qopt', `<span></span>${opt.description ? '<small></small>' : ''}`);
+          o.firstChild.textContent = opt.label; if (opt.description) o.querySelector('small').textContent = opt.description;
+          o.onclick = () => {
+            if (!q.multi_select) { picks[i].clear(); qe.querySelectorAll('.qopt').forEach(x => x.classList.remove('sel')); }
+            picks[i].has(opt.label) ? picks[i].delete(opt.label) : picks[i].add(opt.label); o.classList.toggle('sel', picks[i].has(opt.label));
+          };
+          qe.querySelector('.qopts').appendChild(o);
+        }
+        const other = h('input', 'input other'); other.placeholder = 'Or type your own answer'; others.push(other); qe.appendChild(other);
+        card.appendChild(qe);
+      });
+      const actions = h('div', 'q-actions', `<button class="btn primary">Send answers</button><button class="btn ghost">Skip</button>`);
+      actions.children[0].onclick = () => {
+        const answers = ev.questions.map((q, i) => others[i].value.trim() || [...picks[i]].join(', '));
+        if (answers.some(a => !a)) { toast('Answer each question, or press Skip'); return; }
+        api('/api/respond', { id: ev.id, answer: answers });
+      };
+      actions.children[1].onclick = () => api('/api/respond', { id: ev.id, answer: null });
+      card.appendChild(actions);
+      const at = (ev.call && steps[ev.call]) || lastStep; if (at) at.after(card); else add(card);
+      scrollDown(); break;
+    }
+    case 'question_done': {
+      pending = Math.max(0, pending - 1); updateStatus();
+      const card = $('q-' + ev.id); if (!card) break;
+      const qs = [...card.querySelectorAll('.q > b')].map(b => b.textContent);
+      const done = h('div', 'answered'); done.textContent = ev.answers ? qs.map((q, i) => `${q}\n→ ${ev.answers[i]}`).join('\n') : 'Questions skipped';
+      card.replaceWith(done); break;
+    }
+    case 'plan_review': {
+      pending++; updateStatus();
+      const card = h('div', 'plancard', `<div class="q-head">${icon('book')}<span>Docks has a plan. Review it before anything changes</span></div><div class="prose"></div><textarea placeholder="What should change? (only needed for Request changes)"></textarea><div class="q-actions"><button class="btn primary" data-d="approve">Approve</button><button class="btn" data-d="approve_auto">Approve and auto mode</button><button class="btn" data-d="reject">Request changes</button></div>`);
+      card.id = 'pr-' + ev.id; card.querySelector('.prose').innerHTML = md(ev.plan); scheduleMath(card.querySelector('.prose'));
+      card.querySelectorAll('[data-d]').forEach(b => b.onclick = () => {
+        const feedback = card.querySelector('textarea').value.trim();
+        if (b.dataset.d === 'reject' && !feedback) { toast('Say what should change'); card.querySelector('textarea').focus(); return; }
+        api('/api/respond', { id: ev.id, answer: { decision: b.dataset.d, feedback } });
+      });
+      const at = (ev.call && steps[ev.call]) || lastStep; if (at) at.after(card); else add(card);
+      scrollDown(); break;
+    }
+    case 'plan_review_done': {
+      pending = Math.max(0, pending - 1); updateStatus();
+      const card = $('pr-' + ev.id); if (!card) break;
+      card.querySelector('.q-actions').remove(); card.querySelector('textarea').remove();
+      card.style.borderColor = 'var(--line)';
+      card.querySelector('.q-head span').textContent = { approve: 'Plan approved', approve_auto: 'Plan approved (auto mode on)', reject: 'Changes requested' }[ev.decision];
+      if (ev.decision !== 'reject') refreshState();
+      break;
+    }
+    case 'auto_approved': {
+      const step = ev.call && steps[ev.call];
+      if (step) { const tg = h('span', 'tag auto', 'Auto-approved'); tg.title = ev.reason; step.querySelector('.chev').before(tg); }
+      break;
+    }
     case 'warn': endGroup(); add(h('div', 'notice warn', icon('alert') + esc(ev.text))); break;
     case 'error': endGroup(); add(h('div', 'notice error', icon('alert') + esc(ev.text))); break;
     case 'notice': add(h('div', 'notice', icon('sparkle') + esc(ev.text))); refreshAll(); break;
@@ -855,10 +1028,16 @@ async function connect() {
 async function send(textOverride) {
   if (state.busy) { api('/api/stop', {}); return; }
   const text = (textOverride ?? $('input').value).trim();
+  const uiCmd = UI_COMMANDS.find(c => text === '/' + c.name);
+  if (uiCmd) { $('input').value = ''; store.set('docks-draft', ''); hidePalette(); autosize(); uiCmd.ui(); return; }
   const images = textOverride ? [] : attachments.map(a => ({ media_type: a.type, data: a.data }));
   if (!text && !images.length) return;
   const res = await api('/api/chat', { message: text, images });
-  if (res.ok) { if (!textOverride) { $('input').value = ''; attachments = []; renderAttachments(); } autosize(); mobile('chat'); }
+  if (res.ok) {
+    store.set('docks-last', text);
+    if (!textOverride) { $('input').value = ''; attachments = []; renderAttachments(); store.set('docks-draft', ''); }
+    hidePalette(); autosize(); mobile('chat');
+  }
   else toast((await res.json().catch(() => ({}))).error || 'Could not send');
 }
 function autosize() { const t = $('input'); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 220) + 'px'; $('send').disabled = !state.busy && !t.value.trim() && !attachments.length; }
@@ -902,17 +1081,148 @@ $('deploy').onclick = deploy;
 $('send').onclick = () => send();
 // On touch keyboards Enter makes a new line and the send button sends; elsewhere Enter sends.
 $('input').addEventListener('keydown', e => {
+  if (paletteKeys(e)) return;
+  if (e.key === 'ArrowUp' && !$('input').value) { const last = store.get('docks-last', ''); if (last) { e.preventDefault(); $('input').value = last; autosize(); } return; }
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !matchMedia('(pointer: coarse)').matches) { e.preventDefault(); if (!state.busy) send(); }
 });
-$('input').addEventListener('input', autosize);
+$('input').addEventListener('input', () => { autosize(); store.set('docks-draft', $('input').value); updatePalette(); });
+if (!$('input').value) { $('input').value = store.get('docks-draft', ''); }
+
+// "/" opens commands, "@" opens files: arrow keys to move, Enter or Tab to pick, Escape to close.
+let commands = [], palItems = [], palIndex = 0, palMatch = null;
+const UI_COMMANDS = [
+  { name: 'clear', description: 'Start a new conversation', ui: () => newChat() },
+  { name: 'plan', description: 'Switch to plan mode', ui: () => setMode('plan') },
+  { name: 'mode', description: 'Choose how Docks asks before changes', ui: () => { renderModeMenu(); $('mode-menu').classList.remove('hidden'); fitModeMenu(); } },
+  { name: 'resume', description: 'Open saved conversations', ui: () => openDrawer('sessions') },
+  { name: 'bookmarks', description: 'Show bookmarked replies', ui: () => openDrawer('bookmarks') },
+];
+function updatePalette() {
+  const t = $('input'), before = t.value.slice(0, t.selectionStart);
+  let m;
+  if ((m = before.match(/^\/([\w:.-]*)$/))) {
+    const q = m[1].toLowerCase();
+    palMatch = { kind: '/', start: 0, end: before.length };
+    palItems = [...UI_COMMANDS, ...commands].filter(c => c.name.toLowerCase().includes(q)).slice(0, 40)
+      .map(c => ({ label: '/' + c.name, sub: c.hint ? `${c.hint}  ${c.description}` : c.description, cmd: c }));
+  } else if ((m = before.match(/(^|\s)@([\w./-]*)$/))) {
+    const q = m[2].toLowerCase();
+    palMatch = { kind: '@', start: before.length - m[2].length - 1, end: before.length };
+    palItems = files.filter(f => f.toLowerCase().includes(q)).slice(0, 30).map(f => ({ label: '@' + f, sub: '', file: f }));
+  } else { hidePalette(); return; }
+  if (!palItems.length) { hidePalette(); return; }
+  palIndex = 0; renderPalette();
+}
+function renderPalette() {
+  const box = $('palette'); box.innerHTML = ''; box.classList.remove('hidden');
+  palItems.forEach((it, i) => {
+    const row = h('div', 'pal-item' + (i === palIndex ? ' active' : ''), `<code></code><span></span>`);
+    row.firstChild.textContent = it.label; row.lastChild.textContent = it.sub || '';
+    row.onmousedown = e => { e.preventDefault(); pickPalette(i); };
+    box.appendChild(row);
+  });
+  box.children[palIndex]?.scrollIntoView({ block: 'nearest' });
+}
+function hidePalette() { $('palette').classList.add('hidden'); palItems = []; palMatch = null; }
+function pickPalette(i) {
+  const it = palItems[i], t = $('input'); if (!it) return;
+  if (it.cmd?.ui) { t.value = ''; hidePalette(); autosize(); it.cmd.ui(); return; }
+  const insert = it.cmd ? `/${it.cmd.name} ` : `@${it.file} `;
+  t.value = t.value.slice(0, palMatch.start) + insert + t.value.slice(palMatch.end);
+  const pos = palMatch.start + insert.length; t.setSelectionRange(pos, pos);
+  hidePalette(); autosize(); t.focus(); store.set('docks-draft', t.value);
+}
+function paletteKeys(e) {
+  if (!palItems.length) return false;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); palIndex = (palIndex + (e.key === 'ArrowDown' ? 1 : palItems.length - 1)) % palItems.length; renderPalette(); return true; }
+  if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); pickPalette(palIndex); return true; }
+  if (e.key === 'Escape') { e.preventDefault(); hidePalette(); return true; }
+  return false;
+}
+$('input').addEventListener('blur', () => setTimeout(hidePalette, 150));
+
+// Math in replies ($$…$$, \[…\], \(…\)) renders with KaTeX, loaded only when needed.
+let katexLoading = null; const mathQueue = new Set(); let mathTimer = null;
+function loadKatex() {
+  if (katexLoading) return katexLoading;
+  const base = 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/';
+  const css = h('link'); css.rel = 'stylesheet'; css.href = base + 'katex.min.css'; document.head.appendChild(css);
+  const load = src => new Promise((ok, fail) => { const sc = h('script'); sc.src = src; sc.onload = ok; sc.onerror = fail; document.head.appendChild(sc); });
+  katexLoading = load(base + 'katex.min.js').then(() => load(base + 'contrib/auto-render.min.js')).catch(() => null);
+  return katexLoading;
+}
+function scheduleMath(el) {
+  if (!/\$\$|\\\[|\\\(/.test(el.textContent)) return;
+  mathQueue.add(el); clearTimeout(mathTimer);
+  mathTimer = setTimeout(async () => {
+    await loadKatex(); if (!window.renderMathInElement) return;
+    for (const node of mathQueue) renderMathInElement(node, { throwOnError: false, delimiters: [
+      { left: '$$', right: '$$', display: true }, { left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }] });
+    mathQueue.clear();
+  }, 350);
+}
 autosize();
 
 async function saveSettings(extra = {}) {
-  const res = await api('/api/settings', { model: $('model').value, effort: $('effort').value, auto_approve: $('auto').checked, ...extra });
-  if (res.ok) { const s = await res.json(); showAuto(s.auto_approve); $('auto').checked = s.auto_approve; }
+  const res = await api('/api/settings', { model: $('model').value, effort: $('effort').value, ...extra });
+  if (res.ok) showMode((await res.json()).mode);
 }
-$('model').onchange = () => saveSettings(); $('effort').onchange = () => saveSettings(); $('auto').onchange = () => saveSettings();
-$('auto-chip').onclick = () => { $('auto').checked = !$('auto').checked; saveSettings(); toast($('auto').checked ? 'Docks will make changes without asking' : 'Docks will ask before changes'); };
+async function refreshState() { const r = await api('/api/state'); if (r.ok) { const s = await r.json(); showMode(s.mode); state.bookmarks = s.bookmarks; } }
+$('model').onchange = () => saveSettings(); $('effort').onchange = () => saveSettings();
+$('mode-select').onchange = () => setMode($('mode-select').value);
+function fitModeMenu() {  // keep the menu on screen when the chip sits far right (phones)
+  const menu = $('mode-menu'); menu.style.left = '0px';
+  const over = menu.getBoundingClientRect().right - (innerWidth - 16);
+  if (over > 0) menu.style.left = -over + 'px';
+}
+$('mode-chip').onclick = e => { e.stopPropagation(); renderModeMenu(); $('mode-menu').classList.toggle('hidden'); fitModeMenu(); };
+document.addEventListener('click', e => { if (!e.target.closest('.mode-wrap')) $('mode-menu').classList.add('hidden'); });
+
+// Conversations and bookmarks drawer
+let drawerTab = 'sessions', drawerLoad = 0;
+async function openDrawer(tab) {
+  drawerTab = tab || drawerTab; $('drawer').classList.remove('hidden');
+  const load = ++drawerLoad;  // a slower earlier load must not draw over a newer tab
+  document.querySelectorAll('[data-dtab]').forEach(t => t.classList.toggle('on', t.dataset.dtab === drawerTab));
+  const body = $('drawer-body');
+  if (drawerTab === 'sessions') {
+    const r = await api('/api/sessions'); if (!r.ok || load !== drawerLoad) return;
+    const { sessions, current } = await r.json(); if (load !== drawerLoad) return;
+    body.innerHTML = '';
+    const rename = h('div', 'rename-row', `<input class="input" placeholder="Name this conversation"><button class="btn">Rename</button>`);
+    rename.querySelector('input').value = state.session?.name || '';
+    rename.querySelector('button').onclick = async () => { const name = rename.querySelector('input').value.trim(); if (!name) return; await api('/api/sessions/rename', { name }); state.session = { ...(state.session || {}), name }; toast('Renamed'); openDrawer('sessions'); };
+    body.appendChild(rename);
+    if (!sessions.length) body.appendChild(h('div', 'empty-state', 'No saved conversations yet. They appear here after your first message.'));
+    for (const sn of sessions) {
+      const row = h('button', 'srow' + (sn.id === current ? ' current' : ''), `<b></b><small></small>`);
+      row.querySelector('b').textContent = sn.name;
+      row.querySelector('small').textContent = `${new Date(sn.updated * 1000).toLocaleString()} · ${sn.turns} message${sn.turns === 1 ? '' : 's'}${sn.id === current ? ' · open now' : ''}`;
+      row.onclick = async () => {
+        if (sn.id === current) { $('drawer').classList.add('hidden'); return; }
+        const rr = await api('/api/sessions/resume', { id: sn.id });
+        if (!rr.ok) { toast((await rr.json()).error || 'Could not open it'); return; }
+        toast('Resumed: ' + sn.name); $('drawer').classList.add('hidden');
+      };
+      body.appendChild(row);
+    }
+  } else {
+    const r = await api('/api/state'); if (r.ok) state.bookmarks = (await r.json()).bookmarks;
+    if (load !== drawerLoad) return;
+    body.innerHTML = '';
+    if (!state.bookmarks?.length) body.appendChild(h('div', 'empty-state', 'No bookmarks yet. Hover a reply and press Bookmark to keep it here.'));
+    for (const bm of [...(state.bookmarks || [])].reverse()) {
+      const row = h('div', 'bm', `<div class="prose"></div><div class="bm-actions"><button class="btn ghost">${icon('copy', 13)} Copy</button></div>`);
+      row.querySelector('.prose').innerHTML = md(bm.text); scheduleMath(row.querySelector('.prose'));
+      row.querySelector('button').onclick = () => navigator.clipboard?.writeText(bm.text).then(() => toast('Copied'));
+      body.appendChild(row);
+    }
+  }
+}
+$('open-history').onclick = () => openDrawer('sessions');
+$('close-drawer').onclick = () => $('drawer').classList.add('hidden');
+document.querySelectorAll('[data-dtab]').forEach(t => t.onclick = () => openDrawer(t.dataset.dtab));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('drawer').classList.add('hidden'); });
 function renderMcp(list) {
   const box = $('mcp-list'); box.innerHTML = '';
   if (!list.length) { box.innerHTML = '<div class="mcp-row"><small>None yet. Add one with <code>docks mcp add</code>.</small></div>'; return; }
@@ -943,11 +1253,11 @@ $('gh-chip').onclick = () => { $('app').classList.remove('panel-closed'); showTa
 let currentTab = 'preview';
 function showTab(name) {
   currentTab = name;
-  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === name));
+  document.querySelectorAll('.tab[data-tab]').forEach(t => t.classList.toggle('on', t.dataset.tab === name));
   for (const v of ['preview', 'code', 'github']) $('view-' + v).classList.toggle('hidden', v !== name);
   if (name === 'preview') reloadPreview(); if (name === 'github') loadGit();
 }
-document.querySelectorAll('.tab').forEach(t => t.onclick = () => showTab(t.dataset.tab));
+document.querySelectorAll('.tab[data-tab]').forEach(t => t.onclick = () => showTab(t.dataset.tab));
 function mobile(which) {
   $('app').classList.toggle('show-panel', which !== 'chat');
   if (which !== 'chat') showTab(which);

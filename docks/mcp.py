@@ -295,10 +295,12 @@ class Server:
 class MCPManager:
     """Loads the configured servers, exposes their tools to the agent, and routes calls."""
 
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, extra: dict | None = None):
         self.root = root
         self.servers: dict[str, Server] = {}
         self.routes: dict[str, tuple[Server, dict]] = {}
+        for name, spec in (extra or {}).items():  # servers that installed plugins ship
+            self.servers[name] = Server(name, spec, "plugin")
         for scope, path in (("user", user_config_path()), ("project", project_config_path(root))):
             for name, spec in read_config(path).items():
                 self.servers[name] = Server(name, spec, scope)

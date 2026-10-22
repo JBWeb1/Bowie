@@ -49,6 +49,7 @@ class Session:
         self.busy = False
         agent.display = WebDisplay(self)
         agent.procs.on_change = lambda info: self.publish({"type": "process", **info})
+        agent.on_background_done = self._background_done
 
     def publish(self, event: dict) -> None:
         with self.lock:
@@ -74,13 +75,13 @@ class Session:
             if q in self.subscribers:
                 self.subscribers.remove(q)
 
-    def start_turn(self, text: str, images: list | None = None) -> bool:
+    def start_turn(self, text: str, images: list | None = None, auto: bool = False) -> bool:
         with self.lock:
             if self.busy:
                 return False
             self.busy = True
         images = images or []
-        self.publish({"type": "user", "text": text,
+        self.publish({"type": "user", "text": text, "auto": auto,
                       "images": [f"data:{i['media_type']};base64,{i['data']}" for i in images]})
         content = [{"type": "image", "source": {"type": "base64", **i}} for i in images]
         content = content + [{"type": "text", "text": text}] if content else text
@@ -96,6 +97,26 @@ class Session:
             with self.lock:
                 self.busy = False
             self.publish({"type": "idle"})
+
+    def _background_done(self) -> None:
+        # A background helper finished while Docks was idle: continue the task with its report.
+        if self.agent.has_background_reports():
+            self.start_turn("A background helper finished; its report is attached. Continue the task with it.", auto=True)
+
+    def resume(self, session_id: str) -> dict:
+        """Load a saved conversation and show it in every open browser."""
+        data = self.agent.resume(session_id)
+        with self.lock:
+            self.history = history_from_messages(self.agent.messages, self.agent.turns)
+            for q in self.subscribers:
+                q.put({"type": "rewound"})
+        return data
+
+    def new_chat(self) -> None:
+        self.agent.reset()
+        with self.lock:
+            self.history.clear()
+        self.publish({"type": "cleared"})
 
     def rewind(self, turn: int):
         """Restore files and conversation to before the user's `turn`-th message, and replay the log to browsers."""
@@ -119,14 +140,51 @@ class Session:
     def stop(self) -> None:
         self.agent.stop()
         for approval_id in list(self.approvals):
-            self.answer(approval_id, "no")
+            self.answer(approval_id, None)
 
     def state(self) -> dict:
         a = self.agent
         return {"root": str(a.root), "model": a.model, "effort": a.effort, "auto_approve": a.auto_approve,
-                "busy": self.busy, "usage": a.usage, "processes": a.procs.list(), "plan": a.plan,
-                "turns": [bool(t["checkpoint"]) for t in a.turns],
-                "mcp": a.mcp.summary() if a.mcp else []}
+                "mode": a.active_mode, "busy": self.busy, "usage": a.usage, "processes": a.procs.list(),
+                "plan": a.plan, "turns": [bool(t["checkpoint"]) for t in a.turns],
+                "mcp": a.mcp.summary() if a.mcp else [], "extensions": a.ext.summary(),
+                "session": {"id": a.session_id, "name": a.session_name}, "bookmarks": a.bookmarks}
+
+
+def history_from_messages(messages: list, turns: list) -> list[dict]:
+    """Rebuild the browser's event log from a saved conversation."""
+    from ..agent import _block
+    events, starts = [], {t["index"] for t in turns}
+    for i, msg in enumerate(messages):
+        content = msg["content"]
+        blocks = [{"type": "text", "text": content}] if isinstance(content, str) else content
+        if msg["role"] == "user":
+            if i in starts:
+                text = next((_block(b, "text") for b in blocks if _block(b, "type") == "text"), "")
+                images = [f"data:{_block(b, 'source')['media_type']};base64,{_block(b, 'source')['data']}"
+                          for b in blocks if _block(b, "type") == "image" and _block(b, "source", {}).get("type") == "base64"]
+                events.append({"type": "user", "text": text, "images": images})
+            for b in blocks:
+                if _block(b, "type") == "tool_result":
+                    out = _block(b, "content")
+                    out = out if isinstance(out, str) else "".join(_block(x, "text", "") for x in out or [])
+                    events.append({"type": "tool_output", "text": _clip(out, 20_000), "error": bool(_block(b, "is_error")),
+                                   "id": _block(b, "tool_use_id")})
+        else:
+            for b in blocks:
+                kind = _block(b, "type")
+                if kind == "text" and _block(b, "text"):
+                    events.append({"type": "text", "id": uuid.uuid4().hex[:8], "text": _block(b, "text")})
+                elif kind == "tool_use":
+                    args = _block(b, "input") or {}
+                    if _block(b, "name") == "update_plan":
+                        events.append({"type": "plan", "items": args.get("items", [])})
+                        continue
+                    events.append({"type": "tool_call", "name": _block(b, "name"), "id": _block(b, "id"),
+                                   "summary": _clip(_summarize_args(_block(b, "name"), args), 300),
+                                   "args": {k: _clip(v) for k, v in args.items()}, "helper": None})
+    events.append({"type": "idle"})
+    return events
 
 
 class WebStream:
@@ -184,19 +242,42 @@ class WebDisplay:
     def error(self, msg: str) -> None:
         self.session.publish({"type": "error", "text": msg})
 
-    def confirm(self, name: str, args: dict) -> str:
-        approval_id = uuid.uuid4().hex[:12]
-        entry = {"event": threading.Event(), "answer": "no"}
-        self.session.approvals[approval_id] = entry
-        self.session.publish({"type": "approval", "id": approval_id, "name": name, "call": getattr(self.local, "id", None),
-                              "args": {k: _clip(v, 20_000) for k, v in args.items()}})
+    def _wait(self, event: dict, default):
+        """Publish a request to the browser and wait for the user's answer (or a stop)."""
+        request_id = uuid.uuid4().hex[:12]
+        entry = {"event": threading.Event(), "answer": default}
+        self.session.approvals[request_id] = entry
+        self.session.publish({**event, "id": request_id, "call": getattr(self.local, "id", None)})
         while not entry["event"].wait(0.5):
             if self.session.agent.cancelled.is_set():
                 break
-        self.session.approvals.pop(approval_id, None)
-        self.session.publish({"type": "approval_done", "id": approval_id, "answer": entry["answer"],
+        self.session.approvals.pop(request_id, None)
+        return request_id, entry["answer"]
+
+    def confirm(self, name: str, args: dict) -> str:
+        request_id, answer = self._wait({"type": "approval", "name": name,
+                                         "args": {k: _clip(v, 20_000) for k, v in args.items()}}, "no")
+        answer = answer if answer in ("yes", "no", "always") else "no"
+        self.session.publish({"type": "approval_done", "id": request_id, "answer": answer,
                               "call": getattr(self.local, "id", None)})
-        return entry["answer"]
+        return answer
+
+    def ask(self, questions: list):
+        request_id, answer = self._wait({"type": "question", "questions": questions}, None)
+        ok = isinstance(answer, list) and len(answer) == len(questions)
+        self.session.publish({"type": "question_done", "id": request_id, "answers": answer if ok else None})
+        return [str(a) for a in answer] if ok else None
+
+    def review_plan(self, plan_text: str):
+        request_id, answer = self._wait({"type": "plan_review", "plan": plan_text}, None)
+        decision = answer.get("decision") if isinstance(answer, dict) else "reject"
+        decision = decision if decision in ("approve", "approve_auto", "reject") else "reject"
+        feedback = str(answer.get("feedback", "")) if isinstance(answer, dict) else ""
+        self.session.publish({"type": "plan_review_done", "id": request_id, "decision": decision})
+        return decision, feedback
+
+    def auto_approved(self, call_id, reason: str) -> None:
+        self.session.publish({"type": "auto_approved", "call": call_id, "reason": reason})
 
     def turn_done(self, usage: dict) -> None:
         self.session.publish({"type": "usage", "usage": dict(usage)})
@@ -273,6 +354,12 @@ def make_handler(session: Session, token: str, preview: dict):
                 except UnicodeDecodeError:
                     text = f"(binary file, {target.stat().st_size} bytes, {mimetypes.guess_type(target.name)[0] or 'unknown type'})"
                 return self._json(200, {"path": rel, "text": text})
+            if path == "/api/commands":
+                return self._json(200, session.agent.ext.summary())
+            if path == "/api/sessions":
+                from .. import sessions
+                return self._json(200, {"sessions": sessions.list_sessions(root),
+                                         "current": session.agent.session_id})
             if path == "/api/git":
                 return self._json(200, github.status(root))
             if path == "/api/events":
@@ -370,6 +457,31 @@ def make_handler(session: Session, token: str, preview: dict):
                     return self._json(400, {"error": str(e)})
                 session.publish({"type": "notice", "text": f"Cloned {github.parse_repo(body['repo'])}"})
                 return self._json(200, github.status(root))
+            if path == "/api/respond":  # answers to questions and plan reviews
+                entry = session.approvals.get(str(body.get("id")))
+                if not entry:
+                    return self._json(404, {"error": "that question was already answered"})
+                return self._json(200, {"ok": session.answer(str(body.get("id")), body.get("answer"))})
+            if path == "/api/sessions/resume":
+                if session.busy:
+                    return self._json(409, {"error": "stop the current task first"})
+                try:
+                    data = session.resume(str(body.get("id", "")))
+                except (FileNotFoundError, KeyError, ValueError) as e:
+                    return self._json(404, {"error": str(e)})
+                return self._json(200, {"ok": True, "name": data.get("name") or data.get("title")})
+            if path == "/api/sessions/rename":
+                session.agent.rename(str(body.get("name", ""))[:100])
+                return self._json(200, {"ok": True})
+            if path == "/api/bookmark":
+                text = str(body.get("text", "")).strip()
+                if not text:
+                    return self._json(400, {"error": "nothing to bookmark"})
+                session.agent.bookmark(text[:50_000])
+                return self._json(200, {"bookmarks": session.agent.bookmarks})
+            if path == "/api/hooks/approve":
+                session.agent.ext.approve_hooks(str(body.get("file", "")))
+                return self._json(200, session.agent.ext.summary())
             if path == "/api/approve":
                 answer = body.get("answer") if body.get("answer") in ("yes", "no", "always") else "no"
                 return self._json(200, {"ok": session.answer(str(body.get("id")), answer)})
@@ -379,15 +491,14 @@ def make_handler(session: Session, token: str, preview: dict):
             if path == "/api/clear":
                 if session.busy:
                     return self._json(409, {"error": "stop the current task first"})
-                session.agent.reset()
-                with session.lock:
-                    session.history.clear()
-                session.publish({"type": "cleared"})
+                session.new_chat()
                 return self._json(200, {"ok": True})
             if path == "/api/settings":
                 a = session.agent
                 if isinstance(body.get("auto_approve"), bool):
-                    a.auto_approve = body["auto_approve"]
+                    a.set_mode("yolo" if body["auto_approve"] else "ask")
+                if body.get("mode") in ("ask", "auto", "plan", "yolo"):
+                    a.set_mode(body["mode"])
                 if body.get("effort") in ("low", "medium", "high", "xhigh", "max"):
                     a.effort = body["effort"]
                 if isinstance(body.get("model"), str) and body["model"].strip():

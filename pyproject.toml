@@ -18,3 +18,4 @@ include = ["docks*"]
 
 [tool.setuptools.package-data]
 "docks.web" = ["*.html"]
+"docks" = ["builtin/commands/*.md"]

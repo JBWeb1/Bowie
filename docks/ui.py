@@ -37,6 +37,12 @@ def _summarize_args(name: str, args: dict) -> str:
         return args.get("url", "")
     if name == "remember":
         return args.get("note", "")
+    if name == "ask_user":
+        return "; ".join(q.get("question", "") for q in args.get("questions", []))
+    if name in ("load_skill",):
+        return args.get("name", "")
+    if name == "exit_plan_mode":
+        return "plan ready for review"
     if name in ("github_issue", "github_pr", "github_comment", "review_pull_request"):
         return f"#{args.get('number', '?')}"
     if name == "create_pull_request":
@@ -123,6 +129,47 @@ def plan(items: list) -> None:
         print(f"  {marks.get(item['status'], '○')} {text}")
 
 
+def ask_questions(questions: list) -> list[str] | None:
+    """Ask multiple-choice questions in the terminal. Answer with numbers (1,3 for several) or your own words."""
+    answers = []
+    for q in questions:
+        print(bold(f"? {q['question']}"))
+        options = q.get("options", [])
+        for i, opt in enumerate(options, 1):
+            desc = f" {dim('- ' + opt['description'])}" if opt.get("description") else ""
+            print(f"  {cyan(str(i))}. {opt['label']}{desc}")
+        hint = "numbers separated by commas" if q.get("multi_select") else "a number"
+        try:
+            raw = input(yellow(f"  Your answer ({hint}, or type your own): ")).strip()
+        except EOFError:
+            return None
+        picks = [p.strip() for p in raw.split(",")]
+        if picks and all(p.isdigit() and 1 <= int(p) <= len(options) for p in picks):
+            answers.append(", ".join(options[int(p) - 1]["label"] for p in picks))
+        else:
+            answers.append(raw or "(no answer)")
+    return answers
+
+
+def review_plan(plan_text: str) -> tuple[str, str]:
+    print(bold("\nProposed plan"))
+    for line in plan_text.splitlines():
+        print(f"  {line}")
+    try:
+        raw = input(yellow("Approve? [y]es / [a]uto mode / or describe what to change: ")).strip()
+    except EOFError:
+        return "reject", ""
+    if raw.lower() in ("y", "yes", ""):
+        return "approve", ""
+    if raw.lower() in ("a", "auto"):
+        return "approve_auto", ""
+    return "reject", raw
+
+
+def auto_approved(call_id, reason: str) -> None:
+    print(dim(f"  ✓ auto-approved: {reason}"))
+
+
 class TerminalUI:
     """Agent output for the terminal. The web UI implements the same methods."""
 
@@ -134,6 +181,9 @@ class TerminalUI:
     confirm = staticmethod(confirm_tool)
     notice = staticmethod(notice)
     plan = staticmethod(plan)
+    ask = staticmethod(ask_questions)
+    review_plan = staticmethod(review_plan)
+    auto_approved = staticmethod(auto_approved)
 
     def turn_done(self, usage: dict) -> None:
         pass

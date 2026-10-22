@@ -137,7 +137,8 @@ def test_status_reports_changes(repo):
 
 def test_not_connected_message(repo, monkeypatch):
     work, _, _ = repo
-    monkeypatch.delenv("GITHUB_TOKEN")
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.delenv("GH_TOKEN", raising=False)
     monkeypatch.setattr(github.shutil, "which", lambda _: None)
     with pytest.raises(ToolError, match="not connected"):
         run_tool(work, "github_issue", {"number": 7})

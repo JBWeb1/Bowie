@@ -9,20 +9,29 @@ from . import __version__, ui
 from .agent import DEFAULT_MODEL, Agent
 
 HELP = """Commands:
-  /help     show this help
-  /clear    start a new conversation
-  /usage    show token usage for this session
-  /undo     undo the last task: put files back and forget it (repeat to go further back)
-  /yolo     toggle auto-approval of file writes and shell commands
-  /exit     quit
-End a line with \\ to keep typing on the next line."""
+  /help              show this help
+  /clear             start a new conversation
+  /mode [ask|auto|plan|yolo]  how Docks asks before changes (no argument: show the current mode)
+  /plan              plan mode: research and propose a plan before changing anything
+  /undo              undo the last task: put files back and forget it (repeat to go further back)
+  /resume [name|id]  continue a saved conversation (no argument: list them)
+  /sessions          list saved conversations for this project
+  /rename <name>     name this conversation
+  /bookmark          save Claude's last reply;  /bookmarks  list saved replies
+  /copy              copy Claude's last reply to the clipboard
+  /commands /agents /skills /hooks   show what's installed
+  /usage             token usage for this session
+  /yolo              same as /mode yolo (toggle)
+  /exit              quit
+Any other /name runs that command (built-in, yours, or from a plugin). Mention files with @path.
+Use the up arrow for earlier messages. End a line with \\ to keep typing on the next line."""
 
 
-def start_mcp(root: Path, interactive: bool):
+def start_mcp(root: Path, interactive: bool, extra: dict | None = None):
     """Start configured MCP servers. In a terminal, ask once before starting a project's own servers."""
     from .mcp import MCPError, MCPManager
     try:
-        mgr = MCPManager(root)
+        mgr = MCPManager(root, extra)
     except MCPError as e:
         ui.warn(str(e))
         return None
@@ -120,8 +129,163 @@ def read_prompt() -> str:
         return "\n".join(lines).strip()
 
 
+def _copy_to_clipboard(text: str) -> bool:
+    import base64
+    import shutil
+    import subprocess
+    for tool in (["pbcopy"], ["wl-copy"], ["xclip", "-selection", "clipboard"], ["clip.exe"]):
+        if shutil.which(tool[0]):
+            try:
+                subprocess.run(tool, input=text, text=True, timeout=5, check=True)
+                return True
+            except (OSError, subprocess.SubprocessError):
+                pass
+    if sys.stdout.isatty():  # OSC 52: most terminals copy this, even over SSH
+        sys.stdout.write(f"\033]52;c;{base64.b64encode(text.encode()).decode()}\a")
+        sys.stdout.flush()
+        return True
+    return False
+
+
+def _print_sessions(agent: Agent) -> None:
+    import time as _time
+    from . import sessions
+    items = sessions.list_sessions(agent.root, limit=20)
+    if not items:
+        print(ui.dim("no saved conversations for this project yet"))
+    for s_ in items:
+        when = _time.strftime("%b %d %H:%M", _time.localtime(s_["updated"]))
+        mark = ui.green("●") if s_["id"] == agent.session_id else " "
+        print(f"{mark} {ui.bold(s_['name'][:60])}  {ui.dim(when + ' · ' + str(s_['turns']) + ' msgs · ' + s_['id'])}")
+
+
+def slash(agent: Agent, text: str) -> bool:
+    """Handle a built-in REPL command. Returns False if it isn't one (so it goes to the agent)."""
+    from .checkpoints import CheckpointError
+    cmd, _, arg = text.partition(" ")
+    arg = arg.strip()
+    if cmd in ("/exit", "/quit"):
+        raise EOFError
+    if cmd == "/help":
+        print(HELP)
+        if agent.ext.commands:
+            print(ui.bold("\nAvailable commands:"))
+            for c in sorted(agent.ext.commands.values(), key=lambda c: c.name):
+                print(f"  /{c.name:<22} {ui.dim(c.description[:90])}")
+    elif cmd == "/clear":
+        agent.reset()
+        print(ui.dim("conversation cleared"))
+    elif cmd == "/usage":
+        u = agent.usage
+        print(ui.dim(f"input {u['input']:,} · cached {u['cache_read']:,} · output {u['output']:,} tokens"))
+    elif cmd == "/undo":
+        if not agent.turns:
+            print(ui.dim("nothing to undo"))
+            return True
+        try:
+            undone, restored = agent.rewind(len(agent.turns) - 1)
+        except CheckpointError as e:
+            ui.error(str(e))
+            return True
+        print(ui.green(f"undid: {undone[:80]}"))
+        print(ui.dim(f"restored {len(restored)} file(s): {', '.join(restored[:8])}" if restored else "no files had changed"))
+    elif cmd == "/yolo":
+        agent.set_mode("ask" if agent.active_mode == "yolo" else "yolo")
+        print(ui.dim(f"mode: {agent.active_mode}"))
+    elif cmd in ("/mode", "/plan"):
+        mode = "plan" if cmd == "/plan" else arg
+        if not mode:
+            print(ui.dim(f"mode: {agent.active_mode}  (ask: confirm each change · auto: confirm only risky ones · "
+                         "plan: plan first, change nothing · yolo: never ask)"))
+            return True
+        try:
+            agent.set_mode(mode)
+        except ValueError as e:
+            ui.error(str(e))
+            return True
+        print(ui.dim(f"mode: {agent.active_mode}"))
+    elif cmd == "/sessions" or (cmd == "/resume" and not arg):
+        _print_sessions(agent)
+        if cmd == "/resume":
+            print(ui.dim("resume one with /resume <name or id>"))
+    elif cmd == "/resume":
+        from . import sessions
+        sid = sessions.find(arg, agent.root) or sessions.find(arg)
+        if not sid:
+            ui.error(f"no saved conversation matches {arg!r}")
+            return True
+        data = agent.resume(sid)
+        print(ui.green(f"resumed: {data.get('name') or data.get('title') or sid}") +
+              ui.dim(f"  ({len(data.get('turns', []))} messages)"))
+        last = agent.last_text()
+        if last:
+            print(ui.dim("last reply: " + last.splitlines()[0][:160]))
+    elif cmd == "/rename":
+        if not arg:
+            ui.error("give a name: /rename <name>")
+            return True
+        agent.rename(arg)
+        print(ui.dim(f"named this conversation {arg!r}"))
+    elif cmd == "/bookmark":
+        last = agent.last_text()
+        if not last:
+            print(ui.dim("nothing to bookmark yet"))
+            return True
+        agent.bookmark(last)
+        print(ui.dim("bookmarked Claude's last reply (/bookmarks to see them)"))
+    elif cmd == "/bookmarks":
+        if not agent.bookmarks:
+            print(ui.dim("no bookmarks in this conversation"))
+        for i, b in enumerate(agent.bookmarks, 1):
+            print(ui.bold(f"[{i}]") + " " + b["text"][:600] + ("…" if len(b["text"]) > 600 else ""))
+    elif cmd == "/copy":
+        last = agent.last_text()
+        if not last:
+            print(ui.dim("nothing to copy yet"))
+        else:
+            print(ui.dim("copied Claude's last reply" if _copy_to_clipboard(last) else "couldn't reach a clipboard"))
+    elif cmd == "/commands":
+        for c in sorted(agent.ext.commands.values(), key=lambda c: c.name):
+            print(f"  /{c.name:<22} {ui.dim(f'[{c.source}] ' + c.description[:80])}")
+    elif cmd == "/agents":
+        if not agent.ext.agents:
+            print(ui.dim("no custom helper types (add agents/*.md in ~/.docks, .claude or a plugin)"))
+        for a in agent.ext.agents.values():
+            print(f"  {ui.bold(a.name)}  {ui.dim(a.description[:100])}")
+    elif cmd == "/skills":
+        if not agent.ext.skills:
+            print(ui.dim("no skills (add skills/<name>/SKILL.md in ~/.docks, .claude or a plugin)"))
+        for sk in agent.ext.skills.values():
+            print(f"  {ui.bold(sk.name)}  {ui.dim(sk.description[:100])}")
+    elif cmd == "/hooks":
+        if not agent.ext.hooks and not agent.ext.pending_hooks:
+            print(ui.dim("no hooks"))
+        for h in agent.ext.hooks:
+            print(f"  {ui.bold(h.event)} {h.matcher or '*'}  {ui.dim(h.command[:80] + '  [' + h.source + ']')}")
+        for p_ in agent.ext.pending_hooks:
+            print(ui.yellow(f"  waiting for approval: {p_['file']}"))
+    else:
+        return False
+    return True
+
+
+def approve_project_hooks(agent: Agent) -> None:
+    import json as _json
+    for pending in list(agent.ext.pending_hooks):
+        print(ui.yellow(f"This project has hooks in {pending['file']} that run commands automatically:"))
+        print(ui.dim(_json.dumps(pending["spec"], indent=2)[:1200]))
+        if input(ui.yellow("  Allow them? [y/N] ")).strip().lower() in ("y", "yes"):
+            agent.ext.approve_hooks(pending["file"])
+
+
 def repl(agent: Agent) -> None:
-    print(ui.bold(f"Docks {__version__}") + ui.dim(f"  {agent.model} · {agent.root}"))
+    try:
+        import readline  # noqa: F401  (arrow keys and history for input())
+    except ImportError:
+        pass
+    agent.on_background_done = lambda: print(ui.dim("\n· a background helper finished; its report goes with your next message"))
+    approve_project_hooks(agent)
+    print(ui.bold(f"Docks {__version__}") + ui.dim(f"  {agent.model} · {agent.root} · mode: {agent.active_mode}"))
     print(ui.dim("Tell me what to build. /help for commands.\n"))
     while True:
         try:
@@ -132,35 +296,73 @@ def repl(agent: Agent) -> None:
         if not text:
             continue
         if text.startswith("/"):
-            cmd = text.split()[0]
-            if cmd in ("/exit", "/quit"):
+            try:
+                if slash(agent, text):
+                    continue
+            except EOFError:
                 return
-            elif cmd == "/clear":
-                agent.reset()
-                print(ui.dim("conversation cleared"))
-            elif cmd == "/usage":
-                u = agent.usage
-                print(ui.dim(f"input {u['input']:,} · cached {u['cache_read']:,} · output {u['output']:,} tokens"))
-            elif cmd == "/undo":
-                from .checkpoints import CheckpointError
-                if not agent.turns:
-                    print(ui.dim("nothing to undo"))
-                    continue
-                try:
-                    text, restored = agent.rewind(len(agent.turns) - 1)
-                except CheckpointError as e:
-                    ui.error(str(e))
-                    continue
-                print(ui.green(f"undid: {text[:80]}"))
-                print(ui.dim(f"restored {len(restored)} file(s): {', '.join(restored[:8])}" if restored else "no files had changed"))
-            elif cmd == "/yolo":
-                agent.auto_approve = not agent.auto_approve
-                print(ui.dim(f"auto-approve {'on' if agent.auto_approve else 'off'}"))
-            else:
-                print(HELP)
-            continue
+            if text.split()[0][1:] not in agent.ext.commands:
+                ui.error(f"unknown command {text.split()[0]} (see /help)")
+                continue
         agent.run(text)
         print()
+
+
+def plugin_main(argv) -> int:
+    from . import plugins
+    parser = argparse.ArgumentParser(prog="docks plugin", description="Install and manage plugins "
+                                     "(Claude Code plugin format: commands, agents, skills, hooks, MCP servers).")
+    sub = parser.add_subparsers(dest="cmd", required=True)
+    inst = sub.add_parser("install", help="install from owner/repo, a git URL or a local folder")
+    inst.add_argument("source")
+    inst.add_argument("--plugin", help="from a repo with several plugins, install only this one")
+    sub.add_parser("list", help="show installed plugins")
+    for name in ("remove", "enable", "disable"):
+        sub.add_parser(name).add_argument("name")
+    args = parser.parse_args(argv)
+    if args.cmd == "install":
+        print(ui.dim(f"installing from {args.source}…"))
+        try:
+            names = plugins.install(args.source, args.plugin)
+        except ValueError as e:
+            ui.error(str(e))
+            return 1
+        print(ui.green(f"installed: {', '.join(names)}"))
+        print(ui.dim("Plugins can run commands (hooks) on your machine; only install ones you trust."))
+        return 0
+    if args.cmd == "list":
+        items = plugins.installed_plugins()
+        if not items:
+            print(ui.dim("no plugins yet; try: docks plugin install anthropics/claude-code --plugin commit-commands"))
+        for p_ in items:
+            state = ui.green("enabled") if p_["enabled"] else ui.yellow("disabled")
+            print(f"{ui.bold(p_['name'])} {ui.dim(p_['version'])} [{state}]  {ui.dim(p_['description'][:90])}")
+        return 0
+    if args.cmd == "remove":
+        ok = plugins.remove(args.name)
+        print(f"removed {args.name}" if ok else f"no plugin named {args.name}")
+        return 0 if ok else 1
+    plugins.set_enabled(args.name, args.cmd == "enable")
+    print(f"{args.name} {args.cmd}d")
+    return 0
+
+
+def sessions_main(argv) -> int:
+    parser = argparse.ArgumentParser(prog="docks sessions", description="List saved conversations.")
+    parser.add_argument("-C", "--dir", default=".")
+    parser.add_argument("--all", action="store_true", help="every project, not just this one")
+    args = parser.parse_args(argv)
+    import time as _time
+    from . import sessions
+    root = Path(args.dir).expanduser().resolve()
+    items = sessions.list_sessions(None if args.all else root)
+    if not items:
+        print(ui.dim("no saved conversations yet"))
+    for s_ in items:
+        when = _time.strftime("%b %d %H:%M", _time.localtime(s_["updated"]))
+        where = f" · {s_['root']}" if args.all else ""
+        print(f"{ui.bold(s_['name'][:60])}  {ui.dim(when + ' · ' + str(s_['turns']) + ' msgs · ' + s_['id'] + where)}")
+    return 0
 
 
 def web_main(argv) -> int:
@@ -178,9 +380,11 @@ def web_main(argv) -> int:
         parser.error(f"not a directory: {root}")
     from .web.server import serve
     from .mcp import MCPManager
-    mgr = MCPManager(root)
+    from .plugins import Extensions
+    ext = Extensions.load(root)
+    mgr = MCPManager(root, ext.plugin_mcp)
     mgr.start()  # project servers wait for approval in the browser
-    serve(Agent(root=root, model=args.model, effort=args.effort, auto_approve=args.yolo, mcp=mgr),
+    serve(Agent(root=root, model=args.model, effort=args.effort, auto_approve=args.yolo, mcp=mgr, ext=ext, save=True),
           host=args.host, port=args.port, open_browser=not args.no_open)
     return 0
 
@@ -257,6 +461,10 @@ def main(argv=None) -> int:
         return web_main(argv[1:])
     if argv[:1] == ["mcp"]:
         return mcp_main(argv[1:])
+    if argv[:1] in (["plugin"], ["plugins"]):
+        return plugin_main(argv[1:])
+    if argv[:1] == ["sessions"]:
+        return sessions_main(argv[1:])
     if argv[:1] == ["action"]:
         from .action import main as action_main
         return action_main(argv[1:])
@@ -274,6 +482,14 @@ def main(argv=None) -> int:
     parser.add_argument("-y", "--yolo", action="store_true", help="run tools without asking for approval")
     parser.add_argument("-i", "--image", action="append", default=[],
                         help="attach an image (screenshot, mockup, design) to the task; repeatable")
+    parser.add_argument("--mode", choices=["ask", "auto", "plan", "yolo"], default="ask",
+                        help="ask: confirm each change (default) · auto: confirm only risky ones · "
+                             "plan: plan first · yolo: never ask")
+    parser.add_argument("--plan", action="store_true", help="start in plan mode")
+    parser.add_argument("-r", "--resume", nargs="?", const="", metavar="NAME_OR_ID",
+                        help="continue a saved conversation (no value: list them)")
+    parser.add_argument("-c", "--continue", dest="cont", action="store_true",
+                        help="continue the most recent conversation in this project")
     parser.add_argument("--version", action="version", version=f"docks {__version__}")
     args = parser.parse_args(argv)
 
@@ -281,8 +497,25 @@ def main(argv=None) -> int:
     if not root.is_dir():
         parser.error(f"not a directory: {root}")
 
-    agent = Agent(root=root, model=args.model, effort=args.effort, auto_approve=args.yolo,
-                  mcp=start_mcp(root, sys.stdin.isatty()))
+    from . import sessions
+    from .plugins import Extensions
+    ext = Extensions.load(root)
+    agent = Agent(root=root, model=args.model, effort=args.effort, auto_approve=args.yolo, ext=ext, save=True,
+                  mode="plan" if args.plan else args.mode,
+                  mcp=start_mcp(root, sys.stdin.isatty(), ext.plugin_mcp))
+    if args.resume == "" and not args.cont:
+        _print_sessions(agent)
+        print(ui.dim("resume one with: docks --resume <name or id>"))
+        return 0
+    if args.resume or args.cont:
+        recent = sessions.list_sessions(root, limit=1)
+        sid = (sessions.find(args.resume, root) or sessions.find(args.resume)) if args.resume else \
+            (recent[0]["id"] if recent else None)
+        if not sid:
+            ui.error("no saved conversation to continue" if args.cont else f"no saved conversation matches {args.resume!r}")
+            return 1
+        data = agent.resume(sid)
+        print(ui.dim(f"resumed: {data.get('name') or data.get('title') or sid}"))
     if args.prompt:
         text = " ".join(args.prompt)
         agent.run([*map(image_block, args.image), {"type": "text", "text": text}] if args.image else text)
