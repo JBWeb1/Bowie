@@ -20,7 +20,7 @@ HELP = """Commands:
   /bookmark          save Claude's last reply;  /bookmarks  list saved replies
   /copy              copy Claude's last reply to the clipboard
   /commands /agents /skills /hooks   show what's installed
-  /model [NAME]      opus, fable, sonnet, haiku or codex
+  /model [NAME]      opus, fable, sonnet, haiku, codex or chatgpt
   /compact [focus]   summarize the conversation to free up room
   /context           what's filling the context window
   /memory            instruction files in use;  # <note> adds a line to one
@@ -274,12 +274,12 @@ def slash(agent: Agent, text: str) -> bool:
     elif cmd == "/model":
         from . import models
         if not arg:
-            for c in models.CHOICES:
+            for c in models.choices():
                 mark = ui.green("●") if c["id"] == agent.model else " "
                 print(f"  {mark} {c['alias']:<8} {models.label(c['id']):<34} {ui.dim(c['note'])}")
-            if agent.model not in [c["id"] for c in models.CHOICES]:
+            if agent.model not in [c["id"] for c in models.choices()]:
                 print(f"  {ui.green('●')} {agent.model}")
-            print(ui.dim("switch with /model NAME (or a full model ID)"))
+            print(ui.dim("switch with /model NAME (or a full model ID); docks models update finds newer ones"))
             return True
         try:
             model = agent.set_model(arg)
@@ -558,6 +558,36 @@ def use_worktree(root: Path, name: str | None) -> Path:
     return path
 
 
+def models_main(argv) -> int:
+    from . import models
+    parser = argparse.ArgumentParser(prog="docks models", description="The models Docks uses for each short name.")
+    parser.add_argument("cmd", nargs="?", choices=["list", "update"], default="list",
+                        help="list (default), or update: switch each name to the newest model you have access to")
+    args = parser.parse_args(argv)
+    if args.cmd == "update":
+        print(ui.dim("asking Anthropic and OpenAI which models are available…"))
+        changes, notes = models.update()
+        checked = not any(n.startswith("no provider could be checked") for n in notes)
+        if changes:
+            print(ui.green(models.describe_changes(changes)))
+        elif checked:
+            print(ui.dim("already on the newest models"))
+        for note in notes:
+            print(ui.dim(f"  ({note})"))
+    for c in models.choices():
+        pinned = os.environ.get(models._env_name(c["alias"]))
+        print(f"  {c['alias']:<8} {c['label']:<38} {ui.dim(('pinned by ' + models._env_name(c['alias'])) if pinned else c['note'])}")
+    return 0
+
+
+def start_model_updates(agent, notify) -> None:
+    """Check for newer models once a day in the background; tell the person if a short name moved."""
+    from . import models
+    models.update_in_background(agent.ext.settings, lambda changes: notify(
+        "newer models found: " + models.describe_changes(changes) + " (used from your next session or /model)"),
+        agent.claude_client if models.is_direct_anthropic(agent.claude_client) else None)
+
+
 def worktree_main(argv) -> int:
     from .worktrees import WorktreeError, create, list_worktrees, merge, remove
     parser = argparse.ArgumentParser(prog="docks worktree", description="Parallel tasks in separate git worktrees.")
@@ -598,8 +628,8 @@ def worktree_main(argv) -> int:
 def web_main(argv) -> int:
     parser = argparse.ArgumentParser(prog="docks web", description="Use Docks from your browser.")
     parser.add_argument("-C", "--dir", default=".", help="project directory to work in")
-    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", DEFAULT_MODEL),
-                        help="opus (default), fable, sonnet, haiku, codex, or a model ID")
+    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", "opus"),
+                        help="opus (default), fable, sonnet, haiku, codex, chatgpt, or a model ID")
     parser.add_argument("-e", "--effort", default="high", choices=["low", "medium", "high", "xhigh", "max"])
     parser.add_argument("-y", "--yolo", action="store_true", help="run tools without asking for approval")
     parser.add_argument("--host", default="127.0.0.1", help="interface to listen on (default: this machine only)")
@@ -617,9 +647,10 @@ def web_main(argv) -> int:
     ext = Extensions.load(root)
     mgr = MCPManager(root, ext.plugin_mcp)
     mgr.start()  # project servers wait for approval in the browser
-    serve(Agent(root=root, model=args.model, effort=args.effort, auto_approve=args.yolo, mcp=mgr, ext=ext, save=True,
-                mode=mode_from_settings(ext)),
-          host=args.host, port=args.port, open_browser=not args.no_open)
+    agent = Agent(root=root, model=args.model, effort=args.effort, auto_approve=args.yolo, mcp=mgr, ext=ext, save=True,
+                  mode=mode_from_settings(ext))
+    start_model_updates(agent, lambda text: print(ui.dim(text)))
+    serve(agent, host=args.host, port=args.port, open_browser=not args.no_open)
     return 0
 
 
@@ -673,8 +704,8 @@ def github_task_main(argv) -> int:
     if argv[0] != "pr":
         parser.add_argument("number", type=int, help="issue number" if argv[0] == "fix" else "pull request number")
     parser.add_argument("-C", "--dir", default=".")
-    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", DEFAULT_MODEL),
-                        help="opus (default), fable, sonnet, haiku, codex, or a model ID")
+    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", "opus"),
+                        help="opus (default), fable, sonnet, haiku, codex, chatgpt, or a model ID")
     parser.add_argument("-e", "--effort", default="high", choices=["low", "medium", "high", "xhigh", "max"])
     parser.add_argument("-y", "--yolo", action="store_true", help="run tools without asking for approval")
     args = parser.parse_args(argv[1:])
@@ -700,6 +731,8 @@ def main(argv=None) -> int:
         return plugin_main(argv[1:])
     if argv[:1] == ["sessions"]:
         return sessions_main(argv[1:])
+    if argv[:1] == ["models"]:
+        return models_main(argv[1:])
     if argv[:1] == ["doctor"]:
         from . import doctor
         from .plugins import Extensions
@@ -724,8 +757,8 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="docks", description="An AI coding agent that builds anything.")
     parser.add_argument("prompt", nargs="*", help="run this task once and exit (omit for interactive mode)")
     parser.add_argument("-C", "--dir", default=".", help="project directory to work in")
-    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", DEFAULT_MODEL),
-                        help="opus (default), fable, sonnet, haiku, codex, or a model ID")
+    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", "opus"),
+                        help="opus (default), fable, sonnet, haiku, codex, chatgpt, or a model ID")
     parser.add_argument("-e", "--effort", default="high", choices=["low", "medium", "high", "xhigh", "max"])
     parser.add_argument("-y", "--yolo", action="store_true", help="run tools without asking for approval")
     parser.add_argument("-i", "--image", action="append", default=[],
@@ -768,6 +801,8 @@ def main(argv=None) -> int:
     agent = Agent(root=root, model=args.model, effort=args.effort, auto_approve=args.yolo, ext=ext, save=True,
                   mode="plan" if args.plan else args.mode or mode_from_settings(ext),
                   mcp=start_mcp(root, sys.stdin.isatty() and not args.print, ext.plugin_mcp))
+    if not args.print:
+        start_model_updates(agent, lambda text: print(ui.dim(f"\n· {text}")))
     if args.sandbox and agent.sandbox is None:
         from .sandbox import SandboxUnavailable
         try:

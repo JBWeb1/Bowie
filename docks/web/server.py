@@ -150,7 +150,7 @@ class Session:
                 "plan": a.plan, "turns": [bool(t["checkpoint"]) for t in a.turns],
                 "mcp": a.mcp.summary() if a.mcp else [], "extensions": a.ext.summary(),
                 "session": {"id": a.session_id, "name": a.session_name}, "bookmarks": a.bookmarks,
-                "models": [{"id": c["id"], "label": models.label(c["id"]), "note": c["note"]} for c in models.CHOICES],
+                "models": [{"id": c["id"], "label": c["label"], "note": c["note"]} for c in models.choices()],
                 "output_style": a.output_style,
                 "output_styles": [{"name": "default", "description": "Docks as usual"}] +
                                  [{"name": k, "description": v.description} for k, v in a.ext.output_styles.items()],

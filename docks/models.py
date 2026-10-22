@@ -1,27 +1,42 @@
-"""The models Docks can work with, and how to reach each one.
+"""The models Docks can work with, how to reach each one, and keeping them up to date.
 
-Claude models go straight to the Anthropic API. Codex (OpenAI's coding model) and other non-Claude models go
-through Docks Router, which translates the requests: Docks uses the router at DOCKS_ROUTER_URL if you run one,
-or starts one inside its own process.
+Short names pick a model family; Docks keeps each one pointing at the newest model in it:
 
-    docks -m fable       # Claude Fable 5.1: Anthropic's most capable model (costs about 2.5x Opus)
-    docks -m codex       # OpenAI's Codex, needs OPENAI_API_KEY; the model is DOCKS_CODEX_MODEL (default gpt-5.3-codex)
-    /model sonnet        # switch inside a session
+    opus     Claude Opus (the default)          fable    Claude Fable: Anthropic's most capable
+    sonnet   Claude Sonnet: quicker, cheaper    haiku    Claude Haiku: fastest, cheapest
+    codex    OpenAI's Codex coding model        chatgpt  OpenAI's flagship GPT model
+
+Claude models go straight to the Anthropic API. OpenAI's go through Docks Router, which translates the requests:
+Docks uses the router at DOCKS_ROUTER_URL if you run one, or starts one inside its own process (needs
+OPENAI_API_KEY).
+
+Updates: once a day (in the background) or with `docks models update`, Docks asks Anthropic and OpenAI which
+models your keys can use and moves each short name to the newest one in its family. The choices are saved in
+~/.docks/models.json. Pin one with an environment variable (DOCKS_FABLE_MODEL, DOCKS_CODEX_MODEL, ...), or turn
+updates off with {"autoUpdateModels": false} in settings.
 """
 
+import json
 import os
+import re
 import threading
+import time
+import urllib.request
+from pathlib import Path
 
-CHOICES = [
-    {"id": "claude-opus-5-5", "alias": "opus", "label": "Claude Opus 5.5", "note": "the default: strong and fast"},
-    {"id": "claude-fable-5-1", "alias": "fable", "label": "Claude Fable 5.1",
-     "note": "Anthropic's most capable model, for the hardest work; slower, about 2.5x the price of Opus"},
-    {"id": "claude-sonnet-5-5", "alias": "sonnet", "label": "Claude Sonnet 5.5", "note": "quicker and cheaper"},
-    {"id": "claude-haiku-5-5", "alias": "haiku", "label": "Claude Haiku 5.5", "note": "fastest and cheapest, for simple tasks"},
-    {"id": "codex", "alias": "codex", "label": "Codex (OpenAI)",
-     "note": "OpenAI's coding model through Docks Router; needs OPENAI_API_KEY"},
-]
-ALIASES = {c["alias"]: c["id"] for c in CHOICES} | {"claude-fable-5": "claude-fable-5", "gpt-codex": "codex"}
+DEFAULTS = {"opus": "claude-opus-5-5", "fable": "claude-fable-5-1", "sonnet": "claude-sonnet-5-5",
+            "haiku": "claude-haiku-5-5", "codex": "gpt-5.3-codex", "chatgpt": "gpt-5.5"}
+OPENAI_FAMILIES = ("codex", "chatgpt")  # reached through the router, by these route names
+INFO = {
+    "opus": ("Claude Opus", "the default: strong and fast"),
+    "fable": ("Claude Fable", "Anthropic's most capable model, for the hardest work; slower, about 2.5x the price of Opus"),
+    "sonnet": ("Claude Sonnet", "quicker and cheaper"),
+    "haiku": ("Claude Haiku", "fastest and cheapest, for simple tasks"),
+    "codex": ("Codex (OpenAI)", "OpenAI's coding model through Docks Router; needs OPENAI_API_KEY"),
+    "chatgpt": ("ChatGPT model (OpenAI)", "OpenAI's flagship GPT model through Docks Router; needs OPENAI_API_KEY"),
+}
+EXTRA_ALIASES = {"gpt": "chatgpt", "gpt-codex": "codex", "openai": "chatgpt"}
+UPDATE_EVERY = 24 * 3600
 
 # models that take the newest web search / fetch tools; others get the basic versions
 NEW_WEB_TOOL_MODELS = ("claude-opus-5-5", "claude-opus-5", "claude-opus-4-8", "claude-opus-4-7", "claude-opus-4-6",
@@ -32,14 +47,58 @@ class ModelError(Exception):
     pass
 
 
+# ---------------------------------------------------------------- saved choices
+
+def saved_path() -> Path:
+    return Path(os.environ.get("DOCKS_HOME", Path.home() / ".docks")) / "models.json"
+
+
+def _saved() -> dict:
+    try:
+        return json.loads(saved_path().read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _env_name(family: str) -> str:
+    return f"DOCKS_{family.upper()}_MODEL"
+
+
+def current(family: str) -> str:
+    """The model a short name points at: a pinned environment variable, else the newest found, else the default."""
+    return os.environ.get(_env_name(family)) or _saved().get(family) or DEFAULTS[family]
+
+
 def codex_model() -> str:
-    return os.environ.get("DOCKS_CODEX_MODEL", "gpt-5.3-codex")
+    return current("codex")
+
+
+def choices() -> list[dict]:
+    out = []
+    for family in DEFAULTS:
+        name, note = INFO[family]
+        model = current(family)
+        out.append({"id": family if family in OPENAI_FAMILIES else model, "alias": family,
+                    "label": f"{name} ({model})" if family in OPENAI_FAMILIES else _pretty(model), "note": note})
+    return out
+
+
+def _pretty(model: str) -> str:
+    m = re.fullmatch(r"claude-([a-z]+)-(\d+)(?:-(\d+))?", model)
+    if not m:
+        return model
+    return f"Claude {m.group(1).title()} {m.group(2)}" + (f".{m.group(3)}" if m.group(3) else "")
 
 
 def resolve(name: str) -> str:
-    """'fable' -> 'claude-fable-5-1'; full model IDs pass through."""
-    name = (name or "").strip()
-    return ALIASES.get(name.lower(), name)
+    """'fable' -> the current Fable model ID; 'codex' / 'chatgpt' stay route names; full IDs pass through."""
+    key = (name or "").strip().lower()
+    key = EXTRA_ALIASES.get(key, key)
+    if key in OPENAI_FAMILIES:
+        return key
+    if key in DEFAULTS:
+        return current(key)
+    return (name or "").strip()
 
 
 def uses_router(model: str) -> bool:
@@ -54,10 +113,10 @@ def is_direct_anthropic(client) -> bool:
 
 
 def label(model: str) -> str:
-    choice = next((c for c in CHOICES if c["id"] == model), None)
-    if choice is None:
-        return model
-    return f"{choice['label']} ({codex_model()})" if model == "codex" else choice["label"]
+    for c in choices():
+        if c["id"] == model:
+            return c["label"]
+    return _pretty(model)
 
 
 def web_tools(model: str) -> list[dict]:
@@ -66,6 +125,110 @@ def web_tools(model: str) -> list[dict]:
     if model.startswith("claude-"):
         return [{"type": "web_search_20250305", "name": "web_search"}, {"type": "web_fetch_20250910", "name": "web_fetch"}]
     return []  # other providers have no server-side web tools
+
+
+# ---------------------------------------------------------------- finding the newest models
+
+def _family_of_claude(model_id: str) -> str | None:
+    m = re.match(r"claude-(opus|fable|sonnet|haiku)-\d", model_id)
+    return m.group(1) if m else None
+
+
+def _family_of_openai(model_id: str) -> str | None:
+    if "codex" in model_id and not re.search(r"mini|nano|preview", model_id):
+        return "codex"
+    if re.fullmatch(r"gpt-\d+(\.\d+)?", model_id):
+        return "chatgpt"
+    return None
+
+
+def _created(value) -> float:
+    if hasattr(value, "timestamp"):
+        return value.timestamp()
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def newest_models(anthropic_client=None) -> tuple[dict, list[str]]:
+    """{family: newest model ID} from the providers you have keys for, plus notes about any that couldn't be checked."""
+    found, notes = {}, []
+    best = {}
+    try:
+        import anthropic
+        client = anthropic_client or anthropic.Anthropic()
+        for info in client.models.list(limit=1000):
+            family = _family_of_claude(info.id)
+            if family and _created(info.created_at) >= best.get(family, (0, ""))[0]:
+                best[family] = (_created(info.created_at), info.id)
+    except TypeError:  # the SDK found no credentials
+        notes.append("Claude not checked (no ANTHROPIC_API_KEY)")
+    except Exception as e:  # offline, a router in front
+        notes.append(f"couldn't list Claude models ({type(e).__name__})")
+    key = os.environ.get("OPENAI_API_KEY")
+    if key:
+        base = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+        try:
+            req = urllib.request.Request(f"{base}/models", headers={"Authorization": f"Bearer {key}"})
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                data = json.loads(resp.read()).get("data", [])
+            for info in data:
+                family = _family_of_openai(info.get("id", ""))
+                if family and _created(info.get("created")) >= best.get(family, (0, ""))[0]:
+                    best[family] = (_created(info.get("created")), info["id"])
+        except Exception as e:
+            notes.append(f"couldn't list OpenAI models ({type(e).__name__})")
+    else:
+        notes.append("OpenAI not checked (no OPENAI_API_KEY)")
+    for family, (_, model) in best.items():
+        found[family] = model
+    return found, notes
+
+
+def update(anthropic_client=None) -> tuple[dict, list[str]]:
+    """Point each short name at the newest model in its family. Returns ({family: (old, new)}, notes)."""
+    found, notes = newest_models(anthropic_client)
+    if not found:
+        notes.insert(0, "no provider could be checked, so nothing changed")
+    saved = _saved()
+    changes = {}
+    for family, model in found.items():
+        if os.environ.get(_env_name(family)):
+            continue  # pinned
+        old = current(family)
+        if model != old:
+            changes[family] = (old, model)
+        saved[family] = model
+    if found:  # a failed check is tried again next time
+        saved["checked"] = time.time()
+    path = saved_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(saved, indent=2) + "\n")
+    return changes, notes
+
+
+def update_in_background(settings: dict, on_change=None, anthropic_client=None) -> threading.Thread | None:
+    """Check for newer models once a day, without slowing anything down."""
+    if settings.get("autoUpdateModels", True) is False:
+        return None
+    if time.time() - float(_saved().get("checked", 0)) < UPDATE_EVERY:
+        return None
+
+    def work():
+        try:
+            changes, _ = update(anthropic_client)
+        except Exception:
+            return
+        if changes and on_change:
+            on_change(changes)
+    thread = threading.Thread(target=work, daemon=True, name="docks-model-update")
+    thread.start()
+    return thread
+
+
+def describe_changes(changes: dict) -> str:
+    return "; ".join(f"{family} is now {new} (was {old})" for family, (old, new) in changes.items())
 
 
 # ---------------------------------------------------------------- the router
@@ -90,20 +253,25 @@ def _start_router() -> str:
     return f"http://127.0.0.1:{server.server_address[1]}"
 
 
-def check_codex() -> str | None:
-    """Why Codex can't run here, or None if it can."""
+def check_openai(model: str = "codex") -> str | None:
+    """Why an OpenAI model can't run here, or None if it can."""
     if os.environ.get("DOCKS_ROUTER_URL"):
         return None  # your own router decides
     if not os.environ.get("OPENAI_API_KEY"):
-        return "Codex needs an OpenAI API key: set OPENAI_API_KEY (or run Docks Router yourself and set DOCKS_ROUTER_URL)"
+        name = INFO.get(model, (model, ""))[0]
+        return (f"{name} needs an OpenAI API key: set OPENAI_API_KEY "
+                "(or run Docks Router yourself and set DOCKS_ROUTER_URL)")
     return None
+
+
+check_codex = check_openai
 
 
 def router_client(model: str):
     """An Anthropic-format client that reaches `model` through Docks Router."""
     import anthropic
-    if model == "codex":
-        problem = check_codex()
+    if model in OPENAI_FAMILIES or not model.startswith("claude-"):
+        problem = check_openai(model)
         if problem:
             raise ModelError(problem)
     url = os.environ.get("DOCKS_ROUTER_URL")

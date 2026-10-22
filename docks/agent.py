@@ -333,8 +333,8 @@ class Agent:
         model = models.resolve(name)
         if not model:
             raise ValueError("give a model name")
-        if model == "codex" and models.check_codex():
-            raise ValueError(models.check_codex())
+        if model in models.OPENAI_FAMILIES and models.check_openai(model):
+            raise ValueError(models.check_openai(model))
         self.model = model
         self._use_client_for_model()
         if hasattr(self, "tools"):

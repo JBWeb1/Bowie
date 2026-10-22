@@ -438,3 +438,25 @@ def test_codex_runs_through_the_in_process_router(tmp_path, monkeypatch):
     agent.run("hello")
     sent = oai.requests[0]["body"]
     assert sent["model"] == models.codex_model() and agent.last_text() == "All done."
+
+
+def test_models_update_to_the_newest_in_each_family(tmp_path, monkeypatch):
+    import datetime
+    from types import SimpleNamespace as NS
+    from docks import models
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("DOCKS_FABLE_MODEL", raising=False)
+    monkeypatch.setenv("DOCKS_SONNET_MODEL", "claude-sonnet-5-5")  # pinned: never moves
+    day = lambda d: datetime.datetime(2026, 1, d, tzinfo=datetime.timezone.utc)  # noqa: E731
+    listing = [NS(id="claude-fable-5-1", created_at=day(1)), NS(id="claude-fable-6", created_at=day(9)),
+               NS(id="claude-opus-5-5", created_at=day(2)), NS(id="claude-sonnet-6", created_at=day(9)),
+               NS(id="claude-mythos-6", created_at=day(20))]
+    client = NS(models=NS(list=lambda limit: listing))
+    changes, notes = models.update(client)
+    assert changes == {"fable": ("claude-fable-5-1", "claude-fable-6")}
+    assert models.resolve("fable") == "claude-fable-6" and models.resolve("sonnet") == "claude-sonnet-5-5"
+    assert any("OpenAI" in n for n in notes)
+    assert models.update_in_background({}, anthropic_client=client) is None  # checked today already
+    assert models._family_of_openai("gpt-5.3-codex") == "codex" and models._family_of_openai("gpt-5.5") == "chatgpt"
+    assert models._family_of_openai("gpt-5.5-mini") is None and models._family_of_openai("codex-mini-latest") is None
+    assert models.resolve("gpt") == "chatgpt" and models.label("chatgpt").startswith("ChatGPT model")
