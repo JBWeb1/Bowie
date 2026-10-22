@@ -25,6 +25,7 @@ import importlib.util
 
 from . import tools
 from .browser import SCHEMA as BROWSER_SCHEMA, Browser, BrowserError
+from .lsp import SCHEMA as LSP_SCHEMA, LSPError, LSPManager
 from .sandbox import Sandbox, SandboxUnavailable
 from .tools import ToolError, _check, is_mutating, run_tool, tool_definitions, validate
 
@@ -254,6 +255,7 @@ class Agent:
     on_background_done: Callable | None = None  # called when a background helper finishes while idle
     sandbox: Sandbox | None = None  # run shell commands in a sandbox (see sandbox.py)
     browser: Browser | None = None  # shared with helpers; started on first use
+    lsp: LSPManager | None = None   # language servers, shared with helpers; each starts on first use
 
     def __post_init__(self):
         self.client_error = None
@@ -281,6 +283,8 @@ class Agent:
         self.procs.sandbox = self.sandbox
         if self.browser is None:
             self.browser = Browser(self.root)
+        if self.lsp is None:
+            self.lsp = LSPManager(self.root, self.ext.lsp_servers)
         self.checkpoints = Checkpoints(self.root)
         self.turns = []  # one entry per user turn: where it starts in messages, and the files before it
         self.plan = []
@@ -308,6 +312,8 @@ class Agent:
         process_defs = [define(n, s) for n, s in PROCESS_TOOLS.items()]
         if HAS_PLAYWRIGHT:
             process_defs.append(define("browser", BROWSER_SCHEMA))
+        if self.lsp.available() and self.ext.settings.get("codeIntelligence", True) is not False:
+            process_defs.append(define("code_intel", LSP_SCHEMA))
         agent_defs = [define(n, s) for n, s in AGENT_TOOLS.items()
                       if not (self.helper and n in ("delegate", "exit_plan_mode"))
                       and not (n == "load_skill" and not self.ext.skills)]
@@ -374,6 +380,14 @@ class Agent:
                 raise ToolError(str(e))
             except Exception as e:  # Playwright timeouts and navigation errors: report them, keep going
                 raise ToolError(f"{type(e).__name__}: " + "\n".join(str(e).splitlines()[:6]))
+        if name == "code_intel":
+            if not isinstance(args, dict):
+                raise ToolError("tool input must be a JSON object")
+            _check(args, {"type": "object", **LSP_SCHEMA}, "input")
+            try:
+                return self.lsp.run(args), False
+            except LSPError as e:
+                raise ToolError(str(e))
         if name == "bash" and self.sandbox is not None:
             validate(name, args)
             return tools.bash(self.root, sandbox=self.sandbox, **args), False
@@ -385,6 +399,8 @@ class Agent:
         self.procs.sandbox = self.sandbox
         if self.browser is None:
             self.browser = Browser(self.root)
+        if self.lsp is None:
+            self.lsp = LSPManager(self.root, self.ext.lsp_servers)
         return self.sandbox.describe() if self.sandbox else "sandbox off: commands run with your normal access"
 
     def _agent_tool(self, name: str, args: dict) -> tuple[str, bool]:
@@ -442,7 +458,7 @@ class Agent:
                        effort=self.effort, auto_approve=self.auto_approve, mode=self.mode if self.mode != "plan" else "ask",
                        web=self.web, exclude_tools=self.exclude_tools, client=self.client, mcp=self.mcp,
                        procs=self.procs, helper=True, always_allowed=self.always_allowed, ext=self.ext, sandbox=self.sandbox,
-                       browser=self.browser,
+                       browser=self.browser, lsp=self.lsp,
                        agent_type=agent_type, display=HelperDisplay(self.display, description),
                        confirm=self._locked_confirm)
         helper.cancelled = self.cancelled  # stopping the lead agent stops its helpers
@@ -849,6 +865,11 @@ class Agent:
         except Exception as e:  # tool bugs shouldn't kill the session
             self.display.tool_output(repr(e), is_error=True, id=block.id)
             return _error_result(block.id, f"{type(e).__name__}: {e}")
+        if block.name in ("write_file", "edit_file") and not failed and self.lsp.available() \
+                and self.ext.settings.get("codeIntelligence", True) is not False:
+            errors = self.lsp.errors_after_edit(args.get("path", ""))
+            if errors:
+                output = f"{output}\n\n{errors}"
         # output is text, or content blocks (text and screenshots) from the browser
         shown = output if isinstance(output, str) else "\n".join(b["text"] for b in output if b.get("type") == "text")
         if self.ext.hooks and isinstance(args, dict):

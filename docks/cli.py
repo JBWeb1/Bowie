@@ -393,6 +393,60 @@ def sessions_main(argv) -> int:
     return 0
 
 
+WORKTREE_HELP = "work in a git worktree of its own (a separate copy on branch docks/NAME); no NAME picks one"
+
+
+def use_worktree(root: Path, name: str | None) -> Path:
+    """The folder to work in: root itself, or the named worktree (created if needed)."""
+    if name is None:
+        return root
+    from .worktrees import WorktreeError, create
+    try:
+        path = create(root, name)
+    except WorktreeError as e:
+        ui.error(str(e))
+        raise SystemExit(1)
+    print(ui.dim(f"worktree: {path}  (branch docks/{path.name}; merge it later with: docks worktree merge {path.name})"))
+    return path
+
+
+def worktree_main(argv) -> int:
+    from .worktrees import WorktreeError, create, list_worktrees, merge, remove
+    parser = argparse.ArgumentParser(prog="docks worktree", description="Parallel tasks in separate git worktrees.")
+    parser.add_argument("-C", "--dir", default=".")
+    sub = parser.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("list", help="worktrees and what's in them")
+    for name, text in (("new", "create one"), ("merge", "merge its branch into your current branch"),
+                       ("remove", "delete it"), ("path", "print its folder")):
+        p = sub.add_parser(name, help=text)
+        p.add_argument("name", nargs="?" if name == "new" else None, default="")
+        if name == "remove":
+            p.add_argument("--force", action="store_true", help="also throw away uncommitted or unmerged work")
+    args = parser.parse_args(argv)
+    root = Path(args.dir).expanduser().resolve()
+    try:
+        if args.cmd == "list":
+            trees = list_worktrees(root)
+            if not trees:
+                print(ui.dim("no worktrees yet; start one with: docks -w NAME"))
+            for t in trees:
+                print(f"{ui.bold(t['name']):<28} {ui.dim(t['branch'])}  "
+                      f"{t['commits_ahead']} commit(s) ahead · {t['changed_files']} uncommitted file(s)")
+        elif args.cmd == "new":
+            print(create(root, args.name))
+        elif args.cmd == "path":
+            from .worktrees import path_of, repo_root
+            print(path_of(repo_root(root), args.name))
+        elif args.cmd == "merge":
+            print(ui.green(merge(root, args.name)))
+        elif args.cmd == "remove":
+            print(remove(root, args.name, args.force))
+    except WorktreeError as e:
+        ui.error(str(e))
+        return 1
+    return 0
+
+
 def web_main(argv) -> int:
     parser = argparse.ArgumentParser(prog="docks web", description="Use Docks from your browser.")
     parser.add_argument("-C", "--dir", default=".", help="project directory to work in")
@@ -402,10 +456,12 @@ def web_main(argv) -> int:
     parser.add_argument("--host", default="127.0.0.1", help="interface to listen on (default: this machine only)")
     parser.add_argument("--port", type=int, default=8788, help="app port; the preview uses the next one")
     parser.add_argument("--no-open", action="store_true", help="don't open a browser")
+    parser.add_argument("-w", "--worktree", nargs="?", const="", metavar="NAME", help=WORKTREE_HELP)
     args = parser.parse_args(argv)
     root = Path(args.dir).expanduser().resolve()
     if not root.is_dir():
         parser.error(f"not a directory: {root}")
+    root = use_worktree(root, args.worktree)
     from .web.server import serve
     from .mcp import MCPManager
     from .plugins import Extensions
@@ -494,6 +550,8 @@ def main(argv=None) -> int:
         return plugin_main(argv[1:])
     if argv[:1] == ["sessions"]:
         return sessions_main(argv[1:])
+    if argv[:1] in (["worktree"], ["worktrees"]):
+        return worktree_main(argv[1:])
     if argv[:1] == ["action"]:
         from .action import main as action_main
         return action_main(argv[1:])
@@ -515,6 +573,7 @@ def main(argv=None) -> int:
                         help="ask: confirm each change (default) · auto: confirm only risky ones · "
                              "plan: plan first · yolo: never ask")
     parser.add_argument("--plan", action="store_true", help="start in plan mode")
+    parser.add_argument("-w", "--worktree", nargs="?", const="", metavar="NAME", help=WORKTREE_HELP)
     parser.add_argument("--sandbox", action="store_true",
                         help="run shell commands in a sandbox: writes only inside the project, secrets hidden")
     parser.add_argument("-r", "--resume", nargs="?", const="", metavar="NAME_OR_ID",
@@ -527,6 +586,7 @@ def main(argv=None) -> int:
     root = Path(args.dir).expanduser().resolve()
     if not root.is_dir():
         parser.error(f"not a directory: {root}")
+    root = use_worktree(root, args.worktree)
 
     from . import sessions
     from .plugins import Extensions

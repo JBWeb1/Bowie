@@ -143,6 +143,17 @@ class Hook:
     spec_file: str = ""
 
 
+# settings a cloned project can't use until the user approves them: they run programs or skip questions
+RISKY_KEYS = ("statusLine", "lspServers")
+
+
+def _risky_settings(data: dict) -> dict:
+    perms = data.get("permissions") if isinstance(data.get("permissions"), dict) else {}
+    found = {k: data[k] for k in RISKY_KEYS if data.get(k)}
+    found.update({k: perms[k] for k in ("allow", "defaultMode") if perms.get(k)})
+    return found
+
+
 @dataclass
 class OutputStyle:
     name: str
@@ -173,6 +184,12 @@ class Extensions:
     permissions: Permissions | None = None              # allow / ask / deny rules from every settings file
     settings: dict = field(default_factory=dict)        # other settings (outputStyle, statusLine, sandbox, ...)
     output_styles: dict = field(default_factory=dict)
+    plugin_lsp: dict = field(default_factory=dict)      # language servers that plugins ship (.lsp.json)
+
+    @property
+    def lsp_servers(self) -> dict:
+        configured = self.settings.get("lspServers") if isinstance(self.settings.get("lspServers"), dict) else {}
+        return {**self.plugin_lsp, **configured}
 
     @classmethod
     def load(cls, root: Path) -> "Extensions":
@@ -237,6 +254,14 @@ class Extensions:
         hooks_file = path / "hooks" / "hooks.json"
         if hooks_file.is_file():
             self._add_hooks(hooks_file, f"plugin:{name}", path)
+        lsp_file = path / ".lsp.json"
+        if lsp_file.is_file():
+            try:
+                servers = json.loads(lsp_file.read_text())
+            except json.JSONDecodeError:
+                servers = {}
+            for server, spec in (servers.items() if isinstance(servers, dict) else []):
+                self.plugin_lsp[server] = json.loads(json.dumps(spec).replace("${CLAUDE_PLUGIN_ROOT}", str(path)))
         mcp_file = path / ".mcp.json"
         if mcp_file.is_file():
             try:
@@ -261,11 +286,10 @@ class Extensions:
         perms = data.get("permissions") if isinstance(data.get("permissions"), dict) else {}
         # Rules that only take power away are always honored. Ones that let a cloned repo run things
         # on its own (allow rules, a status line command, a hands-off mode) wait for the user's OK.
-        risky = {k: v for k, v in (("allow", perms.get("allow")), ("statusLine", data.get("statusLine")),
-                                   ("defaultMode", perms.get("defaultMode"))) if v}
+        risky = _risky_settings(data)
         if source == "project" and risky and not trust_store.is_trusted(self.root, f"settings:{path.name}", risky):
             self.pending_hooks.append({"file": str(path), "name": f"settings:{path.name}", "spec": risky})
-            data = {k: v for k, v in data.items() if k != "statusLine"}
+            data = {k: v for k, v in data.items() if k not in RISKY_KEYS}
             perms = {k: v for k, v in perms.items() if k not in ("allow", "defaultMode")}
         self._apply_settings(data, perms, base)
 
@@ -296,8 +320,7 @@ class Extensions:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(data, indent=2) + "\n")
         exclude_from_git(self.root, ".claude/settings.local.json")
-        risky = {k: v for k, v in (("allow", perms.get("allow")), ("statusLine", data.get("statusLine")),
-                                   ("defaultMode", perms.get("defaultMode"))) if v}
+        risky = _risky_settings(data)
         if risky:  # the user wrote these rules themselves
             trust_store.trust(self.root, f"settings:{path.name}", risky)
         self.permissions.add(kind, [rule], self.root)
@@ -330,7 +353,7 @@ class Extensions:
             self.pending_hooks.remove(pending)
             if pending["name"].startswith("settings:"):
                 spec = pending["spec"]
-                data = {"statusLine": spec["statusLine"]} if spec.get("statusLine") else {}
+                data = {k: spec[k] for k in RISKY_KEYS if spec.get(k)}
                 self._apply_settings(data, {k: spec[k] for k in ("allow", "defaultMode") if k in spec},
                                      Path(file).parent.parent)
             else:

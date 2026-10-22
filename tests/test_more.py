@@ -194,3 +194,67 @@ def test_browser_asks_before_clicking_on_other_sites(tmp_path):
     local, _ = agent._approved("browser", {"action": "click", "target": "Buy now"}, "t2", None)
     looking, _ = agent._approved("browser", {"action": "open", "url": "https://example.com"}, "t3", None)
     assert not ok and local and looking
+
+
+# ---------------------------------------------------------------- code intelligence
+
+import shutil  # noqa: E402
+
+
+@pytest.mark.skipif(not shutil.which("pyright-langserver"), reason="pyright isn't installed")
+def test_code_intel_and_errors_after_edits(tmp_path):
+    write(tmp_path / "shapes.py", "def area(w: int, h: int) -> int:\n    return w * h\n")
+    write(tmp_path / "main.py", "from shapes import area\n\nprint(area(2, 3))\n")
+    agent, _, results = run_calls(tmp_path, [
+        ("code_intel", {"action": "references", "path": "shapes.py", "symbol": "area"}),
+        ("code_intel", {"action": "definition", "path": "main.py", "symbol": "area", "line": 3}),
+        ("edit_file", {"path": "main.py", "old_string": "area(2, 3)", "new_string": "area('2', 3)"}),
+        ("code_intel", {"action": "symbols", "path": "nope.py"}),
+    ], mode="yolo")
+    assert "reference(s)" in results["t0"]["content"] and "main.py:3" in results["t0"]["content"]
+    assert results["t1"]["content"].startswith("shapes.py:1:")
+    assert "error(s) in this file" in results["t2"]["content"] and "line 3" in results["t2"]["content"]
+    assert results["t3"]["is_error"]
+    assert any(t["name"] == "code_intel" for t in agent.tools)
+    agent.lsp.shutdown()
+
+
+def test_project_language_servers_need_approval(tmp_path):
+    write(tmp_path / ".claude" / "settings.json", json.dumps({"lspServers": {"x": {"command": "sh", "extensionToLanguage": {".x": "x"}}}}))
+    ext = Extensions.load(tmp_path)
+    assert ext.lsp_servers == {}
+    ext.approve_hooks(ext.pending_hooks[0]["file"])
+    assert "x" in ext.lsp_servers
+
+
+# ---------------------------------------------------------------- worktrees
+
+import subprocess  # noqa: E402
+
+from docks import worktrees  # noqa: E402
+
+
+def git(cwd, *args):
+    return subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t", *args], cwd=cwd,
+                          capture_output=True, text=True, check=True).stdout
+
+
+def test_worktrees_create_list_merge_remove(tmp_path, monkeypatch):
+    monkeypatch.setenv("GIT_AUTHOR_NAME", "t"); monkeypatch.setenv("GIT_AUTHOR_EMAIL", "t@t")
+    monkeypatch.setenv("GIT_COMMITTER_NAME", "t"); monkeypatch.setenv("GIT_COMMITTER_EMAIL", "t@t")
+    git(tmp_path, "init", "-q")
+    write(tmp_path / "a.txt", "1")
+    git(tmp_path, "add", "."); git(tmp_path, "commit", "-qm", "init")
+    tree = worktrees.create(tmp_path, "feature x")
+    assert tree.name == "feature-x" and (tree / "a.txt").exists()
+    assert worktrees.create(tree, "feature x") == tree  # from inside, it finds the same one
+    write(tree / "b.txt", "2")
+    [info] = worktrees.list_worktrees(tmp_path)
+    assert info["changed_files"] == 1 and info["branch"] == "docks/feature-x"
+    assert git(tmp_path, "status", "--porcelain") == ""  # the worktree folder stays out of the main checkout
+    assert "merged docks/feature-x" in worktrees.merge(tmp_path, "feature-x")
+    assert (tmp_path / "b.txt").read_text() == "2"
+    assert worktrees.remove(tmp_path, "feature-x") == "removed feature-x"
+    assert worktrees.list_worktrees(tmp_path) == []
+    with pytest.raises(worktrees.WorktreeError):
+        worktrees.merge(tmp_path, "nope")
