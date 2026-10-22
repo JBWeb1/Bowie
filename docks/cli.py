@@ -716,6 +716,32 @@ def context_main(argv) -> int:
     return 0
 
 
+def image_main(argv) -> int:
+    from . import images
+    parser = argparse.ArgumentParser(prog="docks image", description="Make an image with OpenAI's image model.")
+    parser.add_argument("prompt", nargs="+")
+    parser.add_argument("-C", "--dir", default=".")
+    parser.add_argument("-o", "--out", default="", help="where to save it (default assets/generated/…)")
+    parser.add_argument("--size", default="auto", help="square, wide, tall, auto, or WxH")
+    parser.add_argument("--quality", choices=images.QUALITIES, default="auto")
+    parser.add_argument("--transparent", action="store_true", help="transparent background (logos, icons)")
+    parser.add_argument("-n", type=int, default=1, help="how many (1-4)")
+    parser.add_argument("--edit", action="append", default=[], help="an image to change or use as a reference")
+    parser.add_argument("--detailed", action="store_true", help="the slower model with more fine detail")
+    args = parser.parse_args(_hoist_dir(argv))
+    root = Path(args.dir).expanduser().resolve()
+    print(ui.dim(f"making {args.n} image{'s' if args.n > 1 else ''} with {images.model(args.detailed)}…"))
+    try:
+        made = images.generate(root, " ".join(args.prompt), args.out, args.size, args.quality,
+                               "transparent" if args.transparent else "auto", args.n, args.edit, args.detailed)
+    except images.ImageError as e:
+        ui.error(str(e))
+        return 1
+    for m in made:
+        print(ui.green(f"saved {m['path']}"))
+    return 0
+
+
 def models_main(argv) -> int:
     from . import models
     parser = argparse.ArgumentParser(prog="docks models", description="The models Docks uses for each short name.")
@@ -893,6 +919,8 @@ def main(argv=None) -> int:
         return github_main(argv[1:])
     if argv[:1] == ["context"]:
         return context_main(argv[1:])
+    if argv[:1] in (["image"], ["images"]):
+        return image_main(argv[1:])
     if argv[:1] == ["models"]:
         return models_main(argv[1:])
     if argv[:1] == ["doctor"]:

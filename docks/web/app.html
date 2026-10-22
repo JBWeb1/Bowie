@@ -424,6 +424,62 @@ svg { flex: none; }
 .chk { width: 16px; text-align: center; } .chk.ok { color: #16a34a; } .chk.bad { color: #dc2626; } .chk.wait { color: #ca8a04; }
 .card .muted { color: var(--muted); font-size: 12.5px; }
 .card .code { font-family: var(--mono, monospace); font-size: 16px; letter-spacing: .1em; }
+.img-studio { display: flex; flex-direction: column; gap: 16px; padding: 16px; height: 100%; overflow-y: auto; }
+.img-compose { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+.img-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.img-head h3 { margin: 0; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+.img-prompt { resize: vertical; min-height: 72px; font-size: 14.5px; line-height: 1.45; transition: border-color .15s, box-shadow .15s; }
+.img-prompt:focus { box-shadow: 0 0 0 3px var(--accent-soft); }
+.img-styles { display: flex; flex-wrap: wrap; gap: 6px; }
+.img-styles .chip { font-size: 12px; padding: 3px 10px; transition: background .15s, transform .1s; }
+.img-styles .chip:active { transform: scale(.96); }
+.img-options { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.img-options select { width: auto; padding-top: 5px; padding-bottom: 5px; font-size: 13px; }
+.tseg { display: inline-flex; background: var(--surface-2); border-radius: 9px; padding: 2px; gap: 2px; flex: none; }
+.tseg button { border: 0; background: none; color: var(--muted); font: inherit; font-size: 12.5px; padding: 4px 11px; border-radius: 7px; cursor: pointer; white-space: nowrap; transition: background .15s, color .15s, box-shadow .15s; }
+.tseg button:hover { color: var(--fg); }
+.tseg button.on { background: var(--surface); color: var(--fg); box-shadow: var(--shadow); font-weight: 500; }
+.img-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+.stepper button { border: 0; background: none; width: 28px; height: 28px; cursor: pointer; color: inherit; font-size: 15px; }
+.stepper button:hover { background: var(--accent-soft); }
+.stepper span { min-width: 18px; text-align: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+.img-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.img-actions .muted { color: var(--muted); font-size: 12.5px; }
+#img-go { min-width: 128px; justify-content: center; transition: transform .1s, opacity .2s; }
+#img-go:active { transform: scale(.97); }
+#img-go.working [data-icon] { animation: spin 1.2s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.img-edit { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px dashed var(--line); border-radius: 10px; }
+.img-edit img { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; }
+.img-edit .muted { color: var(--muted); font-size: 12.5px; }
+.img-edit .btn { margin-left: auto; padding: 3px 8px; font-size: 12px; }
+.img-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; align-content: start; }
+.img-card { position: relative; margin: 0; border-radius: 12px; overflow: hidden; background: var(--accent-soft); aspect-ratio: 1; border: 1px solid var(--line); }
+.img-card img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transform: scale(1.02); transition: opacity .35s ease, transform .35s ease; cursor: zoom-in; }
+.img-card.ready img { opacity: 1; transform: none; }
+.img-card figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 22px 10px 8px; font-size: 12px; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.65)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.img-tools { position: absolute; top: 6px; right: 6px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; opacity: 0; transform: translateY(-4px); transition: opacity .2s, transform .2s; max-width: calc(100% - 12px); }
+.img-tools button { border: 0; border-radius: 7px; padding: 3px 7px; font: inherit; font-size: 11.5px; background: rgba(255,255,255,.92); color: #1c1917; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.img-card:hover figcaption, .img-card:focus-within figcaption, .img-card:hover .img-tools, .img-card:focus-within .img-tools { opacity: 1; transform: none; }
+@media (hover: none) { .img-card figcaption { opacity: 1; } .img-tools { display: none; } }
+.shimmer { background: linear-gradient(110deg, var(--accent-soft) 30%, var(--surface) 50%, var(--accent-soft) 70%); background-size: 250% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+.img-wait { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--accent-ink); font-size: 13px; }
+.img-empty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 40px 16px; border: 1px dashed var(--line); border-radius: 14px; }
+.img-empty b { color: inherit; display: block; margin-bottom: 4px; }
+.lightbox { position: fixed; inset: 0; z-index: 60; background: rgba(10,10,12,.72); display: flex; align-items: center; justify-content: center; padding: 16px; opacity: 0; transition: opacity .18s ease; backdrop-filter: blur(4px); }
+.lightbox.open { opacity: 1; }
+.lb-inner { position: relative; background: var(--surface); border-radius: 16px; overflow: hidden; display: flex; max-width: min(1100px, 100%); max-height: 100%; transform: scale(.97); transition: transform .18s ease; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+.lightbox.open .lb-inner { transform: none; }
+.lb-inner img { max-width: min(720px, 70vw); max-height: calc(100dvh - 32px); object-fit: contain; background: repeating-conic-gradient(var(--accent-soft) 0 25%, var(--surface) 0 50%) 0 0/16px 16px; }
+.lb-side { width: 300px; padding: 18px 44px 18px 18px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+.lb-prompt { margin: 0; font-size: 14px; line-height: 1.45; }
+.lb-path { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.lb-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
+.lb-close { position: absolute; top: 8px; right: 8px; background: var(--surface); border-radius: 50%; }
+@media (max-width: 760px) { .lb-inner { flex-direction: column; } .lb-inner img { max-width: 100%; max-height: 60dvh; } .lb-side { width: auto; } .img-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { .shimmer, #img-go.working [data-icon] { animation: none; } .img-card img, .lightbox, .lb-inner { transition: none; } }
 </style>
 </head>
 <body>
@@ -499,6 +555,7 @@ svg { flex: none; }
       <button class="tab on" data-tab="preview"><span data-icon="eye"></span>Preview</button>
       <button class="tab" data-tab="code"><span data-icon="code"></span>Code</button>
       <button class="tab" data-tab="github"><span data-icon="github"></span>GitHub <span class="badge hidden" id="changes-badge"></span></button>
+      <button class="tab" data-tab="images"><span data-icon="image"></span>Images</button>
     </div>
 
     <div class="view" id="view-preview">
@@ -529,6 +586,26 @@ svg { flex: none; }
     <div class="view hidden" id="view-github">
       <div class="gh" id="gh"></div>
     </div>
+    <div class="view hidden" id="view-images">
+      <div class="img-studio">
+        <div class="img-compose">
+          <div class="img-head"><h3><span data-icon="image"></span> Create an image</h3>
+            <div class="tseg" id="img-model"><button class="on" data-v="fast" title="GPT Image 2.5 Flare: quick, great quality">Fast</button><button data-v="detailed" title="GPT Image 2.5 Sunburst: more fine detail, slower">Detailed</button></div>
+          </div>
+          <div class="img-edit hidden" id="img-edit"></div>
+          <textarea class="input img-prompt" id="img-prompt" rows="3" placeholder="A cozy coffee shop at dawn, warm light, watercolor style…"></textarea>
+          <div class="img-styles" id="img-styles"></div>
+          <div class="img-options">
+            <div class="tseg" id="img-size"><button class="on" data-v="square">Square</button><button data-v="wide">Wide</button><button data-v="tall">Tall</button><button data-v="auto">Auto</button></div>
+            <select class="input" id="img-quality" title="Quality"><option value="auto">Quality: auto</option><option value="low">Draft</option><option value="medium">Medium</option><option value="high">High</option></select>
+            <label class="img-check" title="For logos and icons"><input type="checkbox" id="img-transparent"> Transparent</label>
+            <div class="stepper" title="How many"><button id="img-less" aria-label="Fewer">−</button><span id="img-n">1</span><button id="img-more" aria-label="More">+</button></div>
+          </div>
+          <div class="img-actions"><span class="muted" id="img-hint">Saved in your project under assets/generated</span><button class="btn primary" id="img-go"><span data-icon="sparkle"></span>Generate</button></div>
+        </div>
+        <div class="img-grid" id="img-grid"></div>
+      </div>
+    </div>
   </aside>
 </div>
 
@@ -537,7 +614,9 @@ svg { flex: none; }
   <button class="btn ghost" data-m="preview"><span data-icon="eye"></span>Preview</button>
   <button class="btn ghost" data-m="code"><span data-icon="code"></span>Code</button>
   <button class="btn ghost" data-m="github"><span data-icon="github"></span>GitHub</button>
+  <button class="btn ghost" data-m="images"><span data-icon="image"></span>Images</button>
 </nav>
+<div class="lightbox hidden" id="lightbox"><div class="lb-inner"><img alt=""><div class="lb-side"><p class="lb-prompt"></p><code class="lb-path"></code><div class="lb-actions"></div></div><button class="btn ghost icon-only lb-close" aria-label="Close">✕</button></div></div>
 
 <script>
 // ---------------------------------------------------------------- icons
@@ -594,6 +673,7 @@ const ICONS = {
 };
 const icon = (name, size = 16) => `<svg class="icon" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 document.querySelectorAll('[data-icon]').forEach(e => { e.innerHTML = icon(e.dataset.icon, e.classList.contains('ic') ? 24 : e.classList.contains('logo-mark') ? 18 : 16); });
+function hydrateIcons(root) { root.querySelectorAll('[data-icon]').forEach(e => { if (!e.innerHTML) e.innerHTML = icon(e.dataset.icon, 16); }); }
 
 // ---------------------------------------------------------------- basics
 const $ = id => document.getElementById(id);
@@ -1405,8 +1485,8 @@ let currentTab = 'preview';
 function showTab(name) {
   currentTab = name;
   document.querySelectorAll('.tab[data-tab]').forEach(t => t.classList.toggle('on', t.dataset.tab === name));
-  for (const v of ['preview', 'code', 'github']) $('view-' + v).classList.toggle('hidden', v !== name);
-  if (name === 'preview') reloadPreview(); if (name === 'github') loadGit();
+  for (const v of ['preview', 'code', 'github', 'images']) $('view-' + v).classList.toggle('hidden', v !== name);
+  if (name === 'preview') reloadPreview(); if (name === 'github') loadGit(); if (name === 'images') loadImages();
 }
 document.querySelectorAll('.tab[data-tab]').forEach(t => t.onclick = () => showTab(t.dataset.tab));
 function mobile(which) {
@@ -1494,6 +1574,92 @@ $('preview-path').addEventListener('keydown', e => {
 $('preview-open').onclick = () => { if (state.preview) window.open(previewUrl(), '_blank', 'noopener'); };
 $('dev-desktop').onclick = () => { $('stage').classList.remove('phone'); $('dev-desktop').classList.add('on'); $('dev-phone').classList.remove('on'); };
 $('dev-phone').onclick = () => { $('stage').classList.add('phone'); $('dev-phone').classList.add('on'); $('dev-desktop').classList.remove('on'); };
+
+// ---------------------------------------------------------------- Images
+const IMG = { model: 'fast', size: 'square', n: 1, edit: [], images: [], loaded: false };
+const STYLES = [['Photo', 'photorealistic, natural light, shallow depth of field'], ['Illustration', 'clean digital illustration, soft shading'],
+  ['3D', '3D render, soft studio lighting, subtle shadows'], ['Icon', 'flat vector icon, simple shapes, centered, no text'],
+  ['Watercolor', 'watercolor painting, gentle textures'], ['Pixel art', 'pixel art, limited palette, crisp edges']];
+const imgUrl = path => { const p = state.preview || {}; return `${location.protocol}//${location.hostname}:${p.port}${p.prefix || '/'}${path.split('/').map(encodeURIComponent).join('/')}`; };
+function segment(id, key) {
+  $(id).querySelectorAll('button').forEach(b => b.onclick = () => { IMG[key] = b.dataset.v; $(id).querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); });
+}
+segment('img-model', 'model'); segment('img-size', 'size');
+$('img-styles').innerHTML = STYLES.map(([n]) => `<button class="chip" data-s="${esc(n)}">${esc(n)}</button>`).join('');
+$('img-styles').querySelectorAll('button').forEach(b => b.onclick = () => {
+  const style = STYLES.find(x => x[0] === b.dataset.s)[1], t = $('img-prompt');
+  t.value = t.value.trim() ? `${t.value.trim().replace(/[.,]$/, '')}, ${style}` : ''; if (!t.value) { t.placeholder = `Describe it… (${style})`; IMG.style = style; }
+  t.focus();
+});
+const setN = n => { IMG.n = Math.max(1, Math.min(4, n)); $('img-n').textContent = IMG.n; };
+$('img-less').onclick = () => setN(IMG.n - 1); $('img-more').onclick = () => setN(IMG.n + 1);
+function renderEditSource() {
+  const box = $('img-edit'); box.classList.toggle('hidden', !IMG.edit.length); box.innerHTML = '';
+  if (!IMG.edit.length) return;
+  box.appendChild(h('span', 'muted', 'Editing'));
+  for (const path of IMG.edit) { const im = h('img'); im.src = imgUrl(path); im.alt = path; box.appendChild(im); }
+  const x = h('button', 'btn ghost', 'Start fresh'); x.onclick = () => { IMG.edit = []; renderEditSource(); }; box.appendChild(x);
+  $('img-prompt').placeholder = 'What should change? e.g. make the sky purple, add a cat on the counter…';
+}
+async function loadImages() {
+  const r = await api('/api/images'); if (!r.ok) return;
+  const d = await r.json(); IMG.images = d.images; IMG.available = d.available;
+  $('img-go').disabled = !d.available;
+  $('img-hint').innerHTML = d.available ? 'Saved in your project under <code>assets/generated</code>' : 'Needs <code>OPENAI_API_KEY</code> in your environment';
+  renderGallery();
+}
+function renderGallery(pending = 0) {
+  const grid = $('img-grid'); grid.innerHTML = '';
+  for (let i = 0; i < pending; i++) grid.appendChild(h('div', 'img-card shimmer', `<div class="img-wait"><span data-icon="sparkle"></span>Creating…</div>`));
+  if (!pending && !IMG.images.length) {
+    grid.appendChild(h('div', 'img-empty', IMG.available === false
+      ? `<b>Connect OpenAI to make images</b><p>Add <code>OPENAI_API_KEY</code> to your environment, then restart Docks.</p>`
+      : `<b>Your images show up here</b><p>Describe one above, or ask Docks in the chat: “make a hero image for the landing page”.</p>`));
+  }
+  for (const im of IMG.images) {
+    const card = h('figure', 'img-card', `<img loading="lazy" alt=""><figcaption></figcaption><div class="img-tools"></div>`);
+    const img = card.querySelector('img'); img.src = imgUrl(im.path) + '?v=' + Math.round(im.created); img.alt = im.prompt;
+    img.onload = () => card.classList.add('ready'); img.onclick = () => openLightbox(im);
+    card.querySelector('figcaption').textContent = im.prompt;
+    const tools = card.querySelector('.img-tools');
+    for (const [label, fn] of imageActions(im)) { const b = h('button', null, esc(label)); b.onclick = e => { e.stopPropagation(); fn(); }; tools.appendChild(b); }
+    grid.appendChild(card);
+  }
+  hydrateIcons(grid);
+}
+function imageActions(im) {
+  return [
+    ['Use in chat', () => { const t = $('input'); t.value = `${t.value}${t.value && !t.value.endsWith(' ') ? ' ' : ''}@${im.path} `; autosize(); mobile('chat'); t.focus(); closeLightbox(); }],
+    ['Edit', () => { IMG.edit = [im.path]; renderEditSource(); closeLightbox(); $('img-prompt').focus(); }],
+    ['Download', () => { const a = h('a'); a.href = imgUrl(im.path); a.download = im.path.split('/').pop(); a.click(); }],
+    ['Delete', async () => { if (!confirm(`Delete ${im.path}?`)) return; const r = await api('/api/images/delete', { path: im.path, delete_file: true }); if (r.ok) { IMG.images = (await r.json()).images; renderGallery(); closeLightbox(); } }],
+  ];
+}
+function openLightbox(im) {
+  const lb = $('lightbox'); lb.querySelector('img').src = imgUrl(im.path) + '?v=' + Math.round(im.created);
+  lb.querySelector('.lb-prompt').textContent = im.prompt; lb.querySelector('.lb-path').textContent = im.path;
+  const acts = lb.querySelector('.lb-actions'); acts.innerHTML = '';
+  for (const [label, fn] of imageActions(im)) { const b = h('button', 'btn' + (label === 'Use in chat' ? ' primary' : ''), esc(label)); b.onclick = fn; acts.appendChild(b); }
+  lb.classList.remove('hidden'); requestAnimationFrame(() => lb.classList.add('open'));
+}
+function closeLightbox() { const lb = $('lightbox'); lb.classList.remove('open'); setTimeout(() => lb.classList.add('hidden'), 180); }
+$('lightbox').onclick = e => { if (e.target.id === 'lightbox' || e.target.closest('.lb-close')) closeLightbox(); };
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('lightbox').classList.contains('hidden')) closeLightbox(); });
+$('img-prompt').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) $('img-go').click(); });
+$('img-go').onclick = async () => {
+  let prompt = $('img-prompt').value.trim();
+  if (!prompt) { $('img-prompt').focus(); return toast('Describe the image first'); }
+  if (IMG.style && !prompt.includes(IMG.style)) prompt += ', ' + IMG.style;
+  const btn = $('img-go'); btn.disabled = true; btn.classList.add('working'); btn.lastChild.textContent = 'Creating…';
+  renderGallery(IMG.n);
+  const r = await api('/api/images/generate', { prompt, size: IMG.size, quality: $('img-quality').value, n: IMG.n,
+    background: $('img-transparent').checked ? 'transparent' : 'auto', detailed: IMG.model === 'detailed', edit: IMG.edit });
+  btn.disabled = false; btn.classList.remove('working'); btn.lastChild.textContent = 'Generate';
+  const d = await r.json();
+  if (!r.ok) { toast(d.error); renderGallery(); return; }
+  IMG.images = d.images; IMG.style = ''; renderGallery(); toast(`Saved ${d.made.map(m => m.path.split('/').pop()).join(', ')}`);
+  alertUser('Your image is ready');
+};
 
 // ---------------------------------------------------------------- GitHub account, repos, PRs, context repos
 async function accountCard(g) {

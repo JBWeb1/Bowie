@@ -33,7 +33,7 @@ RULE_NAMES = {
     "read_file": ("Read",), "glob": ("Read", "Glob"), "grep": ("Read", "Grep"),
     "write_file": ("Edit", "Write"), "edit_file": ("Edit",),
     "web_fetch": ("WebFetch",), "web_search": ("WebSearch",),
-    "browser": ("Browser",), "code_intel": ("LSP",), "delegate": ("Task",),
+    "browser": ("Browser",), "code_intel": ("LSP",), "delegate": ("Task",), "generate_image": ("ImageGen",),
 }
 FILE_TOOLS = {"read_file", "glob", "grep", "write_file", "edit_file"}
 SHELL_TOOLS = {"bash", "start_process"}

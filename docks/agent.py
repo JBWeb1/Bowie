@@ -24,7 +24,7 @@ from .plugins import TOOL_ALIASES, Extensions, hook_tool_input
 from .procs import ProcessManager
 import importlib.util
 
-from . import context_repos, instructions, models, tools
+from . import context_repos, images, instructions, models, tools
 from .browser import SCHEMA as BROWSER_SCHEMA, Browser, BrowserError
 from .lsp import SCHEMA as LSP_SCHEMA, LSPError, LSPManager
 from .sandbox import Sandbox, SandboxUnavailable
@@ -363,6 +363,8 @@ class Agent:
         process_defs = [define(n, s) for n, s in PROCESS_TOOLS.items()]
         if HAS_PLAYWRIGHT:
             process_defs.append(define("browser", BROWSER_SCHEMA))
+        if images.available():
+            process_defs.append(define("generate_image", images.SCHEMA))
         if self.lsp.available() and self.ext.settings.get("codeIntelligence", True) is not False:
             process_defs.append(define("code_intel", LSP_SCHEMA))
         agent_defs = [define(n, s) for n, s in AGENT_TOOLS.items()
@@ -392,6 +394,8 @@ class Agent:
             return False  # a helper's own tool calls ask for approval as usual
         if name in PROCESS_TOOLS:
             return name == "start_process"
+        if name == "generate_image":
+            return True  # writes files and costs money
         if self.mcp and self.mcp.handles(name):
             return self.mcp.is_mutating(name)
         return is_mutating(name)
@@ -431,6 +435,20 @@ class Agent:
                 raise ToolError(str(e))
             except Exception as e:  # Playwright timeouts and navigation errors: report them, keep going
                 raise ToolError(f"{type(e).__name__}: " + "\n".join(str(e).splitlines()[:6]))
+        if name == "generate_image":
+            if not isinstance(args, dict):
+                raise ToolError("tool input must be a JSON object")
+            _check(args, {"type": "object", **images.SCHEMA}, "input")
+            try:
+                made = images.generate(self.root, **args)
+            except images.ImageError as e:
+                raise ToolError(str(e))
+            blocks = [{"type": "text", "text": "Saved " + ", ".join(m["path"] for m in made) + f" ({made[0]['model']})"}]
+            for m in made:
+                preview = images.preview_block(self.root / m["path"])
+                if preview:
+                    blocks.append(preview)
+            return blocks, False
         if name == "code_intel":
             if not isinstance(args, dict):
                 raise ToolError("tool input must be a JSON object")

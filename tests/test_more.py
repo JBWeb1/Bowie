@@ -585,3 +585,74 @@ def test_context_repos_are_read_only_references(tmp_path, monkeypatch):
     assert "acme/lib" in agent.system and "Shared helpers" in results["t0"]["content"]
     assert results["t1"]["is_error"] and "Blocked by the permission rule" in results["t1"]["content"]
     assert context_repos.remove(project, "acme/lib") and context_repos.items(project) == []
+
+
+# ---------------------------------------------------------------- image generation
+
+PNG = bytes.fromhex("89504e470d0a1a0a0000000d4948445200000001000000010806000000"
+                    "1f15c4890000000d4944415478da63f8ffff3f0005fe02fea7d6a2e40000000049454e44ae426082")
+
+
+class FakeOpenAIImages:
+    def __init__(self):
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+        import base64
+        import threading
+        self.requests = []
+        outer = self
+
+        class H(BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def do_POST(self):
+                raw = self.rfile.read(int(self.headers["content-length"]))
+                kind = self.headers.get("content-type", "")
+                body = json.loads(raw) if kind.startswith("application/json") else {"multipart": raw}
+                outer.requests.append({"path": self.path, "body": body, "auth": self.headers.get("authorization")})
+                if "bad" in str(body.get("prompt", "")):
+                    data, status = {"error": {"message": "Your prompt was rejected"}}, 400
+                else:
+                    n = int(body.get("n", 1)) if "n" in body else 1
+                    data, status = {"data": [{"b64_json": base64.b64encode(PNG).decode()} for _ in range(n)]}, 200
+                out = json.dumps(data).encode()
+                self.send_response(status)
+                self.send_header("content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(out)
+
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        self.url = f"http://127.0.0.1:{self.server.server_port}/v1"
+
+
+def test_images_generate_edit_gallery_and_tool(tmp_path, monkeypatch):
+    from docks import images
+    fake = FakeOpenAIImages()
+    monkeypatch.setenv("OPENAI_BASE_URL", fake.url)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    assert not images.available()
+    with pytest.raises(images.ImageError, match="OPENAI_API_KEY"):
+        images.generate(tmp_path, "a cat")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    made = images.generate(tmp_path, "A cozy coffee shop, watercolor", size="wide", n=2)
+    assert [m["path"].startswith("assets/generated/a-cozy-coffee-shop-watercolor") for m in made] == [True, True]
+    sent = fake.requests[0]
+    assert sent["path"] == "/v1/images/generations" and sent["auth"] == "Bearer sk-test"
+    assert sent["body"]["model"] == images.FAST and sent["body"]["size"] == "1536x1024" and sent["body"]["n"] == 2
+    assert (tmp_path / made[0]["path"]).read_bytes() == PNG
+    edited = images.generate(tmp_path, "make it night", path="public/hero.png", edit=[made[0]["path"]], detailed=True)
+    assert edited[0]["path"] == "public/hero.png" and fake.requests[1]["path"] == "/v1/images/edits"
+    assert images.DETAILED.encode() in fake.requests[1]["body"]["multipart"] and PNG in fake.requests[1]["body"]["multipart"]
+    assert [i["path"] for i in images.gallery(tmp_path)][0] == "public/hero.png"
+    images.forget(tmp_path, "public/hero.png", delete_file=True)
+    assert not (tmp_path / "public/hero.png").exists() and len(images.gallery(tmp_path)) == 2
+    with pytest.raises(images.ImageError, match="rejected"):
+        images.generate(tmp_path, "bad idea")
+
+    agent, display, results = run_calls(tmp_path, [("generate_image", {"prompt": "logo for Docks", "path": "logo.png",
+                                                                       "background": "transparent"})], confirm="yes")
+    blocks = results["t0"]["content"]
+    assert blocks[0]["text"].startswith("Saved logo.png") and blocks[1]["type"] == "image"
+    assert [e[1][0] for e in display.events if e[0] == "confirm"] == ["generate_image"]  # costs money: it asks
+    assert fake.requests[-1]["body"]["background"] == "transparent"

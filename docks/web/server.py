@@ -407,6 +407,11 @@ def make_handler(session: Session, token: str, preview: dict):
                                          "current": session.agent.session_id})
             if path == "/api/git":
                 return self._json(200, github.status(root))
+            if path == "/api/images":
+                from .. import images
+                return self._json(200, {"available": images.available(), "images": images.gallery(root),
+                                         "models": {"fast": images.FAST, "detailed": images.DETAILED},
+                                         "sizes": list(images.SIZES), "qualities": list(images.QUALITIES)})
             if path == "/api/github/account":
                 return self._json(200, {"account": github.whoami(), "device_login": bool(github.device_client_id()),
                                          "login": session.github_login, "web": github.WEB})
@@ -575,6 +580,21 @@ def make_handler(session: Session, token: str, preview: dict):
                     return self._json(409, {"error": "stop the current task first"})
                 session.new_chat()
                 return self._json(200, {"ok": True})
+            if path in ("/api/images/generate", "/api/images/delete"):
+                from .. import images
+                if path == "/api/images/delete":
+                    images.forget(root, str(body.get("path", "")), bool(body.get("delete_file")))
+                    return self._json(200, {"images": images.gallery(root)})
+                try:
+                    made = images.generate(root, str(body.get("prompt", "")), str(body.get("path", "")),
+                                           str(body.get("size", "auto")), str(body.get("quality", "auto")),
+                                           str(body.get("background", "auto")), int(body.get("n", 1) or 1),
+                                           [str(x) for x in body.get("edit") or []], bool(body.get("detailed")))
+                except images.ImageError as e:
+                    return self._json(400, {"error": str(e)})
+                except (TypeError, ValueError):
+                    return self._json(400, {"error": "check the image options"})
+                return self._json(200, {"made": made, "images": images.gallery(root)})
             if path.startswith("/api/github/") or path == "/api/context-repos":
                 from .. import context_repos, pr_watch
                 try:
