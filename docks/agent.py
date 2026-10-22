@@ -18,9 +18,15 @@ from . import automode, memory, sessions
 from . import ui as term
 from .checkpoints import CheckpointError, Checkpoints
 from .mcp import MCPError
+from .permissions import suggest_rule
 from .plugins import TOOL_ALIASES, Extensions, hook_tool_input
 from .procs import ProcessManager
-from .tools import ToolError, _check, is_mutating, run_tool, tool_definitions
+import importlib.util
+
+from . import tools
+from .browser import SCHEMA as BROWSER_SCHEMA, Browser, BrowserError
+from .sandbox import Sandbox, SandboxUnavailable
+from .tools import ToolError, _check, is_mutating, run_tool, tool_definitions, validate
 
 DEFAULT_MODEL = "claude-opus-5-5"
 BETAS = [
@@ -177,8 +183,17 @@ Environment:
 """
 
 
+BROWSER_NOTE = """
+Checking your UI work: after you build or change a web page, open it with the browser tool (the dev server URL,
+or the HTML file) and look at the screenshot. Click through the main flow, fix any console errors it reports,
+and check a mobile viewport too. Don't tell the user a page works until you've seen it work.
+"""
+
+
 def build_system_prompt(root: Path, ext: Extensions | None = None) -> str:
     prompt = SYSTEM_PROMPT.format(cwd=root, platform=platform.platform(), date=date.today())
+    if HAS_PLAYWRIGHT:
+        prompt += BROWSER_NOTE
     for name in MEMORY_FILES:
         f = root / name
         if f.is_file():
@@ -194,6 +209,20 @@ def build_system_prompt(root: Path, ext: Extensions | None = None) -> str:
         prompt += "\nSpecialized helper types for delegate's agent parameter:\n" + "\n".join(
             f"- {a.name}: {a.description}" for a in ext.agents.values()) + "\n"
     return prompt
+
+
+HAS_PLAYWRIGHT = importlib.util.find_spec("playwright") is not None
+
+SETTING_MODES = {"default": "ask", "ask": "ask", "plan": "plan", "auto": "auto", "acceptEdits": "ask",
+                 "bypassPermissions": "yolo", "yolo": "yolo", "dontAsk": "yolo"}
+
+
+def mode_from_settings(ext: Extensions) -> str:
+    """The starting mode a settings file asks for ("defaultMode"); acceptEdits also allows edits in the project."""
+    wanted = ext.permissions.default_mode if ext and ext.permissions else None
+    if wanted == "acceptEdits":
+        ext.permissions.add("allow", ["Edit(/**)"], ext.root)
+    return SETTING_MODES.get(wanted or "", "ask")
 
 
 def _block(b, name, default=None):
@@ -223,9 +252,12 @@ class Agent:
     save: bool = False             # keep this conversation in ~/.docks/sessions
     session_id: str = ""
     on_background_done: Callable | None = None  # called when a background helper finishes while idle
+    sandbox: Sandbox | None = None  # run shell commands in a sandbox (see sandbox.py)
+    browser: Browser | None = None  # shared with helpers; started on first use
 
     def __post_init__(self):
         self.client_error = None
+        self.sandbox_error = None
         if self.client is None:
             try:
                 self.client = anthropic.Anthropic()
@@ -240,6 +272,15 @@ class Agent:
             self.system += f"\nYour role ({self.agent_type.name}):\n{self.agent_type.prompt}\n"
         if self.procs is None:
             self.procs = ProcessManager(self.root)
+        if self.sandbox is None and not self.helper and isinstance(self.ext.settings.get("sandbox"), dict) \
+                and self.ext.settings["sandbox"].get("enabled"):
+            try:
+                self.set_sandbox(True)
+            except SandboxUnavailable as e:  # asked for but impossible here: refuse to work rather than go unsandboxed
+                self.sandbox_error = str(e)
+        self.procs.sandbox = self.sandbox
+        if self.browser is None:
+            self.browser = Browser(self.root)
         self.checkpoints = Checkpoints(self.root)
         self.turns = []  # one entry per user turn: where it starts in messages, and the files before it
         self.plan = []
@@ -265,6 +306,8 @@ class Agent:
                     "input_schema": {"type": "object", "properties": spec["properties"],
                                      "required": spec["required"], "additionalProperties": False}}
         process_defs = [define(n, s) for n, s in PROCESS_TOOLS.items()]
+        if HAS_PLAYWRIGHT:
+            process_defs.append(define("browser", BROWSER_SCHEMA))
         agent_defs = [define(n, s) for n, s in AGENT_TOOLS.items()
                       if not (self.helper and n in ("delegate", "exit_plan_mode"))
                       and not (n == "load_skill" and not self.ext.skills)]
@@ -296,6 +339,9 @@ class Agent:
             return self.mcp.is_mutating(name)
         return is_mutating(name)
 
+    def browser_needs_ok(self, args: dict) -> bool:
+        return self.browser is not None and self.browser.needs_ok(args)
+
     def _run_tool(self, name: str, args: dict) -> tuple[str, bool]:
         if name in AGENT_TOOLS:
             if not isinstance(args, dict):
@@ -318,7 +364,28 @@ class Agent:
                 return self.mcp.call(name, args)
             except MCPError as e:
                 raise ToolError(str(e))
+        if name == "browser":
+            if not isinstance(args, dict):
+                raise ToolError("tool input must be a JSON object")
+            _check(args, {"type": "object", **BROWSER_SCHEMA}, "input")
+            try:
+                return self.browser.run(args), False
+            except BrowserError as e:
+                raise ToolError(str(e))
+            except Exception as e:  # Playwright timeouts and navigation errors: report them, keep going
+                raise ToolError(f"{type(e).__name__}: " + "\n".join(str(e).splitlines()[:6]))
+        if name == "bash" and self.sandbox is not None:
+            validate(name, args)
+            return tools.bash(self.root, sandbox=self.sandbox, **args), False
         return run_tool(self.root, name, args), False
+
+    def set_sandbox(self, on: bool) -> str:
+        """Turn sandboxed commands on or off. Raises sandbox.SandboxUnavailable if it can't be done here."""
+        self.sandbox = Sandbox.from_settings(self.root, self.ext.settings) if on else None
+        self.procs.sandbox = self.sandbox
+        if self.browser is None:
+            self.browser = Browser(self.root)
+        return self.sandbox.describe() if self.sandbox else "sandbox off: commands run with your normal access"
 
     def _agent_tool(self, name: str, args: dict) -> tuple[str, bool]:
         if name == "update_plan":
@@ -374,7 +441,8 @@ class Agent:
         helper = Agent(root=self.root, model=(agent_type.model if agent_type and agent_type.model else self.model),
                        effort=self.effort, auto_approve=self.auto_approve, mode=self.mode if self.mode != "plan" else "ask",
                        web=self.web, exclude_tools=self.exclude_tools, client=self.client, mcp=self.mcp,
-                       procs=self.procs, helper=True, always_allowed=self.always_allowed, ext=self.ext,
+                       procs=self.procs, helper=True, always_allowed=self.always_allowed, ext=self.ext, sandbox=self.sandbox,
+                       browser=self.browser,
                        agent_type=agent_type, display=HelperDisplay(self.display, description),
                        confirm=self._locked_confirm)
         helper.cancelled = self.cancelled  # stopping the lead agent stops its helpers
@@ -678,6 +746,9 @@ class Agent:
     def _stream_once(self):
         if self.client is None:
             raise TurnAborted(f"{NO_KEY} ({self.client_error})")
+        if self.sandbox_error:
+            raise TurnAborted(f"Your settings turn the sandbox on, but it can't run here: {self.sandbox_error} "
+                              "Fix that, or set \"sandbox\": {\"enabled\": false} to work without it.")
         printer = self.display.stream()
         with self.client.beta.messages.stream(
             model=self.model,
@@ -699,18 +770,29 @@ class Agent:
         printer.finish()
         return response
 
-    def _approved(self, name: str, args: dict, call_id: str, hook_decision: str | None) -> tuple[bool, str]:
-        """Whether a tool call may run, asking the user if needed. Returns (ok, message if not)."""
+    def _approved(self, name: str, args: dict, call_id: str, hook_decision: str | None,
+                  rule: str | None = None) -> tuple[bool, str]:
+        """Whether a tool call may run, asking the user if needed. Returns (ok, message if not).
+
+        rule is what the settings' permission rules say: "ask" always asks, "allow" skips the question."""
         if hook_decision == "allow":
             return True, ""
-        if not self._mutating(name):
+        mutating = self._mutating(name) or (name == "browser" and self.browser_needs_ok(args))
+        if not mutating and rule != "ask":
             return True, ""
         mode = self.active_mode
-        if mode == "plan":
+        if mode == "plan" and mutating:
             return False, ("Plan mode is on, so nothing can be changed yet. Finish researching and present your "
                            "plan with exit_plan_mode.")
-        if hook_decision != "ask":
-            if mode == "yolo" or name in self.always_allowed:
+        if hook_decision != "ask" and rule != "ask":
+            if mode == "yolo" or rule == "allow" or name in self.always_allowed:
+                return True, ""
+            if mode == "auto" and name == "bash" and self.sandbox and self.sandbox.auto_allow \
+                    and not self.sandbox.excludes(str(args.get("command", ""))) \
+                    and not automode.DANGEROUS.search(str(args.get("command", ""))):
+                note = getattr(self.display, "auto_approved", None)
+                if note:
+                    note(call_id, "runs in the sandbox")
                 return True, ""
             if mode == "auto":
                 verdict, reason = automode.classify(self.client, name, args, self.root)
@@ -722,7 +804,13 @@ class Agent:
         answer = self._locked_confirm(name, args)
         self._check_cancel()
         if answer == "always":
-            self.always_allowed.add(name)
+            if name in ("bash", "start_process") or name == "browser":
+                # remember this kind of command (npm test, git status...), not every shell command
+                remembered = suggest_rule(name, args)
+                self.ext.permissions.add("allow", [remembered], self.root)
+                self.display.notice(f"Allowed {remembered} for this session (/allow {remembered} keeps it)")
+            else:
+                self.always_allowed.add(name)
         elif answer != "yes":
             return False, "The user declined this tool call. Ask what they want instead."
         return True, ""
@@ -732,6 +820,12 @@ class Agent:
         args = block.input
         self.display.tool_call(block.name, args, id=block.id)
         decision = None
+        rule, rule_text = self.ext.permissions.check(block.name, args) if self.ext.permissions else (None, "")
+        if rule == "deny":
+            message = (f"Blocked by the permission rule {rule_text} in your settings. Don't try to get around it; "
+                       "tell the user if you need it.")
+            self.display.tool_output(message, is_error=True, id=block.id)
+            return _error_result(block.id, message)
         if self.ext.hooks and isinstance(args, dict):
             pre = self.ext.run_hooks("PreToolUse", {"tool_name": TOOL_ALIASES.get(block.name, block.name),
                                                     "tool_input": hook_tool_input(block.name, args),
@@ -741,7 +835,7 @@ class Agent:
                 self.display.tool_output(message, is_error=True, id=block.id)
                 return _error_result(block.id, message)
             decision = pre.decision
-        ok, why = self._approved(block.name, args if isinstance(args, dict) else {}, block.id, decision)
+        ok, why = self._approved(block.name, args if isinstance(args, dict) else {}, block.id, decision, rule)
         if not ok:
             self.display.tool_output(why, is_error=True, id=block.id)
             return _error_result(block.id, why)
@@ -755,15 +849,23 @@ class Agent:
         except Exception as e:  # tool bugs shouldn't kill the session
             self.display.tool_output(repr(e), is_error=True, id=block.id)
             return _error_result(block.id, f"{type(e).__name__}: {e}")
+        # output is text, or content blocks (text and screenshots) from the browser
+        shown = output if isinstance(output, str) else "\n".join(b["text"] for b in output if b.get("type") == "text")
         if self.ext.hooks and isinstance(args, dict):
             post = self.ext.run_hooks("PostToolUse", {"tool_name": TOOL_ALIASES.get(block.name, block.name),
                                                       "tool_input": hook_tool_input(block.name, args),
-                                                      "tool_response": output[:20_000], "session_id": self.session_id},
+                                                      "tool_response": shown[:20_000], "session_id": self.session_id},
                                       tool=block.name)
             feedback = "\n".join(x for x in (post.reason if post.block else "", post.context) if x)
             if feedback:
-                output = f"{output}\n\n[hook feedback]\n{feedback}"
-        self.display.tool_output(output, is_error=failed, id=block.id)
+                shown = f"{shown}\n\n[hook feedback]\n{feedback}"
+                output = shown if isinstance(output, str) else output + [{"type": "text", "text": f"[hook feedback]\n{feedback}"}]
+        self.display.tool_output(shown, is_error=failed, id=block.id)
+        if not isinstance(output, str):
+            show_image = getattr(self.display, "tool_image", None)
+            for b in output:
+                if b.get("type") == "image" and show_image:
+                    show_image(b["source"]["data"], b["source"]["media_type"], id=block.id)
         result = {"type": "tool_result", "tool_use_id": block.id, "content": output}
         return {**result, "is_error": True} if failed else result
 

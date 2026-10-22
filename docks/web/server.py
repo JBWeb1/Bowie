@@ -230,6 +230,9 @@ class WebDisplay:
     def tool_output(self, output: str, is_error: bool = False, id=None, helper=None) -> None:
         self.session.publish({"type": "tool_output", "text": _clip(output, 20_000), "error": is_error, "id": id})
 
+    def tool_image(self, data: str, media_type: str, id=None) -> None:
+        self.session.publish({"type": "tool_image", "data": data, "media": media_type, "id": id})
+
     def notice(self, msg: str) -> None:
         self.session.publish({"type": "notice", "text": msg})
 

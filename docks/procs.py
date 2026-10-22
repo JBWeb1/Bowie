@@ -20,12 +20,13 @@ ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 
 
 class Proc:
-    def __init__(self, pid_id: int, command: str, root: Path, on_change=None):
+    def __init__(self, pid_id: int, command: str, root: Path, on_change=None, sandbox=None):
         self.id, self.command = pid_id, command
         self.lines = deque(maxlen=2000)
         self.url = None
         self.on_change = on_change
-        self.popen = subprocess.Popen(command, shell=True, cwd=root, stdout=subprocess.PIPE,
+        argv = sandbox.argv(command, server=True) if sandbox else None
+        self.popen = subprocess.Popen(argv or command, shell=argv is None, cwd=root, stdout=subprocess.PIPE,
                                       stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, text=True,
                                       errors="replace", start_new_session=True,
                                       env={**os.environ, "FORCE_COLOR": "0", "BROWSER": "none"})
@@ -72,10 +73,11 @@ class ProcessManager:
         self.procs: dict[int, Proc] = {}
         self.ids = itertools.count(1)
         self.on_change = on_change
+        self.sandbox = None  # set by the agent when commands are sandboxed
         atexit.register(self.stop_all)
 
     def start(self, command: str, wait: float = 15) -> str:
-        proc = Proc(next(self.ids), command, self.root, self._changed)
+        proc = Proc(next(self.ids), command, self.root, self._changed, self.sandbox)
         self.procs[proc.id] = proc
         # Give it a moment: dev servers print their URL within a few seconds; crashes show up fast too.
         deadline = time.monotonic() + wait

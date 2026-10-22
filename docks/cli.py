@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from . import __version__, ui
-from .agent import DEFAULT_MODEL, Agent
+from .agent import DEFAULT_MODEL, Agent, mode_from_settings
 
 HELP = """Commands:
   /help              show this help
@@ -20,6 +20,9 @@ HELP = """Commands:
   /bookmark          save Claude's last reply;  /bookmarks  list saved replies
   /copy              copy Claude's last reply to the clipboard
   /commands /agents /skills /hooks   show what's installed
+  /sandbox [on|off]  run commands in a sandbox (writes only inside the project)
+  /permissions       show allow / ask / deny rules
+  /allow RULE        never ask about it, e.g. /allow Bash(npm test:*)   (/ask and /deny too)
   /usage             token usage for this session
   /yolo              same as /mode yolo (toggle)
   /exit              quit
@@ -257,6 +260,29 @@ def slash(agent: Agent, text: str) -> bool:
             print(ui.dim("no skills (add skills/<name>/SKILL.md in ~/.docks, .claude or a plugin)"))
         for sk in agent.ext.skills.values():
             print(f"  {ui.bold(sk.name)}  {ui.dim(sk.description[:100])}")
+    elif cmd == "/sandbox":
+        from .sandbox import SandboxUnavailable
+        want = {"on": True, "off": False}.get(arg, agent.sandbox is None)
+        try:
+            print(ui.dim(agent.set_sandbox(want)))
+        except SandboxUnavailable as e:
+            ui.error(str(e))
+    elif cmd == "/permissions":
+        rules = agent.ext.permissions.summary()
+        if not any(rules.values()):
+            print(ui.dim("no permission rules yet; add some with /allow, /ask or /deny, e.g. /allow Bash(npm test:*)"))
+        for kind, color in (("deny", ui.red), ("ask", ui.yellow), ("allow", ui.green)):
+            for r in rules[kind]:
+                print(f"  {color(kind):<16} {r}")
+        if agent.always_allowed:
+            print(ui.dim(f"  always allowed this session: {', '.join(sorted(agent.always_allowed))}"))
+    elif cmd in ("/allow", "/deny", "/ask"):
+        from .permissions import parse
+        if not arg or not parse(arg, agent.root):
+            ui.error(f"give a rule, e.g. {cmd} Bash(npm test:*) · {cmd} Edit(src/**) · {cmd} Read(./.env)")
+            return True
+        path = agent.ext.save_rule(cmd[1:], arg)
+        print(ui.dim(f"{cmd[1:]}: {arg}  (saved in {path.relative_to(agent.root)}, kept out of git)"))
     elif cmd == "/hooks":
         if not agent.ext.hooks and not agent.ext.pending_hooks:
             print(ui.dim("no hooks"))
@@ -272,7 +298,9 @@ def slash(agent: Agent, text: str) -> bool:
 def approve_project_hooks(agent: Agent) -> None:
     import json as _json
     for pending in list(agent.ext.pending_hooks):
-        print(ui.yellow(f"This project has hooks in {pending['file']} that run commands automatically:"))
+        what = ("settings that let Docks act without asking" if pending["name"].startswith("settings:")
+                else "hooks that run commands automatically")
+        print(ui.yellow(f"This project has {what} in {pending['file']}:"))
         print(ui.dim(_json.dumps(pending["spec"], indent=2)[:1200]))
         if input(ui.yellow("  Allow them? [y/N] ")).strip().lower() in ("y", "yes"):
             agent.ext.approve_hooks(pending["file"])
@@ -384,7 +412,8 @@ def web_main(argv) -> int:
     ext = Extensions.load(root)
     mgr = MCPManager(root, ext.plugin_mcp)
     mgr.start()  # project servers wait for approval in the browser
-    serve(Agent(root=root, model=args.model, effort=args.effort, auto_approve=args.yolo, mcp=mgr, ext=ext, save=True),
+    serve(Agent(root=root, model=args.model, effort=args.effort, auto_approve=args.yolo, mcp=mgr, ext=ext, save=True,
+                mode=mode_from_settings(ext)),
           host=args.host, port=args.port, open_browser=not args.no_open)
     return 0
 
@@ -482,10 +511,12 @@ def main(argv=None) -> int:
     parser.add_argument("-y", "--yolo", action="store_true", help="run tools without asking for approval")
     parser.add_argument("-i", "--image", action="append", default=[],
                         help="attach an image (screenshot, mockup, design) to the task; repeatable")
-    parser.add_argument("--mode", choices=["ask", "auto", "plan", "yolo"], default="ask",
+    parser.add_argument("--mode", choices=["ask", "auto", "plan", "yolo"], default=None,
                         help="ask: confirm each change (default) · auto: confirm only risky ones · "
                              "plan: plan first · yolo: never ask")
     parser.add_argument("--plan", action="store_true", help="start in plan mode")
+    parser.add_argument("--sandbox", action="store_true",
+                        help="run shell commands in a sandbox: writes only inside the project, secrets hidden")
     parser.add_argument("-r", "--resume", nargs="?", const="", metavar="NAME_OR_ID",
                         help="continue a saved conversation (no value: list them)")
     parser.add_argument("-c", "--continue", dest="cont", action="store_true",
@@ -501,8 +532,15 @@ def main(argv=None) -> int:
     from .plugins import Extensions
     ext = Extensions.load(root)
     agent = Agent(root=root, model=args.model, effort=args.effort, auto_approve=args.yolo, ext=ext, save=True,
-                  mode="plan" if args.plan else args.mode,
+                  mode="plan" if args.plan else args.mode or mode_from_settings(ext),
                   mcp=start_mcp(root, sys.stdin.isatty(), ext.plugin_mcp))
+    if args.sandbox and agent.sandbox is None:
+        from .sandbox import SandboxUnavailable
+        try:
+            print(ui.dim(agent.set_sandbox(True)))
+        except SandboxUnavailable as e:
+            ui.error(str(e))
+            return 1
     if args.resume == "" and not args.cont:
         _print_sessions(agent)
         print(ui.dim("resume one with: docks --resume <name or id>"))

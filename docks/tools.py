@@ -28,10 +28,11 @@ def _resolve(root: Path, path: str) -> Path:
     return (p if p.is_absolute() else root / p).resolve()
 
 
-def bash(root: Path, command: str, timeout: int = 120) -> str:
+def bash(root: Path, command: str, timeout: int = 120, sandbox=None) -> str:
+    argv = sandbox.argv(command) if sandbox else None  # a sandbox.Sandbox, when commands are sandboxed
     try:
         proc = subprocess.run(
-            command, shell=True, cwd=root, capture_output=True, text=True,
+            argv or command, shell=argv is None, cwd=root, capture_output=True, text=True,
             timeout=min(max(timeout, 1), 600),
         )
     except subprocess.TimeoutExpired:

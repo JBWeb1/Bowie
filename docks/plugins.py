@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import mcp as trust_store
+from .permissions import Permissions, exclude_from_git, local_settings_file
 
 BUILTIN = Path(__file__).parent / "builtin"
 HOOK_EVENTS = ("PreToolUse", "PostToolUse", "UserPromptSubmit", "SessionStart", "Stop")
@@ -143,6 +144,15 @@ class Hook:
 
 
 @dataclass
+class OutputStyle:
+    name: str
+    description: str
+    prompt: str
+    source: str
+    keep_coding_instructions: bool = False
+
+
+@dataclass
 class HookResult:
     block: bool = False         # stop this action (or for Stop: keep working)
     reason: str = ""
@@ -160,21 +170,24 @@ class Extensions:
     pending_hooks: list = field(default_factory=list)  # project hook files waiting for approval
     plugins: list = field(default_factory=list)
     plugin_mcp: dict = field(default_factory=dict)     # MCP servers that plugins ship
+    permissions: Permissions | None = None              # allow / ask / deny rules from every settings file
+    settings: dict = field(default_factory=dict)        # other settings (outputStyle, statusLine, sandbox, ...)
+    output_styles: dict = field(default_factory=dict)
 
     @classmethod
     def load(cls, root: Path) -> "Extensions":
-        ext = cls(root=root)
+        ext = cls(root=root, permissions=Permissions(root))
         ext._scan_dir(BUILTIN, "builtin")
         for base in (claude_home(), docks_home()):
             ext._scan_dir(base, "user")
-            ext._load_settings_hooks(base / "settings.json", "user")
+            ext._load_settings(base / "settings.json", "user")
         for plugin in installed_plugins():
             if plugin["enabled"]:
                 ext._load_plugin(Path(plugin["path"]))
         for base in (root / ".claude", root / ".docks"):
             ext._scan_dir(base, "project")
             for name in ("settings.json", "settings.local.json"):
-                ext._load_settings_hooks(base / name, "project")
+                ext._load_settings(base / name, "project")
         return ext
 
     # -- scanning
@@ -197,6 +210,14 @@ class Extensions:
                 self.agents[name] = AgentType(name, meta.get("description", ""), body, _as_list(meta.get("tools")),
                                               MODEL_ALIASES.get(meta.get("model", ""), None) if meta.get("model") != "inherit" else None,
                                               source)
+        style_dir = base / "output-styles"
+        if style_dir.is_dir():
+            for f in sorted(style_dir.glob("*.md")):
+                meta, body = parse_frontmatter(f.read_text(errors="replace"))
+                name = meta.get("name") or f.stem
+                self.output_styles[name.lower()] = OutputStyle(
+                    name, meta.get("description", ""), body.strip(), source,
+                    str(meta.get("keep-coding-instructions", "false")).lower() == "true")
         skill_dir = base / "skills"
         if skill_dir.is_dir():
             for f in sorted(skill_dir.glob("*/SKILL.md")):
@@ -226,9 +247,61 @@ class Extensions:
                 self.plugin_mcp[f"{name}-{server}"] = json.loads(
                     json.dumps(spec).replace("${CLAUDE_PLUGIN_ROOT}", str(path)))
 
-    def _load_settings_hooks(self, path: Path, source: str) -> None:
-        if path.is_file():
-            self._add_hooks(path, source, path.parent.parent if source == "project" else None)
+    def _load_settings(self, path: Path, source: str) -> None:
+        if not path.is_file():
+            return
+        self._add_hooks(path, source, path.parent.parent if source == "project" else None)
+        try:
+            data = json.loads(path.read_text())
+        except (OSError, json.JSONDecodeError):
+            return
+        if not isinstance(data, dict):
+            return
+        base = path.parent.parent if source == "project" else self.root
+        perms = data.get("permissions") if isinstance(data.get("permissions"), dict) else {}
+        # Rules that only take power away are always honored. Ones that let a cloned repo run things
+        # on its own (allow rules, a status line command, a hands-off mode) wait for the user's OK.
+        risky = {k: v for k, v in (("allow", perms.get("allow")), ("statusLine", data.get("statusLine")),
+                                   ("defaultMode", perms.get("defaultMode"))) if v}
+        if source == "project" and risky and not trust_store.is_trusted(self.root, f"settings:{path.name}", risky):
+            self.pending_hooks.append({"file": str(path), "name": f"settings:{path.name}", "spec": risky})
+            data = {k: v for k, v in data.items() if k != "statusLine"}
+            perms = {k: v for k, v in perms.items() if k not in ("allow", "defaultMode")}
+        self._apply_settings(data, perms, base)
+
+    def _apply_settings(self, data: dict, perms: dict, base: Path) -> None:
+        for kind in ("allow", "ask", "deny"):
+            self.permissions.add(kind, perms.get(kind), base)
+        if perms.get("defaultMode"):
+            self.permissions.default_mode = perms["defaultMode"]
+        for key, value in data.items():
+            if key in ("hooks", "permissions"):
+                continue
+            if isinstance(value, dict) and isinstance(self.settings.get(key), dict):
+                self.settings[key] = {**self.settings[key], **value}
+            else:
+                self.settings[key] = value
+
+    def save_rule(self, kind: str, rule: str) -> Path:
+        """Remember a permission rule for this project in .claude/settings.local.json (kept out of git)."""
+        path = local_settings_file(self.root)
+        try:
+            data = json.loads(path.read_text()) if path.is_file() else {}
+        except json.JSONDecodeError:
+            data = {}
+        perms = data.setdefault("permissions", {})
+        rules = perms.setdefault(kind, [])
+        if rule not in rules:
+            rules.append(rule)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, indent=2) + "\n")
+        exclude_from_git(self.root, ".claude/settings.local.json")
+        risky = {k: v for k, v in (("allow", perms.get("allow")), ("statusLine", data.get("statusLine")),
+                                   ("defaultMode", perms.get("defaultMode"))) if v}
+        if risky:  # the user wrote these rules themselves
+            trust_store.trust(self.root, f"settings:{path.name}", risky)
+        self.permissions.add(kind, [rule], self.root)
+        return path
 
     def _add_hooks(self, path: Path, source: str, root: Path | None) -> None:
         try:
@@ -251,12 +324,17 @@ class Extensions:
                                                root, int(h.get("timeout", 60)), str(path)))
 
     def approve_hooks(self, file: str) -> None:
-        pending = next((p for p in self.pending_hooks if p["file"] == file), None)
-        if not pending:
-            return
-        trust_store.trust(self.root, pending["name"], pending["spec"])
-        self.pending_hooks.remove(pending)
-        self._add_hooks(Path(file), "project", self.root)
+        """Approve a project's hooks, or the parts of its settings that need an OK."""
+        for pending in [p for p in self.pending_hooks if p["file"] == file]:
+            trust_store.trust(self.root, pending["name"], pending["spec"])
+            self.pending_hooks.remove(pending)
+            if pending["name"].startswith("settings:"):
+                spec = pending["spec"]
+                data = {"statusLine": spec["statusLine"]} if spec.get("statusLine") else {}
+                self._apply_settings(data, {k: spec[k] for k in ("allow", "defaultMode") if k in spec},
+                                     Path(file).parent.parent)
+            else:
+                self._add_hooks(Path(file), "project", self.root)
 
     # -- commands
 

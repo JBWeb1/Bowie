@@ -10,6 +10,9 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = ["anthropic>=1.15"]
 
+[project.optional-dependencies]
+browser = ["playwright>=1.40"]  # the browser tool (then: playwright install chromium)
+
 [project.scripts]
 docks = "docks.cli:main"
 
@@ -18,4 +21,4 @@ include = ["docks*"]
 
 [tool.setuptools.package-data]
 "docks.web" = ["*.html"]
-"docks" = ["builtin/commands/*.md"]
+"docks" = ["builtin/commands/*.md", "builtin/output-styles/*.md"]

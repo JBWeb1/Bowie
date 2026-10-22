@@ -402,6 +402,7 @@ svg { flex: none; }
 }
 @media (max-width: 560px) { .ideas { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+.step-body img.shot { display: block; max-width: min(100%, 520px); border: 1px solid var(--line); border-radius: 9px; margin: 6px 0; cursor: zoom-in; }
 </style>
 </head>
 <body>
@@ -647,9 +648,19 @@ const TOOL = {
   ask_user:            { icon: 'question', run: 'Asking you a question', done: 'Asked you a question', d: () => '' },
   exit_plan_mode:      { icon: 'book', run: 'Proposing a plan', done: 'Proposed a plan', d: () => '' },
   load_skill:          { icon: 'sparkle', run: a => `Loading skill ${a.name}`, done: a => `Loaded skill: ${a.name}`, d: () => '' },
+  browser:             { icon: 'eye', run: a => BROWSE[a.action]?.[0](a) || 'Using the browser', done: a => BROWSE[a.action]?.[1](a) || 'Used the browser', d: a => a.url || a.target || a.key || a.script || a.device || '' },
+  code_intel:          { icon: 'search', run: a => `Looking up ${a.symbol || a.action}`, done: a => a.action === 'diagnostics' ? 'Checked for errors' : `Looked up ${a.symbol || a.action}`, d: a => a.path || a.query || '' },
   start_process:       { icon: 'play', run: 'Starting the app', done: 'Started the app', d: a => a.command },
   process_logs:        { icon: 'terminal', run: 'Checking the app output', done: 'Checked the app output', d: a => `process ${a.process_id}` },
   stop_process:        { icon: 'server', run: 'Stopping the app', done: 'Stopped the app', d: a => `process ${a.process_id}` },
+};
+const BROWSE = {
+  open: [a => `Opening ${a.url}`, a => `Opened ${a.url}`], click: [a => `Clicking ${a.target}`, a => `Clicked ${a.target}`],
+  type: [a => `Typing into ${a.target}`, a => `Typed into ${a.target}`], press: [a => `Pressing ${a.key}`, a => `Pressed ${a.key}`],
+  screenshot: [() => 'Taking a screenshot', () => 'Took a screenshot'], read: [() => 'Reading the page', () => 'Read the page'],
+  console: [() => 'Checking the console', () => 'Checked the console'], eval: [() => 'Running a script on the page', () => 'Ran a script on the page'],
+  viewport: [a => `Switching to ${a.device || a.width + '×' + a.height}`, a => `Switched to ${a.device || a.width + '×' + a.height}`],
+  close: [() => 'Closing the browser', () => 'Closed the browser'],
 };
 function toolInfo(name) {
   if (TOOL[name]) return TOOL[name];
@@ -807,9 +818,9 @@ function renderExt(x) {
   box.appendChild(h('div', null, `${x.commands.length} commands · ${x.agents.length} helper types · ${x.skills.length} skills · ${x.hooks} hooks` +
     (x.plugins.length ? `<br>Plugins: ${esc(x.plugins.join(', '))}` : '<br>Add plugins with <code>docks plugin install owner/repo</code>')));
   for (const file of x.pending_hooks || []) {
-    const row = h('div', 'mcp-row', `<span class="d needs-approval"></span><small>Project hooks in ${esc(file.split('/').slice(-2).join('/'))} need approval</small>`);
+    const row = h('div', 'mcp-row', `<span class="d needs-approval"></span><small>Project hooks or settings in ${esc(file.split('/').slice(-2).join('/'))} need approval</small>`);
     const b = h('button', 'btn', 'Approve');
-    b.onclick = async e => { e.stopPropagation(); if (!confirm('These hooks run commands automatically while Docks works. Approve them?\n\n' + file)) return; const r = await api('/api/hooks/approve', { file }); if (r.ok) renderExt(await r.json()); };
+    b.onclick = async e => { e.stopPropagation(); if (!confirm('This project wants to run hooks or let Docks act without asking (allow rules, a status line). Approve?\n\n' + file)) return; const r = await api('/api/hooks/approve', { file }); if (r.ok) renderExt(await r.json()); };
     row.appendChild(b); box.appendChild(row);
   }
   commands = x.commands;
@@ -885,6 +896,11 @@ function handle(ev) {
       if (ev.name === 'delegate') helperSteps[(ev.args || {}).description] = s;
       const parent = ev.helper && helperSteps[ev.helper];
       (parent ? parent.querySelector('.subs') : group).appendChild(s); lastStep = s; scrollDown();
+      break;
+    }
+    case 'tool_image': {
+      const step = (ev.id && steps[ev.id]) || lastStep;
+      if (step) { const img = h('img', 'shot'); img.src = `data:${ev.media};base64,${ev.data}`; img.alt = 'Browser screenshot'; img.onclick = () => window.open(img.src); step.querySelector('.step-body').appendChild(img); }
       break;
     }
     case 'tool_output': {
