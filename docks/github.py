@@ -1,6 +1,7 @@
 """GitHub integration: read issues and pull requests, push branches, open PRs, post reviews.
 
-Auth comes from GITHUB_TOKEN / GH_TOKEN, or from the GitHub CLI (`gh auth token`) if it's logged in.
+Auth comes from GITHUB_TOKEN / GH_TOKEN, then the account you connected with `docks github login` (saved in
+~/.docks/github.json, readable only by you), then the GitHub CLI (`gh auth token`) if it's logged in.
 The token is only ever sent to the GitHub API and to git over HTTPS; it's never put on a command line.
 """
 
@@ -22,8 +23,37 @@ class GitHubError(Exception):
     pass
 
 
+def account_path() -> Path:
+    return Path(os.environ.get("DOCKS_HOME", Path.home() / ".docks")) / "github.json"
+
+
+def _saved_account() -> dict:
+    try:
+        return json.loads(account_path().read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def token_source() -> str | None:
+    if os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN"):
+        return "environment"
+    if _saved_account().get("token"):
+        return "docks"
+    if shutil.which("gh") and _gh_token():
+        return "gh"
+    return None
+
+
+def _gh_token() -> str | None:
+    try:
+        out = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True, timeout=10)
+        return out.stdout.strip() or None
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+
+
 def token() -> str | None:
-    tok = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    tok = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or _saved_account().get("token")
     if tok:
         return tok
     if shutil.which("gh"):
@@ -75,7 +105,7 @@ def repo_of(root: Path) -> str:
 def request(method: str, path: str, body: dict | None = None, accept: str = "application/vnd.github+json"):
     tok = token()
     if not tok:
-        raise GitHubError("not connected to GitHub: set GITHUB_TOKEN, or run `gh auth login`")
+        raise GitHubError("not connected to GitHub: run `docks github login` (or set GITHUB_TOKEN)")
     req = urllib.request.Request(f"{API}{path}", method=method,
                                  data=json.dumps(body).encode() if body is not None else None,
                                  headers={"authorization": f"Bearer {tok}", "accept": accept,
@@ -221,3 +251,207 @@ def deploy_prompt() -> str:
             "workflow under .github/workflows that builds and publishes it, commit it on a branch and open a pull "
             "request. Build first and fix build errors. Finish with the live URL, or exactly what the user must do "
             "to finish (for example, which setting to turn on).")
+
+
+# ------------------------------------------------------------ your account
+
+
+WEB = "https://github.com" if API == "https://api.github.com" else re.sub(r"/api/v3/?$", "", API)
+SCOPES = "repo read:org workflow"
+
+
+def _check_token(tok: str) -> dict:
+    req = urllib.request.Request(f"{API}/user", headers={"authorization": f"Bearer {tok}", "user-agent": "docks",
+                                                         "accept": "application/vnd.github+json"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            user = json.loads(resp.read())
+            scopes = resp.headers.get("x-oauth-scopes") or ""
+    except urllib.error.HTTPError as e:
+        raise GitHubError("GitHub didn't accept that token" if e.code == 401 else f"GitHub returned {e.code}")
+    except urllib.error.URLError as e:
+        raise GitHubError(f"could not reach GitHub: {e.reason}")
+    return {"login": user.get("login"), "name": user.get("name") or "", "avatar": user.get("avatar_url", ""),
+            "scopes": scopes}
+
+
+def save_token(tok: str, source: str = "token") -> dict:
+    """Check a token with GitHub, then keep it in ~/.docks/github.json (only you can read it)."""
+    tok = tok.strip()
+    if not tok:
+        raise GitHubError("no token given")
+    info = _check_token(tok)
+    path = account_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        json.dump({"token": tok, "source": source, **info}, f)
+    os.chmod(path, 0o600)
+    return info
+
+
+def logout() -> bool:
+    try:
+        account_path().unlink()
+        return True
+    except FileNotFoundError:
+        return False
+
+
+def whoami() -> dict | None:
+    """The connected account, or None."""
+    tok = token()
+    if not tok:
+        return None
+    saved = _saved_account()
+    if saved.get("token") == tok and saved.get("login"):
+        return {k: saved.get(k, "") for k in ("login", "name", "avatar", "scopes")} | {"source": token_source()}
+    try:
+        return _check_token(tok) | {"source": token_source()}
+    except GitHubError:
+        return None
+
+
+def device_client_id() -> str | None:
+    return os.environ.get("DOCKS_GITHUB_CLIENT_ID") or _saved_account().get("client_id")
+
+
+def _form_post(url: str, fields: dict) -> dict:
+    from urllib.parse import urlencode
+    req = urllib.request.Request(url, data=urlencode(fields).encode(), method="POST",
+                                 headers={"accept": "application/json", "user-agent": "docks"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        raise GitHubError(f"GitHub sign-in failed ({e.code}): {e.read().decode(errors='replace')[:200]}")
+    except urllib.error.URLError as e:
+        raise GitHubError(f"could not reach GitHub: {e.reason}")
+
+
+def start_device_login(client_id: str | None = None) -> dict:
+    """Step 1 of signing in with GitHub: a code to enter at github.com/login/device."""
+    client_id = client_id or device_client_id()
+    if not client_id:
+        raise GitHubError("signing in through GitHub needs an OAuth app's client ID in DOCKS_GITHUB_CLIENT_ID "
+                          "(see the README), or connect with a token instead")
+    data = _form_post(f"{WEB}/login/device/code", {"client_id": client_id, "scope": SCOPES})
+    if "device_code" not in data:
+        raise GitHubError(data.get("error_description") or data.get("error") or "GitHub didn't start the sign-in")
+    return {"client_id": client_id, "device_code": data["device_code"], "user_code": data["user_code"],
+            "verification_uri": data.get("verification_uri", f"{WEB}/login/device"),
+            "interval": int(data.get("interval", 5)), "expires_in": int(data.get("expires_in", 900))}
+
+
+def poll_device_login(login: dict) -> dict | None:
+    """Step 2: None while waiting for the person to approve; their account once they have."""
+    data = _form_post(f"{WEB}/login/oauth/access_token", {
+        "client_id": login["client_id"], "device_code": login["device_code"],
+        "grant_type": "urn:ietf:params:oauth:grant-type:device_code"})
+    if data.get("access_token"):
+        return save_token(data["access_token"], source="device")
+    error = data.get("error")
+    if error == "slow_down":
+        login["interval"] = int(data.get("interval", login["interval"] + 5))
+        return None
+    if error == "authorization_pending":
+        return None
+    raise GitHubError({"expired_token": "the sign-in code expired; start again",
+                       "access_denied": "sign-in was cancelled on GitHub"}.get(error, data.get("error_description") or str(error)))
+
+
+# ------------------------------------------------------------ repositories, branches, pull requests
+
+
+def my_repos(query: str = "", limit: int = 60) -> list[dict]:
+    if query:
+        login = (whoami() or {}).get("login", "")
+        found = request("GET", "/search/repositories?per_page=50&q=" + urllib.request.quote(
+            f"{query} in:name fork:true" + (f" user:{login}" if "/" not in query and login else "")))
+        items = found.get("items", [])
+        if not items and login:  # also look beyond your own account (orgs, public repos)
+            items = request("GET", "/search/repositories?per_page=30&q=" + urllib.request.quote(f"{query} in:name")).get("items", [])
+    else:
+        items = request("GET", "/user/repos?sort=pushed&per_page=100&affiliation=owner,collaborator,organization_member")
+    return [{"repo": r["full_name"], "private": r.get("private", False), "description": r.get("description") or "",
+             "default_branch": r.get("default_branch", "main"), "pushed": r.get("pushed_at", ""),
+             "language": r.get("language") or "", "url": r.get("html_url", "")} for r in items[:limit]]
+
+
+def branches(repo: str) -> dict:
+    info = request("GET", f"/repos/{repo}")
+    found = request("GET", f"/repos/{repo}/branches?per_page=100")
+    return {"default": info.get("default_branch", "main"),
+            "branches": [{"name": b["name"], "protected": b.get("protected", False)} for b in found]}
+
+
+def _checks(repo: str, sha: str) -> str:
+    """success | failure | pending | none, for a commit's check runs and statuses."""
+    try:
+        runs = request("GET", f"/repos/{repo}/commits/{sha}/check-runs?per_page=100").get("check_runs", [])
+        combined = request("GET", f"/repos/{repo}/commits/{sha}/status")
+    except GitHubError:
+        return "none"
+    states = [r.get("conclusion") or "pending" for r in runs if r.get("status") == "completed"] + \
+             ["pending" for r in runs if r.get("status") != "completed"] + \
+             [st.get("state") for st in combined.get("statuses", [])]
+    if not states:
+        return "none"
+    if any(x in ("failure", "error", "timed_out", "cancelled", "action_required") for x in states):
+        return "failure"
+    if any(x == "pending" for x in states):
+        return "pending"
+    return "success"
+
+
+def _review_state(repo: str, number: int) -> str:
+    try:
+        reviews = request("GET", f"/repos/{repo}/pulls/{number}/reviews?per_page=100")
+    except GitHubError:
+        return ""
+    latest = {}
+    for r in reviews:
+        if r.get("state") in ("APPROVED", "CHANGES_REQUESTED", "DISMISSED"):
+            latest[(r.get("user") or {}).get("login")] = r["state"]
+    if "CHANGES_REQUESTED" in latest.values():
+        return "changes requested"
+    return "approved" if "APPROVED" in latest.values() else ("commented" if reviews else "")
+
+
+def pull_request_state(repo: str, number: int) -> dict:
+    pr = request("GET", f"/repos/{repo}/pulls/{number}")
+    state = "merged" if pr.get("merged") else pr.get("state", "open")
+    return {"repo": repo, "number": number, "title": pr.get("title", ""), "author": (pr.get("user") or {}).get("login", ""),
+            "state": state, "draft": pr.get("draft", False), "head": (pr.get("head") or {}).get("ref", ""),
+            "base": (pr.get("base") or {}).get("ref", ""), "url": pr.get("html_url", ""),
+            "updated": pr.get("updated_at", ""), "checks": _checks(repo, pr["head"]["sha"]) if state == "open" else "none",
+            "review": _review_state(repo, number), "comments": pr.get("comments", 0) + pr.get("review_comments", 0)}
+
+
+def pull_requests(repo: str, limit: int = 15) -> list[dict]:
+    found = request("GET", f"/repos/{repo}/pulls?state=open&sort=updated&direction=desc&per_page={limit}")
+    return [{"repo": repo, "number": p["number"], "title": p["title"], "author": (p.get("user") or {}).get("login", ""),
+             "draft": p.get("draft", False), "head": p["head"]["ref"], "base": p["base"]["ref"], "url": p["html_url"],
+             "updated": p.get("updated_at", ""), "checks": _checks(repo, p["head"]["sha"]), "state": "open"}
+            for p in found]
+
+
+def my_pull_requests() -> dict:
+    """Open pull requests you wrote, and ones waiting for your review, across all repositories."""
+    def search(q):
+        items = request("GET", "/search/issues?per_page=30&sort=updated&q=" + urllib.request.quote(q)).get("items", [])
+        return [{"repo": i["repository_url"].split("/repos/")[-1], "number": i["number"], "title": i["title"],
+                 "url": i["html_url"], "updated": i.get("updated_at", ""), "draft": i.get("draft", False)} for i in items]
+    return {"authored": search("is:pr is:open author:@me archived:false"),
+            "review_requested": search("is:pr is:open review-requested:@me archived:false")}
+
+
+def switch_branch(root: Path, name: str) -> str:
+    if git(root, "status", "--porcelain", check=False):
+        raise GitHubError("you have uncommitted changes; commit or stash them before switching branches")
+    git(root, "fetch", "origin", name, check=False, env=_auth_env())
+    if git(root, "rev-parse", "--verify", "-q", f"refs/heads/{name}", check=False):
+        git(root, "switch", name)
+    else:
+        git(root, "switch", "-c", name, "--track", f"origin/{name}")
+    return name

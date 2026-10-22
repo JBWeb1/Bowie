@@ -460,3 +460,128 @@ def test_models_update_to_the_newest_in_each_family(tmp_path, monkeypatch):
     assert models._family_of_openai("gpt-5.3-codex") == "codex" and models._family_of_openai("gpt-5.5") == "chatgpt"
     assert models._family_of_openai("gpt-5.5-mini") is None and models._family_of_openai("codex-mini-latest") is None
     assert models.resolve("gpt") == "chatgpt" and models.label("chatgpt").startswith("ChatGPT model")
+
+
+# ---------------------------------------------------------------- GitHub connection, PR watching, context repos
+
+class FakeGitHub:
+    """Just enough of the GitHub API for the account, repo, branch and PR features."""
+
+    def __init__(self):
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+        import threading
+        self.prs = {7: {"state": "open", "merged": False, "checks": "in_progress", "reviews": [], "comments": 0}}
+        self.device_polls = 0
+        outer = self
+
+        class H(BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def _send(self, obj, status=200, headers=None):
+                data = json.dumps(obj).encode()
+                self.send_response(status)
+                self.send_header("content-type", "application/json")
+                for k, v in (headers or {}).items():
+                    self.send_header(k, v)
+                self.end_headers()
+                self.wfile.write(data)
+
+            def do_POST(self):
+                self.rfile.read(int(self.headers.get("content-length", 0)))
+                if self.path == "/login/device/code":
+                    return self._send({"device_code": "dc", "user_code": "ABCD-1234", "verification_uri": "https://example/device", "interval": 0})
+                if self.path == "/login/oauth/access_token":
+                    outer.device_polls += 1
+                    return self._send({"error": "authorization_pending"} if outer.device_polls < 2 else {"access_token": "gho_device"})
+
+            def do_GET(self):
+                auth = self.headers.get("authorization", "")
+                if auth not in ("Bearer good", "Bearer gho_device"):
+                    return self._send({"message": "Bad credentials"}, 401)
+                p = self.path.split("?")[0]
+                pr = outer.prs[7]
+                routes = {
+                    "/user": ({"login": "ada", "name": "Ada", "avatar_url": ""}, {"x-oauth-scopes": "repo, workflow"}),
+                    "/user/repos": ([{"full_name": "ada/app", "private": True, "description": "My app", "default_branch": "main",
+                                      "pushed_at": "", "language": "Python", "html_url": "https://github.com/ada/app"}], {}),
+                    "/repos/ada/app": ({"default_branch": "main"}, {}),
+                    "/repos/ada/app/branches": ([{"name": "main", "protected": True}, {"name": "feature"}], {}),
+                    "/repos/ada/app/pulls/7": ({"number": 7, "title": "Add login", "user": {"login": "ada"}, "state": pr["state"],
+                                                "merged": pr["merged"], "draft": False, "head": {"ref": "feature", "sha": "abc"},
+                                                "base": {"ref": "main"}, "html_url": "https://github.com/ada/app/pull/7",
+                                                "comments": pr["comments"], "review_comments": 0}, {}),
+                    "/repos/ada/app/pulls/7/reviews": (pr["reviews"], {}),
+                    "/repos/ada/app/commits/abc/check-runs": ({"check_runs": [{"status": "completed", "conclusion": "success"}]
+                                                               if pr["checks"] == "success" else [{"status": "in_progress"}]}, {}),
+                    "/repos/ada/app/commits/abc/status": ({"statuses": []}, {}),
+                }
+                obj, headers = routes.get(p, ({"message": "not found"}, {}))
+                self._send(obj, 200 if p in routes else 404, headers)
+
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        self.url = f"http://127.0.0.1:{self.server.server_port}"
+
+
+def test_github_connect_repos_branches_and_watch(tmp_path, monkeypatch):
+    import os
+    import stat
+    from docks import github, pr_watch
+    fake = FakeGitHub()
+    monkeypatch.setattr(github, "API", fake.url)
+    monkeypatch.setattr(github, "WEB", fake.url)
+    for var in ("GITHUB_TOKEN", "GH_TOKEN"):
+        monkeypatch.delenv(var, raising=False)
+    monkeypatch.setattr(github.shutil, "which", lambda _: None)
+    assert github.whoami() is None
+    with pytest.raises(github.GitHubError, match="didn't accept"):
+        github.save_token("bad")
+    info = github.save_token("good")
+    assert info["login"] == "ada" and stat.S_IMODE(os.stat(github.account_path()).st_mode) == 0o600
+    assert github.whoami()["source"] == "docks" and github.token() == "good"
+    assert github.my_repos()[0]["repo"] == "ada/app"
+    assert github.branches("ada/app") == {"default": "main", "branches": [{"name": "main", "protected": True},
+                                                                         {"name": "feature", "protected": False}]}
+    # watching a PR reports what changed
+    pr_watch.watch("ada/app", 7)
+    assert pr_watch.check_once() == []
+    fake.prs[7].update(checks="success", reviews=[{"state": "APPROVED", "user": {"login": "bob"}}], comments=2)
+    [update] = pr_watch.check_once()
+    assert update["changes"] == ["checks passed on ada/app#7", "ada/app#7: approved", "2 new comments on ada/app#7"]
+    fake.prs[7].update(state="closed", merged=True)
+    assert pr_watch.check_once()[0]["changes"][0] == "ada/app#7 was merged"
+    assert pr_watch.watched() == []  # finished PRs stop being watched
+    # signing in through GitHub's device flow
+    github.logout()
+    monkeypatch.setenv("DOCKS_GITHUB_CLIENT_ID", "client-1")
+    flow = github.start_device_login()
+    assert flow["user_code"] == "ABCD-1234"
+    assert github.poll_device_login(flow) is None
+    assert github.poll_device_login(flow)["login"] == "ada" and github.token() == "gho_device"
+
+
+def test_context_repos_are_read_only_references(tmp_path, monkeypatch):
+    from docks import context_repos
+    source = tmp_path / "lib"
+    source.mkdir()
+    git(source, "init", "-q")
+    write(source / "README.md", "Shared helpers")
+    git(source, "add", ".")
+    git(source, "commit", "-qm", "init")
+    project = tmp_path / "project"
+    project.mkdir()
+
+    def fake_clone(repo, branch, dest):
+        git(tmp_path, "clone", "-q", str(source), str(dest))
+    monkeypatch.setattr(context_repos, "_clone", fake_clone)
+    item = context_repos.add(project, "acme/lib")
+    assert item["present"] and (context_repos.folder("acme/lib") / "README.md").exists()
+    assert not (project / ".docks").exists()  # the list lives in Docks' own folder
+    agent, _, results = run_calls(project, [
+        ("read_file", {"path": str(context_repos.folder("acme/lib") / "README.md")}),
+        ("write_file", {"path": str(context_repos.folder("acme/lib") / "README.md"), "content": "changed"}),
+    ], mode="yolo")
+    assert "acme/lib" in agent.system and "Shared helpers" in results["t0"]["content"]
+    assert results["t1"]["is_error"] and "Blocked by the permission rule" in results["t1"]["content"]
+    assert context_repos.remove(project, "acme/lib") and context_repos.items(project) == []

@@ -51,6 +51,36 @@ class Session:
         agent.display = WebDisplay(self)
         agent.procs.on_change = lambda info: self.publish({"type": "process", **info})
         agent.on_background_done = self._background_done
+        self.github_login = {}  # a sign-in through GitHub in progress
+        from ..pr_watch import Watcher
+        self.pr_watcher = Watcher(lambda u: self.publish({"type": "pr_update", "text": "; ".join(u["changes"]),
+                                                           "url": u["url"], "title": u["title"]}))
+        self.pr_watcher.start()
+
+    def start_github_login(self) -> dict:
+        """Begin signing in on github.com; a thread waits for the person to approve and reports back."""
+        flow = github.start_device_login()
+        self.github_login = {"user_code": flow["user_code"], "verification_uri": flow["verification_uri"], "status": "waiting"}
+
+        def wait():
+            import time
+            deadline = time.monotonic() + flow["expires_in"]
+            while time.monotonic() < deadline:
+                time.sleep(flow["interval"])
+                try:
+                    info = github.poll_device_login(flow)
+                except github.GitHubError as e:
+                    self.github_login = {"status": "error", "error": str(e)}
+                    self.publish({"type": "github_login", **self.github_login})
+                    return
+                if info:
+                    self.github_login = {"status": "connected", "login": info["login"]}
+                    self.publish({"type": "github_login", **self.github_login})
+                    return
+            self.github_login = {"status": "error", "error": "the sign-in code expired; start again"}
+            self.publish({"type": "github_login", **self.github_login})
+        threading.Thread(target=wait, daemon=True).start()
+        return self.github_login
 
     def publish(self, event: dict) -> None:
         with self.lock:
@@ -377,6 +407,31 @@ def make_handler(session: Session, token: str, preview: dict):
                                          "current": session.agent.session_id})
             if path == "/api/git":
                 return self._json(200, github.status(root))
+            if path == "/api/github/account":
+                return self._json(200, {"account": github.whoami(), "device_login": bool(github.device_client_id()),
+                                         "login": session.github_login, "web": github.WEB})
+            if path.startswith("/api/github/") or path == "/api/context-repos":
+                from urllib.parse import parse_qs
+                from .. import context_repos, pr_watch
+                q = {k: v[0] for k, v in parse_qs(query).items()}
+                try:
+                    if path == "/api/github/repos":
+                        return self._json(200, {"repos": github.my_repos(q.get("q", ""))})
+                    if path == "/api/github/branches":
+                        repo = github.repo_of(root)
+                        current = github.git(root, "rev-parse", "--abbrev-ref", "HEAD", check=False)
+                        return self._json(200, {**github.branches(repo), "current": current, "repo": repo})
+                    if path == "/api/github/prs":
+                        try:
+                            here = github.pull_requests(github.repo_of(root))
+                        except github.GitHubError:
+                            here = []
+                        return self._json(200, {"here": here, "mine": github.my_pull_requests(),
+                                                 "watched": [{"repo": w["repo"], "number": w["number"]} for w in pr_watch.watched()]})
+                    if path == "/api/context-repos":
+                        return self._json(200, {"repos": context_repos.items(root)})
+                except github.GitHubError as e:
+                    return self._json(400, {"error": str(e)})
             if path == "/api/context":
                 return self._json(200, session.agent.context_report())
             if path == "/api/doctor":
@@ -520,6 +575,42 @@ def make_handler(session: Session, token: str, preview: dict):
                     return self._json(409, {"error": "stop the current task first"})
                 session.new_chat()
                 return self._json(200, {"ok": True})
+            if path.startswith("/api/github/") or path == "/api/context-repos":
+                from .. import context_repos, pr_watch
+                try:
+                    if path == "/api/github/login":
+                        if body.get("token"):
+                            info = github.save_token(str(body["token"]))
+                            return self._json(200, {"account": info})
+                        return self._json(200, {"login": session.start_github_login()})
+                    if path == "/api/github/logout":
+                        github.logout()
+                        return self._json(200, {"account": github.whoami()})
+                    if path == "/api/github/switch":
+                        if session.busy:
+                            return self._json(409, {"error": "Docks is working; wait for it to finish first"})
+                        name = github.switch_branch(root, str(body.get("branch", "")))
+                        session.publish({"type": "notice", "text": f"Switched to branch {name}"})
+                        return self._json(200, {"branch": name})
+                    if path == "/api/github/watch":
+                        repo, number = str(body.get("repo", "")), int(body.get("number", 0))
+                        pr_watch.watch(repo, number, bool(body.get("on", True)))
+                        return self._json(200, {"watched": [{"repo": w["repo"], "number": w["number"]} for w in pr_watch.watched()]})
+                    if path == "/api/context-repos":
+                        action = body.get("action")
+                        if action == "add":
+                            context_repos.add(root, str(body.get("repo", "")), str(body.get("branch", "")))
+                        elif action == "remove":
+                            context_repos.remove(root, str(body.get("repo", "")))
+                        elif action == "sync":
+                            context_repos.sync(root, force=True)
+                        a = session.agent
+                        a.ext.permissions.add("deny", context_repos.deny_rules(root), root)
+                        a.reload_instructions()
+                        return self._json(200, {"repos": context_repos.items(root)})
+                except (github.GitHubError, ValueError) as e:
+                    return self._json(400, {"error": str(e)})
+                return self._json(404, {"error": "not found"})
             if path == "/api/memory":
                 from .. import instructions
                 text = str(body.get("text", "")).strip()

@@ -24,7 +24,7 @@ from .plugins import TOOL_ALIASES, Extensions, hook_tool_input
 from .procs import ProcessManager
 import importlib.util
 
-from . import instructions, models, tools
+from . import context_repos, instructions, models, tools
 from .browser import SCHEMA as BROWSER_SCHEMA, Browser, BrowserError
 from .lsp import SCHEMA as LSP_SCHEMA, LSPError, LSPManager
 from .sandbox import Sandbox, SandboxUnavailable
@@ -200,6 +200,7 @@ def build_system_prompt(root: Path, ext: Extensions | None = None, style=None) -
     written = instructions.system_section(root)
     if written:
         prompt += f"\n{written}\n"
+    prompt += context_repos.system_note(root)
     lessons = memory.load(root)
     if lessons:
         prompt += f"\n{lessons}\n"
@@ -276,6 +277,10 @@ class Agent:
         if self.ext is None:
             self.ext = Extensions.load(self.root)
         self._folders_read = set()  # subfolder instruction files already shown to Claude
+        if self.ext.permissions is not None:  # reference repos are read-only
+            self.ext.permissions.add("deny", context_repos.deny_rules(self.root), self.root)
+        if not self.helper:
+            context_repos.sync_in_background(self.root)
         self.output_style = self.output_style or str(self.ext.settings.get("outputStyle") or "default")
         self.reload_instructions()
         if self.procs is None:

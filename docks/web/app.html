@@ -413,6 +413,17 @@ svg { flex: none; }
 .doc-row.ok > span { color: var(--green, #16a34a); } .doc-row.warn > span { color: #ca8a04; } .doc-row.fail > span { color: #dc2626; }
 .syscard pre { white-space: pre-wrap; max-height: 260px; overflow: auto; font-size: 12px; }
 #perm-info code { font-size: 12px; overflow-wrap: anywhere; }
+.gh-list { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; }
+.gh-row { display: flex; align-items: center; gap: 8px; padding: 6px 4px; border-bottom: 1px solid var(--line); font-size: 13px; min-width: 0; flex-wrap: wrap; }
+.gh-row a { color: inherit; text-decoration: none; font-weight: 500; overflow-wrap: anywhere; }
+.gh-row a:hover { text-decoration: underline; }
+.gh-row small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.gh-row .spacer { flex: 1; }
+.gh-row .btn { padding: 3px 8px; font-size: 12px; }
+.gh-sub { font-size: 12px; font-weight: 600; color: var(--muted); margin: 12px 0 2px; text-transform: uppercase; letter-spacing: .03em; }
+.chk { width: 16px; text-align: center; } .chk.ok { color: #16a34a; } .chk.bad { color: #dc2626; } .chk.wait { color: #ca8a04; }
+.card .muted { color: var(--muted); font-size: 12.5px; }
+.card .code { font-family: var(--mono, monospace); font-size: 16px; letter-spacing: .1em; }
 </style>
 </head>
 <body>
@@ -940,6 +951,16 @@ function handle(ev) {
       const parent = ev.helper && helperSteps[ev.helper];
       (parent ? parent.querySelector('.subs') : group).appendChild(s); lastStep = s; scrollDown();
       break;
+    }
+    case 'pr_update': {
+      const n = h('div', 'notice'); n.innerHTML = `${icon('pr', 13)} <span></span> <a target="_blank" rel="noopener">open</a>`;
+      n.querySelector('span').textContent = ev.text; n.querySelector('a').href = ev.url;
+      thread.appendChild(n); alertUser(ev.text); toast(ev.text);
+      break;
+    }
+    case 'github_login': {
+      if (ev.status === 'connected') toast('Connected to GitHub as ' + ev.login); else toast(ev.error || 'GitHub sign-in failed');
+      loadGit(); break;
     }
     case 'tool_image': {
       const step = (ev.id && steps[ev.id]) || lastStep;
@@ -1474,6 +1495,122 @@ $('preview-open').onclick = () => { if (state.preview) window.open(previewUrl(),
 $('dev-desktop').onclick = () => { $('stage').classList.remove('phone'); $('dev-desktop').classList.add('on'); $('dev-phone').classList.remove('on'); };
 $('dev-phone').onclick = () => { $('stage').classList.add('phone'); $('dev-phone').classList.add('on'); $('dev-desktop').classList.remove('on'); };
 
+// ---------------------------------------------------------------- GitHub account, repos, PRs, context repos
+async function accountCard(g) {
+  const r = await api('/api/github/account'); const a = r.ok ? await r.json() : {};
+  const c = h('div', 'card');
+  if (a.account) {
+    c.innerHTML = `<h3>${icon('github')} Your GitHub account</h3><div class="repo-line"><b></b><span class="pill">via ${esc(a.account.source || 'docks')}</span><button class="btn ghost">Sign out</button></div>`;
+    c.querySelector('b').textContent = a.account.login;
+    c.querySelector('button').onclick = async () => { await api('/api/github/logout', {}); loadGit(); };
+    if (a.account.source !== 'docks') c.querySelector('button').remove();
+    return c;
+  }
+  c.innerHTML = `<h3>${icon('github')} Connect GitHub</h3><p>Give Docks access to your repositories: browse branches, track pull requests, fix issues and review code.</p>
+    <div class="row gh-device"><button class="btn primary">Sign in with GitHub</button></div>
+    <p class="muted" style="margin:10px 0 6px">Or paste a personal access token (<a target="_blank" rel="noopener" href="${esc((a.web || 'https://github.com') + '/settings/tokens')}">create one</a>: scopes repo, read:org, workflow). It stays on this computer.</p>
+    <div class="row"><input class="input" type="password" autocomplete="off" placeholder="ghp_… or github_pat_…"><button class="btn">Connect</button></div>`;
+  const device = c.querySelector('.gh-device button');
+  if (!a.device_login) { device.disabled = true; device.title = 'Needs DOCKS_GITHUB_CLIENT_ID (see the README); use a token for now'; }
+  device.onclick = async () => {
+    const rr = await api('/api/github/login', {}); const j = await rr.json();
+    if (!rr.ok) return toast(j.error);
+    c.querySelector('.gh-device').innerHTML = `<p>Open <a target="_blank" rel="noopener" href="${esc(j.login.verification_uri)}">${esc(j.login.verification_uri)}</a> and enter <b class="code"></b>. Waiting for you to approve…</p>`;
+    c.querySelector('.code').textContent = j.login.user_code;
+    window.open(j.login.verification_uri, '_blank', 'noopener');
+  };
+  const tok = c.querySelector('input[type=password]');
+  c.querySelectorAll('.row')[1].querySelector('button').onclick = async () => {
+    if (!tok.value.trim()) return;
+    const rr = await api('/api/github/login', { token: tok.value.trim() }); tok.value = '';
+    if (rr.ok) { toast('Connected as ' + (await rr.json()).account.login); loadGit(); } else toast((await rr.json()).error);
+  };
+  return c;
+}
+function branchesCard() {
+  const c = h('div', 'card', `<h3>${icon('pr')} Branches</h3><div class="muted">Loading…</div>`);
+  api('/api/github/branches').then(async r => {
+    const d = await r.json(); const body = c.querySelector('.muted'); body.remove();
+    if (!r.ok) return c.appendChild(h('p', null, esc(d.error)));
+    const list = h('div', 'gh-list');
+    for (const b of d.branches) {
+      const row = h('div', 'gh-row', `<span></span>${b.name === d.default ? '<span class="pill">default</span>' : ''}${b.protected ? '<span class="pill">protected</span>' : ''}<span class="spacer"></span>`);
+      row.querySelector('span').textContent = b.name;
+      if (b.name === d.current) row.appendChild(h('span', 'pill ok', 'checked out'));
+      else { const sw = h('button', 'btn ghost', 'Switch'); sw.onclick = async () => { const rr = await api('/api/github/switch', { branch: b.name }); if (rr.ok) { toast('Switched to ' + b.name); refreshAll(); } else toast((await rr.json()).error); }; row.appendChild(sw); }
+      list.appendChild(row);
+    }
+    c.appendChild(list);
+  });
+  return c;
+}
+const CHECK = { success: ['✓', 'ok'], failure: ['✗', 'bad'], pending: ['●', 'wait'], none: ['·', ''] };
+function prsCard(g) {
+  const c = h('div', 'card', `<h3>${icon('pr')} Pull requests</h3><div class="muted">Loading…</div>`);
+  api('/api/github/prs').then(async r => {
+    const d = await r.json(); c.querySelector('.muted').remove();
+    if (!r.ok) return c.appendChild(h('p', null, esc(d.error)));
+    const watched = new Set(d.watched.map(w => `${w.repo}#${w.number}`));
+    const row = (p, showRepo) => {
+      const key = `${p.repo}#${p.number}`, [mark, cls] = CHECK[p.checks || 'none'];
+      const el = h('div', 'gh-row', `<span class="chk ${cls}" title="checks: ${esc(p.checks || 'unknown')}">${mark}</span><a target="_blank" rel="noopener"></a><small></small><span class="spacer"></span>`);
+      el.querySelector('a').href = p.url; el.querySelector('a').textContent = `${showRepo ? p.repo : ''}#${p.number} ${p.title}`;
+      el.querySelector('small').textContent = [p.author, p.draft ? 'draft' : ''].filter(Boolean).join(' · ');
+      const w = h('button', 'btn ghost', watched.has(key) ? 'Watching' : 'Watch');
+      w.title = 'Get told when checks finish, reviews come in, or it is merged';
+      w.onclick = async () => { const on = !watched.has(key); const rr = await api('/api/github/watch', { repo: p.repo, number: p.number, on }); if (rr.ok) { on ? watched.add(key) : watched.delete(key); w.textContent = on ? 'Watching' : 'Watch'; toast(on ? `Watching ${key}` : `Stopped watching ${key}`); } };
+      el.appendChild(w);
+      if (p.repo === g.repo) { const rv = h('button', 'btn ghost', 'Review'); rv.onclick = async () => { const rr = await api('/api/github', { action: 'review', number: p.number }); if (rr.ok) { mobile('chat'); toast('Docks is reviewing it'); } }; el.appendChild(rv); }
+      return el;
+    };
+    const section = (title, items, showRepo) => { c.appendChild(h('div', 'gh-sub', esc(title))); if (!items.length) c.appendChild(h('div', 'muted', 'None')); items.forEach(p => c.appendChild(row(p, showRepo))); };
+    section(`Open in ${g.repo}`, d.here, false);
+    section('Yours, everywhere', d.mine.authored, true);
+    section('Waiting for your review', d.mine.review_requested, true);
+  });
+  return c;
+}
+function reposCard() {
+  const c = h('div', 'card', `<h3>${icon('github')} Your repositories</h3><div class="row"><input class="input" placeholder="Search your repositories"></div><div class="gh-list"></div>`);
+  const list = c.querySelector('.gh-list'), input = c.querySelector('input');
+  const load = async () => {
+    list.innerHTML = '<div class="muted">Loading…</div>';
+    const r = await api('/api/github/repos?q=' + encodeURIComponent(input.value.trim())); const d = await r.json(); list.innerHTML = '';
+    if (!r.ok) return list.appendChild(h('p', null, esc(d.error)));
+    for (const repo of d.repos.slice(0, 40)) {
+      const el = h('div', 'gh-row', `<a target="_blank" rel="noopener"></a>${repo.private ? '<span class="pill">private</span>' : ''}<small></small><span class="spacer"></span>`);
+      el.querySelector('a').href = repo.url; el.querySelector('a').textContent = repo.repo; el.querySelector('small').textContent = repo.description.slice(0, 80);
+      const add = h('button', 'btn ghost', 'Use as context'); add.title = 'Let Docks read this repository while it works here';
+      add.onclick = async () => { add.disabled = true; add.textContent = 'Adding…'; const rr = await api('/api/context-repos', { action: 'add', repo: repo.repo }); if (rr.ok) { toast('Added ' + repo.repo); loadGit(); } else { toast((await rr.json()).error); add.disabled = false; add.textContent = 'Use as context'; } };
+      const copy = h('button', 'btn ghost', 'Clone'); copy.title = 'Copy the command that clones it and opens Docks there';
+      copy.onclick = () => navigator.clipboard?.writeText(`docks clone ${repo.repo}`).then(() => toast('Copied: docks clone ' + repo.repo));
+      el.append(add, copy); list.appendChild(el);
+    }
+  };
+  let t; input.addEventListener('input', () => { clearTimeout(t); t = setTimeout(load, 400); });
+  load();
+  return c;
+}
+function contextCard() {
+  const c = h('div', 'card', `<h3>${icon('book')} Context repositories</h3><p>Other repositories Docks can read while it works here, like files in a Claude Project. They stay in sync and Docks never edits them.</p><div class="gh-list"></div><div class="row"><input class="input" placeholder="owner/repo"><button class="btn">Add</button><button class="btn ghost">Sync now</button></div>`);
+  const list = c.querySelector('.gh-list');
+  const render = repos => {
+    list.innerHTML = '';
+    if (!repos.length) list.appendChild(h('div', 'muted', 'None yet.'));
+    for (const r of repos) {
+      const el = h('div', 'gh-row', `<b></b><small></small><span class="spacer"></span>`);
+      el.querySelector('b').textContent = r.repo + (r.branch ? ' @' + r.branch : ''); el.querySelector('small').textContent = r.present ? 'synced' : 'downloading…';
+      const rm = h('button', 'btn ghost', 'Remove'); rm.onclick = async () => { const rr = await api('/api/context-repos', { action: 'remove', repo: r.repo }); if (rr.ok) render((await rr.json()).repos); };
+      el.appendChild(rm); list.appendChild(el);
+    }
+  };
+  api('/api/context-repos').then(async r => r.ok && render((await r.json()).repos));
+  const [addBtn, syncBtn] = c.querySelectorAll('.row button');
+  addBtn.onclick = async () => { const v = c.querySelector('.row input').value.trim(); if (!v) return; addBtn.disabled = true; const rr = await api('/api/context-repos', { action: 'add', repo: v }); addBtn.disabled = false; if (rr.ok) { c.querySelector('.row input').value = ''; render((await rr.json()).repos); toast('Added ' + v); } else toast((await rr.json()).error); };
+  syncBtn.onclick = async () => { syncBtn.disabled = true; const rr = await api('/api/context-repos', { action: 'sync' }); syncBtn.disabled = false; if (rr.ok) { render((await rr.json()).repos); toast('Synced'); } };
+  return c;
+}
+
 // ---------------------------------------------------------------- GitHub
 async function loadGit() {
   const res = await api('/api/git'); if (!res.ok) return;
@@ -1485,9 +1622,13 @@ async function loadGit() {
   const gh = $('gh'); gh.innerHTML = '';
 
   const repoCard = h('div', 'card');
-  repoCard.innerHTML = `<h3>${icon('github')} Repository</h3><div class="repo-line">${g.repo ? `<b>${esc(g.repo)}</b>` : g.is_repo ? '<span>Local git repository (no GitHub remote)</span>' : '<span>Not a git repository</span>'}${g.branch ? `<span class="pill">${icon('pr', 12)} ${esc(g.branch)}</span>` : ''}${g.connected ? `<span class="pill ok">Connected</span>` : `<span class="pill off">Not connected</span>`}</div>` +
-    (g.connected ? '' : `<p style="margin:10px 0 0">To connect, set <code>GITHUB_TOKEN</code> before running <code>docks web</code>, or run <code>gh auth login</code>.</p>`);
+  repoCard.innerHTML = `<h3>${icon('github')} Repository</h3><div class="repo-line">${g.repo ? `<b>${esc(g.repo)}</b>` : g.is_repo ? '<span>Local git repository (no GitHub remote)</span>' : '<span>Not a git repository</span>'}${g.branch ? `<span class="pill">${icon('pr', 12)} ${esc(g.branch)}</span>` : ''}${g.connected ? `<span class="pill ok">Connected</span>` : `<span class="pill off">Not connected</span>`}</div>`;
   gh.appendChild(repoCard);
+  gh.appendChild(await accountCard(g));
+  if (g.connected) {
+    if (g.repo) { gh.appendChild(branchesCard()); gh.appendChild(prsCard(g)); }
+    gh.appendChild(reposCard()); gh.appendChild(contextCard());
+  }
 
   if (!g.is_repo) {
     const c = h('div', 'card', `<h3>${icon('github')} Start from a GitHub repo</h3><p>Clone a repository into this empty folder and start working on it.</p><div class="row"><input class="input" id="clone-repo" placeholder="owner/repo or https://github.com/…"><button class="btn primary" id="clone-go">Clone</button></div>`);

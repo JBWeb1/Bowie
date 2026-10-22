@@ -399,6 +399,14 @@ def repl(agent: Agent) -> None:
     if terminal.notifications_on(agent):
         agent.display.alert = terminal.notify
     agent.on_background_done = lambda: print(ui.dim("\n· a background helper finished; its report goes with your next message"))
+    from .pr_watch import Watcher
+
+    def pr_update(update):
+        text = "; ".join(update["changes"])
+        print(ui.dim(f"\n· {text}  {update['url']}"))
+        if terminal.notifications_on(agent):
+            terminal.notify(text)
+    Watcher(pr_update).start()
     approve_project_hooks(agent)
     print(ui.bold(f"Docks {__version__}") + ui.dim(f"  {agent.model} · {agent.root} · mode: {agent.active_mode}"))
     print(ui.dim("Tell me what to build. /help for commands.\n"))
@@ -556,6 +564,156 @@ def use_worktree(root: Path, name: str | None) -> Path:
         raise SystemExit(1)
     print(ui.dim(f"worktree: {path}  (branch docks/{path.name}; merge it later with: docks worktree merge {path.name})"))
     return path
+
+
+def _hoist_dir(argv: list) -> list:
+    """Let -C DIR come anywhere on the line (argparse wants it before the sub-command)."""
+    argv = list(argv)
+    for flag in ("-C", "--dir"):
+        if flag in argv[1:]:
+            i = argv.index(flag)
+            if i + 1 < len(argv):
+                pair = argv[i:i + 2]
+                del argv[i:i + 2]
+                argv = pair + argv
+    return argv
+
+
+def github_main(argv) -> int:
+    import getpass
+    import time
+    from . import github
+    parser = argparse.ArgumentParser(prog="docks github", description="Your GitHub connection.")
+    parser.add_argument("-C", "--dir", default=".")
+    sub = parser.add_subparsers(dest="cmd", required=True)
+    login = sub.add_parser("login", help="connect your GitHub account")
+    login.add_argument("--token", action="store_true", help="paste a personal access token instead of signing in on GitHub")
+    login.add_argument("--gh", action="store_true", help="use the GitHub CLI's login (gh auth login)")
+    sub.add_parser("logout", help="forget the connected account")
+    sub.add_parser("status", help="which account is connected")
+    repos = sub.add_parser("repos", help="your repositories (newest activity first)")
+    repos.add_argument("query", nargs="?", default="")
+    br = sub.add_parser("branches", help="branches of a repository (default: this project's)")
+    br.add_argument("repo", nargs="?")
+    prs = sub.add_parser("prs", help="open pull requests: this project's, or yours across GitHub with --mine")
+    prs.add_argument("repo", nargs="?")
+    prs.add_argument("--mine", action="store_true")
+    w = sub.add_parser("watch", help="get told when a PR's checks, reviews or state change: owner/repo#12 or #12")
+    w.add_argument("pr", nargs="?", help="leave out to list what you're watching")
+    w.add_argument("--off", action="store_true", help="stop watching it")
+    args = parser.parse_args(_hoist_dir(argv))
+    root = Path(args.dir).expanduser().resolve()
+    try:
+        if args.cmd == "login":
+            if args.gh:
+                import shutil
+                import subprocess
+                if not shutil.which("gh"):
+                    ui.error("the GitHub CLI (gh) isn't installed; use docks github login (or --token)")
+                    return 1
+                return subprocess.call(["gh", "auth", "login", "--scopes", "repo,read:org,workflow"])
+            if args.token or not github.device_client_id():
+                if not args.token:
+                    print(ui.dim("Signing in on GitHub needs DOCKS_GITHUB_CLIENT_ID (see the README); using a token instead."))
+                print(f"Create a token at {github.WEB}/settings/tokens (classic: scopes repo, read:org, workflow; "
+                      "or a fine-grained token with Contents, Pull requests, Issues and Workflows).")
+                info = github.save_token(getpass.getpass("Paste it here (it won't be shown): "))
+            else:
+                flow = github.start_device_login()
+                print(f"Open {ui.bold(flow['verification_uri'])} and enter the code {ui.bold(flow['user_code'])}")
+                deadline = time.monotonic() + flow["expires_in"]
+                info = None
+                while info is None and time.monotonic() < deadline:
+                    time.sleep(flow["interval"])
+                    info = github.poll_device_login(flow)
+                if info is None:
+                    ui.error("the code expired; run docks github login again")
+                    return 1
+            print(ui.green(f"connected as {info['login']}") + ui.dim(f"  (saved in {github.account_path()}, only you can read it)"))
+        elif args.cmd == "logout":
+            print("signed out" if github.logout() else ui.dim("no account was saved by Docks"))
+            if github.token_source() in ("environment", "gh"):
+                print(ui.dim(f"(a token from {github.token_source()} is still in use)"))
+        elif args.cmd == "status":
+            me = github.whoami()
+            print(ui.green(f"connected as {me['login']}") + ui.dim(f"  via {me['source']}; scopes: {me['scopes'] or 'fine-grained'}")
+                  if me else ui.yellow("not connected: run docks github login"))
+        elif args.cmd == "repos":
+            for r in github.my_repos(args.query):
+                print(f"  {ui.bold(r['repo']):<46} {ui.dim(('private · ' if r['private'] else '') + (r['language'] or ''))}  {r['description'][:70]}")
+        elif args.cmd == "branches":
+            data = github.branches(args.repo or github.repo_of(root))
+            for b in data["branches"]:
+                print(f"  {'●' if b['name'] == data['default'] else ' '} {b['name']}{ui.dim(' (protected)') if b['protected'] else ''}")
+        elif args.cmd == "watch":
+            from . import pr_watch
+            if not args.pr:
+                items = pr_watch.watched()
+                for i in items:
+                    last = i.get("last") or {}
+                    print(f"  {i['repo']}#{i['number']}  {last.get('title', '')[:60]}  {ui.dim(last.get('checks', ''))}")
+                print(ui.dim("not watching any pull requests" if not items else
+                             "Docks reports changes while a session is open (terminal or browser)"))
+                return 0
+            repo, _, number = args.pr.rpartition("#")
+            repo = repo or github.repo_of(root)
+            if not number.isdigit():
+                ui.error("give a pull request like owner/repo#12, or #12 for this project")
+                return 1
+            pr_watch.watch(repo, int(number), not args.off)
+            print(f"{'stopped watching' if args.off else 'watching'} {repo}#{number}")
+        elif args.cmd == "prs":
+            marks = {"success": ui.green("✓"), "failure": ui.red("✗"), "pending": ui.yellow("●"), "none": ui.dim("·")}
+            if args.mine:
+                mine = github.my_pull_requests()
+                for title, key in (("Yours", "authored"), ("Waiting for your review", "review_requested")):
+                    print(ui.bold(title))
+                    for p_ in mine[key] or []:
+                        print(f"  {p_['repo']}#{p_['number']}  {p_['title'][:80]}")
+                    if not mine[key]:
+                        print(ui.dim("  none"))
+            else:
+                for p_ in github.pull_requests(args.repo or github.repo_of(root)):
+                    print(f"  {marks[p_['checks']]} #{p_['number']:<6} {p_['title'][:70]}  {ui.dim(p_['author'] + (' · draft' if p_['draft'] else ''))}")
+    except github.GitHubError as e:
+        ui.error(str(e))
+        return 1
+    return 0
+
+
+def context_main(argv) -> int:
+    from . import context_repos, github
+    parser = argparse.ArgumentParser(prog="docks context", description="Other repositories Docks can read while it works here.")
+    parser.add_argument("-C", "--dir", default=".")
+    sub = parser.add_subparsers(dest="cmd", required=True)
+    a = sub.add_parser("add", help="add a GitHub repository (owner/repo)")
+    a.add_argument("repo")
+    a.add_argument("--branch", default="")
+    rm = sub.add_parser("remove")
+    rm.add_argument("repo")
+    sub.add_parser("list")
+    sub.add_parser("sync", help="pull the latest of each")
+    args = parser.parse_args(_hoist_dir(argv))
+    root = Path(args.dir).expanduser().resolve()
+    try:
+        if args.cmd == "add":
+            item = context_repos.add(root, args.repo, args.branch)
+            print(ui.green(f"added {item['repo']}") + ui.dim(f"  ({item['path']})"))
+        elif args.cmd == "remove":
+            print("removed" if context_repos.remove(root, args.repo) else ui.dim("it wasn't in the list"))
+        elif args.cmd == "sync":
+            for note in context_repos.sync(root, force=True) or ["nothing to sync"]:
+                print(note)
+        else:
+            found = context_repos.items(root)
+            if not found:
+                print(ui.dim("no reference repositories yet: docks context add owner/repo"))
+            for i in found:
+                print(f"  {ui.bold(i['repo'])}{' @' + i['branch'] if i['branch'] else ''}  {ui.dim(i['path'])}")
+    except github.GitHubError as e:
+        ui.error(str(e))
+        return 1
+    return 0
 
 
 def models_main(argv) -> int:
@@ -731,6 +889,10 @@ def main(argv=None) -> int:
         return plugin_main(argv[1:])
     if argv[:1] == ["sessions"]:
         return sessions_main(argv[1:])
+    if argv[:1] in (["github"], ["gh"]):
+        return github_main(argv[1:])
+    if argv[:1] == ["context"]:
+        return context_main(argv[1:])
     if argv[:1] == ["models"]:
         return models_main(argv[1:])
     if argv[:1] == ["doctor"]:
