@@ -18,7 +18,7 @@ from http.server import BaseHTTPRequestHandler, SimpleHTTPRequestHandler, Thread
 from importlib import resources
 from pathlib import Path
 
-from .. import github
+from .. import github, models
 from ..agent import Agent
 from ..checkpoints import CheckpointError
 from ..sandbox import SandboxUnavailable, engine as sandbox_engine, unavailable_reason as sandbox_reason
@@ -150,6 +150,7 @@ class Session:
                 "plan": a.plan, "turns": [bool(t["checkpoint"]) for t in a.turns],
                 "mcp": a.mcp.summary() if a.mcp else [], "extensions": a.ext.summary(),
                 "session": {"id": a.session_id, "name": a.session_name}, "bookmarks": a.bookmarks,
+                "models": [{"id": c["id"], "label": models.label(c["id"]), "note": c["note"]} for c in models.CHOICES],
                 "output_style": a.output_style,
                 "output_styles": [{"name": "default", "description": "Docks as usual"}] +
                                  [{"name": k, "description": v.description} for k, v in a.ext.output_styles.items()],
@@ -566,7 +567,10 @@ def make_handler(session: Session, token: str, preview: dict):
                 if body.get("effort") in ("low", "medium", "high", "xhigh", "max"):
                     a.effort = body["effort"]
                 if isinstance(body.get("model"), str) and body["model"].strip():
-                    a.model = body["model"].strip()
+                    try:
+                        a.set_model(body["model"])
+                    except ValueError as e:
+                        return self._json(400, {"error": str(e)})
                 return self._json(200, session.state())
             self._json(404, {"error": "not found"})
 

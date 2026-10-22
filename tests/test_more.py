@@ -376,3 +376,65 @@ def test_status_line_keys_and_notifications(tmp_path):
     quiet = io.StringIO()
     terminal.notify("x", out=quiet)
     assert quiet.getvalue() == ""  # not a terminal: nothing
+
+
+# ---------------------------------------------------------------- models: Fable and Codex
+
+def test_model_choices_fable_and_codex(tmp_path, monkeypatch):
+    from docks import models
+    agent = Agent(root=tmp_path, client=FakeClient([]), display=Display(), model="fable")
+    assert agent.model == "claude-fable-5-1"
+    assert {t["type"] for t in agent.tools if t["name"] in ("web_search", "web_fetch")} == {"web_search_20250305", "web_fetch_20250910"}
+    agent.set_model("opus")
+    assert {t["type"] for t in agent.tools if t["name"] == "web_search"} == {"web_search_20260209"}
+
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("DOCKS_ROUTER_URL", raising=False)
+    with pytest.raises(ValueError, match="OPENAI_API_KEY"):
+        agent.set_model("codex")
+    assert agent.model == "claude-opus-5-5"
+
+    # A direct Anthropic client switches to the router for Codex, and back for Claude.
+    import anthropic
+    direct = anthropic.Anthropic(api_key="x")
+    router = object()
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setattr(models, "router_client", lambda model: router)
+    agent = Agent(root=tmp_path, client=direct, display=Display(), model="codex")
+    assert agent.client is router and agent.model == "codex"
+    assert not any(t["name"] == "web_search" for t in agent.tools)  # no server-side web tools elsewhere
+    agent.set_model("sonnet")
+    assert agent.client is direct and agent.model == "claude-sonnet-5-5"
+
+
+def test_router_offers_codex_and_fable_routes(tmp_path, monkeypatch):
+    from docks.router.config import load
+    monkeypatch.setenv("DOCKS_CODEX_MODEL", "gpt-test-codex")
+    cfg = load(tmp_path / "missing.json")
+    assert cfg["routes"]["codex"]["targets"][0] == "openai/gpt-test-codex"
+    assert cfg["routes"]["fable"]["targets"][0] == "anthropic/claude-fable-5-1"
+
+
+def test_codex_runs_through_the_in_process_router(tmp_path, monkeypatch):
+    """Codex with only an OpenAI key: Docks starts the router itself and talks OpenAI's format to it."""
+    import anthropic
+    from docks import models
+    from docks.router import config
+    from tests.test_router import OPENAI_TEXT_STREAM, FakeUpstream
+    oai = FakeUpstream("openai")
+    oai.replies.append((200, OPENAI_TEXT_STREAM, {}))
+    real_load = config.load
+
+    def fake_load(path=None):
+        cfg = real_load(tmp_path / "missing.json")
+        cfg["providers"] = {"openai": {"type": "openai", "base_url": oai.url + "/v1", "api_key_env": "OPENAI_API_KEY"}}
+        cfg["fallback_to_default"] = False
+        return cfg
+    monkeypatch.setattr(config, "load", fake_load)
+    monkeypatch.setattr(models, "_router", {"url": None, "engine": None})
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.delenv("DOCKS_ROUTER_URL", raising=False)
+    agent = Agent(root=tmp_path, client=anthropic.Anthropic(api_key="x"), display=Display(), model="codex")
+    agent.run("hello")
+    sent = oai.requests[0]["body"]
+    assert sent["model"] == models.codex_model() and agent.last_text() == "All done."

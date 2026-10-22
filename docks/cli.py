@@ -20,6 +20,7 @@ HELP = """Commands:
   /bookmark          save Claude's last reply;  /bookmarks  list saved replies
   /copy              copy Claude's last reply to the clipboard
   /commands /agents /skills /hooks   show what's installed
+  /model [NAME]      opus, fable, sonnet, haiku or codex
   /compact [focus]   summarize the conversation to free up room
   /context           what's filling the context window
   /memory            instruction files in use;  # <note> adds a line to one
@@ -270,6 +271,22 @@ def slash(agent: Agent, text: str) -> bool:
             print(ui.dim("no skills (add skills/<name>/SKILL.md in ~/.docks, .claude or a plugin)"))
         for sk in agent.ext.skills.values():
             print(f"  {ui.bold(sk.name)}  {ui.dim(sk.description[:100])}")
+    elif cmd == "/model":
+        from . import models
+        if not arg:
+            for c in models.CHOICES:
+                mark = ui.green("●") if c["id"] == agent.model else " "
+                print(f"  {mark} {c['alias']:<8} {models.label(c['id']):<34} {ui.dim(c['note'])}")
+            if agent.model not in [c["id"] for c in models.CHOICES]:
+                print(f"  {ui.green('●')} {agent.model}")
+            print(ui.dim("switch with /model NAME (or a full model ID)"))
+            return True
+        try:
+            model = agent.set_model(arg)
+        except ValueError as e:
+            ui.error(str(e))
+            return True
+        print(ui.dim(f"model: {models.label(model)}"))
     elif cmd == "/compact":
         print(ui.dim("summarizing the conversation…"))
         try:
@@ -581,7 +598,8 @@ def worktree_main(argv) -> int:
 def web_main(argv) -> int:
     parser = argparse.ArgumentParser(prog="docks web", description="Use Docks from your browser.")
     parser.add_argument("-C", "--dir", default=".", help="project directory to work in")
-    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", DEFAULT_MODEL))
+    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", DEFAULT_MODEL),
+                        help="opus (default), fable, sonnet, haiku, codex, or a model ID")
     parser.add_argument("-e", "--effort", default="high", choices=["low", "medium", "high", "xhigh", "max"])
     parser.add_argument("-y", "--yolo", action="store_true", help="run tools without asking for approval")
     parser.add_argument("--host", default="127.0.0.1", help="interface to listen on (default: this machine only)")
@@ -655,7 +673,8 @@ def github_task_main(argv) -> int:
     if argv[0] != "pr":
         parser.add_argument("number", type=int, help="issue number" if argv[0] == "fix" else "pull request number")
     parser.add_argument("-C", "--dir", default=".")
-    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", DEFAULT_MODEL))
+    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", DEFAULT_MODEL),
+                        help="opus (default), fable, sonnet, haiku, codex, or a model ID")
     parser.add_argument("-e", "--effort", default="high", choices=["low", "medium", "high", "xhigh", "max"])
     parser.add_argument("-y", "--yolo", action="store_true", help="run tools without asking for approval")
     args = parser.parse_args(argv[1:])
@@ -705,7 +724,8 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="docks", description="An AI coding agent that builds anything.")
     parser.add_argument("prompt", nargs="*", help="run this task once and exit (omit for interactive mode)")
     parser.add_argument("-C", "--dir", default=".", help="project directory to work in")
-    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", DEFAULT_MODEL))
+    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", DEFAULT_MODEL),
+                        help="opus (default), fable, sonnet, haiku, codex, or a model ID")
     parser.add_argument("-e", "--effort", default="high", choices=["low", "medium", "high", "xhigh", "max"])
     parser.add_argument("-y", "--yolo", action="store_true", help="run tools without asking for approval")
     parser.add_argument("-i", "--image", action="append", default=[],

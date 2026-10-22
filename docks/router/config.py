@@ -91,6 +91,10 @@ def load(path: Path | None = None) -> dict:
                 cfg[key].update(value)
             else:
                 cfg[key] = value
+    # Model routes Docks offers by name; a route of the same name in your router.json wins.
+    codex = os.environ.get("DOCKS_CODEX_MODEL", "gpt-5.3-codex")
+    cfg["routes"].setdefault("codex", {"strategy": "fallback", "targets": [f"openai/{codex}", "anthropic/claude-opus-5-5"]})
+    cfg["routes"].setdefault("fable", {"strategy": "fallback", "targets": ["anthropic/claude-fable-5-1", "anthropic/claude-opus-5-5"]})
     return cfg
 
 

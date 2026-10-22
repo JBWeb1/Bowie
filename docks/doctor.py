@@ -53,6 +53,10 @@ def check(root: Path, ext=None, mcp=None, agent=None, online: bool = True) -> li
     else:
         out.append((OK, "API key", "set (not tested)"))
 
+    from . import models
+    problem = models.check_codex()
+    out.append((WARN if problem else OK, "Codex", problem or f"ready ({models.codex_model()} through Docks Router)"))
+
     for tool, why in (("git", "undo, worktrees, GitHub features"), ("node", "JavaScript projects"),
                       ("rg", "faster search (optional)")):
         found = shutil.which(tool)

@@ -432,7 +432,7 @@ svg { flex: none; }
 </header>
 
 <div class="pop hidden" id="settings" role="dialog" aria-label="Settings">
-  <label>Model<input class="input" id="model" autocomplete="off"></label>
+  <label>Model<select class="input" id="model"></select></label>
   <label>Effort
     <select class="input" id="effort"><option value="low">Low: fastest</option><option value="medium">Medium</option><option value="high">High: recommended</option><option value="xhigh">Extra high</option><option value="max">Max: most thorough</option></select>
   </label>
@@ -799,6 +799,11 @@ function applyState(s) {
   if (s.mcp) renderMcp(s.mcp);
   const name = (s.root || '').split('/').filter(Boolean).pop() || s.root;
   $('project-name').textContent = name; $('project-name').title = s.root; $('root-path').textContent = s.root;
+  if (s.models) {
+    const known = s.models.some(m => m.id === s.model);
+    $('model').innerHTML = s.models.map(m => `<option value="${esc(m.id)}" title="${esc(m.note)}">${esc(m.label)}</option>`).join('')
+      + (known ? '' : `<option value="${esc(s.model)}">${esc(s.model)}</option>`);
+  }
   $('model').value = s.model; $('effort').value = s.effort;
   if (s.mode) showMode(s.mode);
   if (s.extensions) renderExt(s.extensions);
@@ -1272,7 +1277,8 @@ autosize();
 
 async function saveSettings(extra = {}) {
   const res = await api('/api/settings', { model: $('model').value, effort: $('effort').value, ...extra });
-  if (res.ok) showMode((await res.json()).mode);
+  if (res.ok) { const st = await res.json(); showMode(st.mode); state.model = st.model; }
+  else { toast((await res.json()).error || 'Could not change that'); $('model').value = state.model; }
 }
 async function refreshState() { const r = await api('/api/state'); if (r.ok) { const s = await r.json(); showMode(s.mode); state.bookmarks = s.bookmarks; } }
 $('model').onchange = () => saveSettings(); $('effort').onchange = () => saveSettings();

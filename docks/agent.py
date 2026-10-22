@@ -24,7 +24,7 @@ from .plugins import TOOL_ALIASES, Extensions, hook_tool_input
 from .procs import ProcessManager
 import importlib.util
 
-from . import instructions, tools
+from . import instructions, models, tools
 from .browser import SCHEMA as BROWSER_SCHEMA, Browser, BrowserError
 from .lsp import SCHEMA as LSP_SCHEMA, LSPError, LSPManager
 from .sandbox import Sandbox, SandboxUnavailable
@@ -45,10 +45,6 @@ NO_KEY = ("No API key was found, so Docks can't reach Claude. Get a key at https
           "at Docks Router).")
 MAX_JSON_RETRIES = 2
 MAX_MENTION_BYTES = 100_000
-WEB_TOOLS = [
-    {"type": "web_search_20260209", "name": "web_search"},
-    {"type": "web_fetch_20260209", "name": "web_fetch"},
-]
 
 
 PROCESS_TOOLS = {
@@ -268,11 +264,15 @@ class Agent:
         self.client_error = None
         self.sandbox_error = None
         self.context_used = 0  # tokens in the latest request, as the API counted them
+        self.model_error = None
         if self.client is None:
             try:
                 self.client = anthropic.Anthropic()
             except anthropic.AnthropicError as e:  # bad credentials setup: report it when a task runs
                 self.client_error = e
+        self.claude_client = self.client  # for Claude models; Codex and others go through the router
+        self.model = models.resolve(self.model)
+        self._use_client_for_model()
         if self.ext is None:
             self.ext = Extensions.load(self.root)
         self._folders_read = set()  # subfolder instruction files already shown to Claude
@@ -316,6 +316,31 @@ class Agent:
         if self.agent_type is not None:
             self.system += f"\nYour role ({self.agent_type.name}):\n{self.agent_type.prompt}\n"
 
+    def _use_client_for_model(self) -> None:
+        self.model_error = None
+        self.__dict__.pop("_window", None)  # context window size differs per model
+        own_router = self.claude_client is not None and not models.is_direct_anthropic(self.claude_client)
+        if not models.uses_router(self.model) or own_router:
+            self.client = self.claude_client  # Claude, or a client already pointed at your own router
+            return
+        try:
+            self.client = models.router_client(self.model)
+        except models.ModelError as e:  # reported when a task runs
+            self.model_error = str(e)
+
+    def set_model(self, name: str) -> str:
+        """Switch models (aliases work: opus, fable, sonnet, haiku, codex). Returns the model ID."""
+        model = models.resolve(name)
+        if not model:
+            raise ValueError("give a model name")
+        if model == "codex" and models.check_codex():
+            raise ValueError(models.check_codex())
+        self.model = model
+        self._use_client_for_model()
+        if hasattr(self, "tools"):
+            self.refresh_tools()
+        return model
+
     def set_output_style(self, name: str) -> None:
         if name.lower() != "default" and name.lower() not in self.ext.output_styles:
             raise ValueError(f"no output style {name!r}; choose from: default, {', '.join(self.ext.output_styles)}")
@@ -339,7 +364,7 @@ class Agent:
                       if not (self.helper and n in ("delegate", "exit_plan_mode"))
                       and not (n == "load_skill" and not self.ext.skills)]
         mcp_defs = self.mcp.tool_definitions() if self.mcp else []
-        tools = [t for t in tool_definitions() + process_defs + agent_defs + mcp_defs + (WEB_TOOLS if self.web else [])
+        tools = [t for t in tool_definitions() + process_defs + agent_defs + mcp_defs + (models.web_tools(self.model) if self.web else [])
                  if t["name"] not in self.exclude_tools]
         allowed = self.agent_type.tools if self.agent_type is not None else None
         if allowed:  # a specialized helper limited to some tools (Claude Code or Docks names both work)
@@ -480,7 +505,7 @@ class Agent:
                 raise ToolError(f"no helper type {agent_name!r}; available: {', '.join(self.ext.agents) or 'none'}")
         helper = Agent(root=self.root, model=(agent_type.model if agent_type and agent_type.model else self.model),
                        effort=self.effort, auto_approve=self.auto_approve, mode=self.mode if self.mode != "plan" else "ask",
-                       web=self.web, exclude_tools=self.exclude_tools, client=self.client, mcp=self.mcp,
+                       web=self.web, exclude_tools=self.exclude_tools, client=self.claude_client, mcp=self.mcp,
                        procs=self.procs, helper=True, always_allowed=self.always_allowed, ext=self.ext, sandbox=self.sandbox,
                        browser=self.browser, lsp=self.lsp,
                        agent_type=agent_type, display=HelperDisplay(self.display, description),
@@ -879,6 +904,8 @@ class Agent:
                     time.sleep(min(0.2, max(0.0, end - time.monotonic())))
 
     def _stream_once(self):
+        if self.model_error:
+            raise TurnAborted(f"{self.model_error} (or switch models with /model)")
         if self.client is None:
             raise TurnAborted(f"{NO_KEY} ({self.client_error})")
         if self.sandbox_error:
@@ -930,7 +957,7 @@ class Agent:
                     note(call_id, "runs in the sandbox")
                 return True, ""
             if mode == "auto":
-                verdict, reason = automode.classify(self.client, name, args, self.root)
+                verdict, reason = automode.classify(self.claude_client, name, args, self.root)
                 if verdict == "allow":
                     note = getattr(self.display, "auto_approved", None)
                     if note:
