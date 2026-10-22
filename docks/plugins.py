@@ -27,7 +27,8 @@ from . import mcp as trust_store
 from .permissions import Permissions, exclude_from_git, local_settings_file
 
 BUILTIN = Path(__file__).parent / "builtin"
-HOOK_EVENTS = ("PreToolUse", "PostToolUse", "UserPromptSubmit", "SessionStart", "Stop")
+HOOK_EVENTS = ("PreToolUse", "PostToolUse", "UserPromptSubmit", "SessionStart", "Stop", "SubagentStop",
+               "Notification", "SessionEnd", "PreCompact")
 # Claude Code's tool names, so hook matchers written for it work here too.
 TOOL_ALIASES = {"bash": "Bash", "write_file": "Write", "edit_file": "Edit", "read_file": "Read", "glob": "Glob",
                 "grep": "Grep", "web_fetch": "WebFetch", "web_search": "WebSearch", "delegate": "Task",

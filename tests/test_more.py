@@ -258,3 +258,121 @@ def test_worktrees_create_list_merge_remove(tmp_path, monkeypatch):
     assert worktrees.list_worktrees(tmp_path) == []
     with pytest.raises(worktrees.WorktreeError):
         worktrees.merge(tmp_path, "nope")
+
+
+# ---------------------------------------------------------------- hooks, memory, compact, context, styles
+
+def test_more_hook_events(tmp_path):
+    log = tmp_path / "events.log"
+    hook = lambda name: [{"hooks": [{"type": "command", "command": f"cat >> {log}; echo >> {log}"}]}]  # noqa: E731
+    spec = {e: hook(e) for e in ("Notification", "SessionEnd", "PreCompact")}
+    spec["SubagentStop"] = [{"hooks": [{"type": "command", "command":
+        f"test -f {tmp_path}/once || (touch {tmp_path}/once; echo 'also list the tests' >&2; exit 2)"}]}]
+    write(plugin_home_settings(), json.dumps({"hooks": spec}))
+    client = FakeClient([
+        msg("tool_use", tool_use("d1", "delegate", description="look", prompt="look around")),
+        msg("end_turn", text("helper report")),          # the helper's first answer
+        msg("end_turn", text("helper report + tests")),  # after SubagentStop sent it back
+        msg("tool_use", tool_use("w1", "write_file", path="a.txt", content="a")),
+        msg("end_turn", text("done")),
+        msg("end_turn", text("Summary: wrote a.txt")),   # /compact
+    ])
+    display = Display(confirm="yes")
+    agent = Agent(root=tmp_path, client=client, display=display)
+    agent.run("go")
+    assert "helper report + tests" in agent.messages[2]["content"][0]["content"]
+    agent.compact("keep file names")
+    agent.reset()
+    events = [json.loads(l) for l in log.read_text().splitlines() if l.strip()]
+    assert [e.get("hook_event_name") or ("message" in e and "Notification") or ("trigger" in e and "PreCompact")
+            or ("reason" in e and "SessionEnd") for e in events] == ["Notification", "PreCompact", "SessionEnd"]
+    assert "permission" in events[0]["message"] and events[1]["custom_instructions"] == "keep file names"
+    assert events[2]["reason"] == "clear"
+
+
+def test_compact_replaces_history_with_a_summary(tmp_path):
+    client = FakeClient([msg("end_turn", text("first answer")), msg("end_turn", text("Summary: user wants a todo app"))])
+    agent = Agent(root=tmp_path, client=client, display=Display())
+    agent.run("build a todo app")
+    summary = agent.compact()
+    assert summary == "Summary: user wants a todo app" and len(agent.messages) == 2
+    assert "user wants a todo app" in agent.messages[0]["content"]
+    asked = client.requests[1]
+    assert asked["tool_choice"] == {"type": "none"} and "Summarize" in asked["messages"][-1]["content"]
+
+
+def test_instruction_files_imports_folders_and_notes(tmp_path, monkeypatch):
+    from docks import instructions
+    from docks.plugins import docks_home
+    write(docks_home() / "DOCKS.md", "Always answer in British English.")
+    write(tmp_path / "CLAUDE.md", "Use pnpm.\nSee @docs/style.md for style.\n```\n@ignored.md\n```")
+    write(tmp_path / "docs" / "style.md", "Tabs, not spaces.")
+    write(tmp_path / "ignored.md", "SHOULD NOT APPEAR")
+    write(tmp_path / "api" / "AGENTS.md", "API handlers must validate input.")
+    write(tmp_path / "api" / "users.py", "x = 1\n")
+    (tmp_path / ".git" / "info").mkdir(parents=True)
+    agent, _, results = run_calls(tmp_path, [("read_file", {"path": "api/users.py"}),
+                                             ("read_file", {"path": "api/users.py"})])
+    assert "British English" in agent.system and "Use pnpm" in agent.system and "Tabs, not spaces" in agent.system
+    assert "SHOULD NOT APPEAR" not in agent.system
+    assert "validate input" in results["t0"]["content"] and "validate input" not in results["t1"]["content"]
+    path = instructions.add_note(tmp_path, "# run tests with pnpm test", "project")
+    assert path.name == "CLAUDE.md" and path.read_text().endswith("- run tests with pnpm test\n")
+    local = instructions.add_note(tmp_path, "my api key lives in 1password", "local")
+    assert local.name == "DOCKS.local.md" and "DOCKS.local.md" in (tmp_path / ".git" / "info" / "exclude").read_text()
+    agent.reload_instructions()
+    assert "pnpm test" in agent.system and "1password" in agent.system
+
+
+def test_context_report_and_output_styles(tmp_path):
+    agent, _, _ = run_calls(tmp_path, [("bash", {"command": "echo " + "x" * 4000})], mode="yolo")
+    report = agent.context_report()
+    assert report["parts"]["Tool results"] > 900 and report["measured"] > 0
+    assert set(agent.ext.output_styles) >= {"explanatory", "learning", "concise"}
+    agent.set_output_style("learning")
+    assert "TODO(human)" in agent.system
+    with pytest.raises(ValueError):
+        agent.set_output_style("nope")
+    write(tmp_path / ".claude" / "settings.local.json", json.dumps({"outputStyle": "concise"}))
+    assert "Output style (Concise)" in Agent(root=tmp_path, client=FakeClient([]), display=Display()).system
+
+
+def test_script_mode_refuses_what_needs_approval(tmp_path):
+    import io
+    from docks import script
+    client = FakeClient([msg("tool_use", tool_use("b1", "bash", command="echo ok"), tool_use("b2", "bash", command="rm x")),
+                         msg("end_turn", text("finished"))])
+    write(plugin_home_settings(), json.dumps({"permissions": {"allow": ["Bash(echo:*)"]}}))
+    agent = Agent(root=tmp_path, client=client)
+    out = io.StringIO()
+    assert script.run(agent, "do it", "stream-json", out=out) == 0
+    events = [json.loads(l) for l in out.getvalue().splitlines()]
+    kinds = [e["type"] for e in events]
+    assert kinds[0] == "init" and kinds[-1] == "result" and "permission_denied" in kinds
+    assert events[-1]["result"] == "finished" and events[-1]["denied"][0]["rule"] == "Bash(rm x:*)"
+    refused = client.requests[1]["messages"][-1]["content"][1]["content"]
+    assert "non-interactive" in refused
+
+
+def test_status_line_keys_and_notifications(tmp_path):
+    import io
+    from docks import terminal
+    write(tmp_path / ".claude" / "settings.local.json", json.dumps({}))
+    agent = Agent(root=tmp_path, client=FakeClient([]), display=Display())
+    assert "mode ask" in terminal.status_line(agent)
+    agent.ext.settings["statusLine"] = {"type": "command", "command": "python3 -c \"import json,sys; d=json.load(sys.stdin); print('MY', d['mode'], d['model']['id'])\""}
+    assert terminal.status_line(agent) == f"MY ask {agent.model}"
+    agent.ext.settings["statusLine"] = {"type": "none"}
+    assert terminal.status_line(agent) == ""
+    assert terminal._key("ctrl+g") == r"\C-g" and terminal._key("alt+r") == r"\er" and terminal._key("shift+tab") == r"\e[Z"
+    assert terminal._key("ctrl+enter") is None
+
+    class TTY(io.StringIO):
+        def isatty(self):
+            return True
+    out = TTY()
+    terminal.notify("needs you; now", out=out)
+    assert out.getvalue().startswith("\x07\x1b]9;Docks: needs you, now\x07")
+    quiet = io.StringIO()
+    terminal.notify("x", out=quiet)
+    assert quiet.getvalue() == ""  # not a terminal: nothing

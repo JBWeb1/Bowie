@@ -20,11 +20,18 @@ HELP = """Commands:
   /bookmark          save Claude's last reply;  /bookmarks  list saved replies
   /copy              copy Claude's last reply to the clipboard
   /commands /agents /skills /hooks   show what's installed
+  /compact [focus]   summarize the conversation to free up room
+  /context           what's filling the context window
+  /memory            instruction files in use;  # <note> adds a line to one
+  /output-style      explanatory, learning, concise or your own
+  /security-review   check changes for security holes
+  /doctor            check your setup
+  /vim               vim keys on/off;  /statusline  show the status line
   /sandbox [on|off]  run commands in a sandbox (writes only inside the project)
   /permissions       show allow / ask / deny rules
   /allow RULE        never ask about it, e.g. /allow Bash(npm test:*)   (/ask and /deny too)
   /usage             token usage for this session
-  /yolo              same as /mode yolo (toggle)
+  /yolo              same as /mode yolo (toggle); shift+tab cycles modes
   /exit              quit
 Any other /name runs that command (built-in, yours, or from a plugin). Mention files with @path.
 Use the up arrow for earlier messages. End a line with \\ to keep typing on the next line."""
@@ -197,6 +204,9 @@ def slash(agent: Agent, text: str) -> bool:
         print(ui.dim(f"mode: {agent.active_mode}"))
     elif cmd in ("/mode", "/plan"):
         mode = "plan" if cmd == "/plan" else arg
+        if mode == "next":
+            from .agent import MODES
+            mode = MODES[(MODES.index(agent.active_mode) + 1) % len(MODES)]
         if not mode:
             print(ui.dim(f"mode: {agent.active_mode}  (ask: confirm each change · auto: confirm only risky ones · "
                          "plan: plan first, change nothing · yolo: never ask)"))
@@ -260,6 +270,64 @@ def slash(agent: Agent, text: str) -> bool:
             print(ui.dim("no skills (add skills/<name>/SKILL.md in ~/.docks, .claude or a plugin)"))
         for sk in agent.ext.skills.values():
             print(f"  {ui.bold(sk.name)}  {ui.dim(sk.description[:100])}")
+    elif cmd == "/compact":
+        print(ui.dim("summarizing the conversation…"))
+        try:
+            summary = agent.compact(arg)
+        except ValueError as e:
+            ui.error(str(e))
+            return True
+        print(ui.green("conversation summarized") + ui.dim(f" ({len(summary):,} characters kept; earlier undo points are gone)"))
+    elif cmd == "/context":
+        print_context(agent)
+    elif cmd == "/memory":
+        from . import instructions
+        if arg.startswith("edit"):
+            scope = (arg.split() + ["project"])[1]
+            path = instructions.note_path(agent.root, scope if scope in ("project", "local", "user") else "project")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.touch()
+            editor = os.environ.get("VISUAL") or os.environ.get("EDITOR") or "nano"
+            import subprocess
+            subprocess.call(f'{editor} "{path}"', shell=True)
+            agent.reload_instructions()
+            print(ui.dim(f"reloaded {path}"))
+            return True
+        shown = [*instructions.user_files(), instructions.project_file(agent.root), instructions.local_file(agent.root),
+                 *sorted(agent._folders_read)]
+        shown = [p_ for p_ in shown if p_]
+        if not shown:
+            print(ui.dim("no instruction files yet. Start a message with # to add one, or run /init"))
+        for p_ in shown:
+            print(f"  {p_}  {ui.dim(str(len(p_.read_text(errors='replace').splitlines())) + ' lines')}")
+        print(ui.dim("/memory edit [project|local|user] opens one in your editor; # <note> adds a line"))
+    elif cmd in ("/output-style", "/style"):
+        if not arg:
+            for name in ["default", *agent.ext.output_styles]:
+                style = agent.ext.output_styles.get(name)
+                mark = ui.green("●") if name == agent.output_style else " "
+                print(f"  {mark} {name:<14} {ui.dim(style.description if style else 'Docks as usual')}")
+            print(ui.dim("choose one with /output-style NAME"))
+            return True
+        try:
+            agent.set_output_style(arg)
+        except ValueError as e:
+            ui.error(str(e))
+            return True
+        print(ui.dim(f"output style: {agent.output_style}"))
+    elif cmd == "/doctor":
+        from . import doctor
+        print(doctor.report(doctor.check(agent.root, agent.ext, agent.mcp, agent)))
+    elif cmd == "/vim":
+        from . import terminal
+        on = {"on": True, "off": False}.get(arg, agent.ext.settings.get("editorMode") != "vim")
+        terminal.set_vim(agent, on)
+        print(ui.dim(f"vim keys {'on' if on else 'off'} (saved in your settings)"))
+    elif cmd == "/statusline":
+        from . import terminal
+        line = terminal.status_line(agent)
+        print(line or ui.dim("the status line is hidden (statusLine type none)"))
+        print(ui.dim('use your own: {"statusLine": {"type": "command", "command": "~/my-status.sh"}} in settings.json'))
     elif cmd == "/sandbox":
         from .sandbox import SandboxUnavailable
         want = {"on": True, "off": False}.get(arg, agent.sandbox is None)
@@ -307,33 +375,79 @@ def approve_project_hooks(agent: Agent) -> None:
 
 
 def repl(agent: Agent) -> None:
-    try:
-        import readline  # noqa: F401  (arrow keys and history for input())
-    except ImportError:
-        pass
+    import time
+    from . import terminal
+    for note in terminal.setup_keys(agent):  # also turns on arrow keys and history for input()
+        ui.warn(note)
+    if terminal.notifications_on(agent):
+        agent.display.alert = terminal.notify
     agent.on_background_done = lambda: print(ui.dim("\n· a background helper finished; its report goes with your next message"))
     approve_project_hooks(agent)
     print(ui.bold(f"Docks {__version__}") + ui.dim(f"  {agent.model} · {agent.root} · mode: {agent.active_mode}"))
     print(ui.dim("Tell me what to build. /help for commands.\n"))
-    while True:
-        try:
-            text = read_prompt()
-        except (EOFError, KeyboardInterrupt):
-            print()
-            return
-        if not text:
-            continue
-        if text.startswith("/"):
+    try:
+        while True:
+            line = terminal.status_line(agent)
+            if line:
+                print(line)
             try:
-                if slash(agent, text):
-                    continue
-            except EOFError:
+                text = read_prompt()
+            except (EOFError, KeyboardInterrupt):
+                print()
                 return
-            if not agent.ext.find_command(text.split()[0][1:]):
-                ui.error(f"unknown command {text.split()[0]} (see /help)")
+            if not text:
                 continue
-        agent.run(text)
-        print()
+            if text.startswith("#") and not text.startswith("#!"):
+                save_note(agent, text)
+                continue
+            if text.startswith("/"):
+                try:
+                    if slash(agent, text):
+                        continue
+                except EOFError:
+                    return
+                if not agent.ext.find_command(text.split()[0][1:]):
+                    ui.error(f"unknown command {text.split()[0]} (see /help)")
+                    continue
+            started = time.monotonic()
+            agent.run(text)
+            if time.monotonic() - started > terminal.LONG_TASK and terminal.notifications_on(agent):
+                terminal.notify("finished: " + text.splitlines()[0][:80])
+            print()
+    finally:
+        agent.end_session("exit")
+
+
+def save_note(agent: Agent, text: str) -> None:
+    """'# use pnpm, not npm' -> a line in an instruction file, used from now on."""
+    from . import instructions
+    note = text.lstrip("#").strip()
+    if not note:
+        return
+    try:
+        where = input(ui.yellow(f"  Remember for [p]roject ({instructions.note_path(agent.root, 'project').name}, "
+                                f"shared), [l]ocal (just you, this project), or [u]ser (all projects)? ")).strip().lower()
+    except EOFError:
+        return
+    scope = {"l": "local", "local": "local", "u": "user", "user": "user"}.get(where, "project")
+    path = instructions.add_note(agent.root, note, scope)
+    agent.reload_instructions()
+    print(ui.dim(f"  remembered in {path}"))
+
+
+def print_context(agent: Agent) -> None:
+    report = agent.context_report()
+    window, measured = report["window"], report["measured"]
+    total = measured or report["estimated"]
+    print(ui.bold("Context") + ui.dim(f"  {total:,} tokens" + (f" of {window:,} ({total / window:.0%})" if window else "")
+                                     + ("" if measured else " (estimated: no request sent yet)")))
+    width = 40
+    for name, n in sorted(report["parts"].items(), key=lambda kv: -kv[1]):
+        if n <= 0:
+            continue
+        share = n / max(report["estimated"], 1)
+        print(f"  {name:<30} {'█' * max(1, round(share * width)):<{width}} {ui.dim(f'~{n:,}')}")
+    print(ui.dim("Long sessions are summarized automatically; /compact does it now, /clear starts over."))
 
 
 def plugin_main(argv) -> int:
@@ -391,6 +505,23 @@ def sessions_main(argv) -> int:
         where = f" · {s_['root']}" if args.all else ""
         print(f"{ui.bold(s_['name'][:60])}  {ui.dim(when + ' · ' + str(s_['turns']) + ' msgs · ' + s_['id'] + where)}")
     return 0
+
+
+def _split_rules(text: str) -> list[str]:
+    """'Bash(git diff:*) Edit,Read' -> each rule (spaces inside parentheses stay)."""
+    rules, depth, current = [], 0, ""
+    for ch in text:
+        depth += ch == "("
+        depth -= ch == ")"
+        if ch in " ," and depth == 0:
+            if current.strip():
+                rules.append(current.strip())
+            current = ""
+        else:
+            current += ch
+    if current.strip():
+        rules.append(current.strip())
+    return rules
 
 
 WORKTREE_HELP = "work in a git worktree of its own (a separate copy on branch docks/NAME); no NAME picks one"
@@ -550,6 +681,16 @@ def main(argv=None) -> int:
         return plugin_main(argv[1:])
     if argv[:1] == ["sessions"]:
         return sessions_main(argv[1:])
+    if argv[:1] == ["doctor"]:
+        from . import doctor
+        from .plugins import Extensions
+        root = Path(argv[2] if argv[1:2] == ["-C"] and len(argv) > 2 else ".").resolve()
+        from .mcp import MCPManager
+        mgr = MCPManager(root, Extensions.load(root).plugin_mcp)
+        mgr.start()
+        results = doctor.check(root, mcp=mgr)
+        print(doctor.report(results))
+        return 1 if any(r[0] == doctor.FAIL for r in results) else 0
     if argv[:1] in (["worktree"], ["worktrees"]):
         return worktree_main(argv[1:])
     if argv[:1] == ["action"]:
@@ -580,8 +721,19 @@ def main(argv=None) -> int:
                         help="continue a saved conversation (no value: list them)")
     parser.add_argument("-c", "--continue", dest="cont", action="store_true",
                         help="continue the most recent conversation in this project")
+    parser.add_argument("-p", "--print", action="store_true",
+                        help="script mode: run the task with nobody to ask, print only the answer, exit")
+    parser.add_argument("--output-format", choices=["text", "json", "stream-json"], default="text",
+                        help="with -p: text (just the answer), json (one result object), stream-json (events, one per line)")
+    parser.add_argument("--allow", "--allowedTools", dest="allow", action="append", default=[], metavar="RULE",
+                        help="permission rule to allow without asking, e.g. 'Bash(npm test:*)' or Edit; repeatable")
+    parser.add_argument("--deny", "--disallowedTools", dest="deny", action="append", default=[], metavar="RULE",
+                        help="permission rule to always refuse; repeatable")
     parser.add_argument("--version", action="version", version=f"docks {__version__}")
     args = parser.parse_args(argv)
+    script_out = None
+    if args.print:  # keep stdout for the answer alone; setup messages go to stderr
+        script_out, sys.stdout = sys.stdout, sys.stderr
 
     root = Path(args.dir).expanduser().resolve()
     if not root.is_dir():
@@ -591,9 +743,11 @@ def main(argv=None) -> int:
     from . import sessions
     from .plugins import Extensions
     ext = Extensions.load(root)
+    for kind in ("allow", "deny"):  # rules from the command line, for this run only
+        ext.permissions.add(kind, [r for arg in getattr(args, kind) for r in _split_rules(arg)], root)
     agent = Agent(root=root, model=args.model, effort=args.effort, auto_approve=args.yolo, ext=ext, save=True,
                   mode="plan" if args.plan else args.mode or mode_from_settings(ext),
-                  mcp=start_mcp(root, sys.stdin.isatty(), ext.plugin_mcp))
+                  mcp=start_mcp(root, sys.stdin.isatty() and not args.print, ext.plugin_mcp))
     if args.sandbox and agent.sandbox is None:
         from .sandbox import SandboxUnavailable
         try:
@@ -614,6 +768,17 @@ def main(argv=None) -> int:
             return 1
         data = agent.resume(sid)
         print(ui.dim(f"resumed: {data.get('name') or data.get('title') or sid}"))
+    if args.print:
+        from . import script
+        text = " ".join(args.prompt)
+        piped = sys.stdin.read().strip() if not sys.stdin.isatty() else ""
+        if piped:
+            text = f"{text}\n\n<stdin>\n{piped}\n</stdin>" if text else piped
+        if not text:
+            ui.error("give a task: docks -p \"...\" (or pipe one in)")
+            return 2
+        prompt = [*map(image_block, args.image), {"type": "text", "text": text}] if args.image else text
+        return script.run(agent, prompt, args.output_format, out=script_out)
     if args.prompt:
         text = " ".join(args.prompt)
         agent.run([*map(image_block, args.image), {"type": "text", "text": text}] if args.image else text)

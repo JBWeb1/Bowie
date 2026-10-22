@@ -1,6 +1,7 @@
 """The agent loop: stream a turn from Claude, run its tools, repeat until done."""
 
 import itertools
+import json
 import platform
 import queue
 import re
@@ -23,7 +24,7 @@ from .plugins import TOOL_ALIASES, Extensions, hook_tool_input
 from .procs import ProcessManager
 import importlib.util
 
-from . import tools
+from . import instructions, tools
 from .browser import SCHEMA as BROWSER_SCHEMA, Browser, BrowserError
 from .lsp import SCHEMA as LSP_SCHEMA, LSPError, LSPManager
 from .sandbox import Sandbox, SandboxUnavailable
@@ -42,7 +43,6 @@ MODES = ("ask", "auto", "plan", "yolo")
 NO_KEY = ("No API key was found, so Docks can't reach Claude. Get a key at https://console.anthropic.com, "
           "then set it before starting Docks: export ANTHROPIC_API_KEY=sk-ant-...  (or point ANTHROPIC_BASE_URL "
           "at Docks Router).")
-MEMORY_FILES = ("DOCKS.md", "AGENTS.md", "CLAUDE.md")
 MAX_JSON_RETRIES = 2
 MAX_MENTION_BYTES = 100_000
 WEB_TOOLS = [
@@ -135,6 +135,12 @@ AGENT_TOOLS = {
 }
 QUIET_TOOLS = {"update_plan", "load_skill"}  # never need approval and change nothing
 
+COMPACT_PROMPT = """Summarize this conversation so you can continue the work from the summary alone. Include:
+the user's goals and requests (quote important wording), decisions made and why, files created or changed and
+what's in them now, commands that matter (how to build, test, run), problems found and how they were fixed,
+what's still left to do, and anything the user asked you to remember. Be specific: names, paths, numbers.
+Reply with the summary only."""
+
 HELPER_NOTE = """
 You are a helper agent doing one part of a larger task for a lead agent. The user doesn't see your messages;
 your final message is returned to the lead agent, so end with a complete, concise report: what you did or
@@ -191,15 +197,13 @@ and check a mobile viewport too. Don't tell the user a page works until you've s
 """
 
 
-def build_system_prompt(root: Path, ext: Extensions | None = None) -> str:
+def build_system_prompt(root: Path, ext: Extensions | None = None, style=None) -> str:
     prompt = SYSTEM_PROMPT.format(cwd=root, platform=platform.platform(), date=date.today())
     if HAS_PLAYWRIGHT:
         prompt += BROWSER_NOTE
-    for name in MEMORY_FILES:
-        f = root / name
-        if f.is_file():
-            prompt += f"\nProject instructions from {name}:\n{f.read_text()[:20_000]}\n"
-            break
+    written = instructions.system_section(root)
+    if written:
+        prompt += f"\n{written}\n"
     lessons = memory.load(root)
     if lessons:
         prompt += f"\n{lessons}\n"
@@ -209,6 +213,8 @@ def build_system_prompt(root: Path, ext: Extensions | None = None) -> str:
     if ext and ext.agents:
         prompt += "\nSpecialized helper types for delegate's agent parameter:\n" + "\n".join(
             f"- {a.name}: {a.description}" for a in ext.agents.values()) + "\n"
+    if style is not None:
+        prompt += f"\nOutput style ({style.name}): follow it in everything you write to the user.\n{style.prompt}\n"
     return prompt
 
 
@@ -253,6 +259,7 @@ class Agent:
     save: bool = False             # keep this conversation in ~/.docks/sessions
     session_id: str = ""
     on_background_done: Callable | None = None  # called when a background helper finishes while idle
+    output_style: str = ""          # default | explanatory | learning | concise | one from output-styles/
     sandbox: Sandbox | None = None  # run shell commands in a sandbox (see sandbox.py)
     browser: Browser | None = None  # shared with helpers; started on first use
     lsp: LSPManager | None = None   # language servers, shared with helpers; each starts on first use
@@ -260,6 +267,7 @@ class Agent:
     def __post_init__(self):
         self.client_error = None
         self.sandbox_error = None
+        self.context_used = 0  # tokens in the latest request, as the API counted them
         if self.client is None:
             try:
                 self.client = anthropic.Anthropic()
@@ -267,11 +275,9 @@ class Agent:
                 self.client_error = e
         if self.ext is None:
             self.ext = Extensions.load(self.root)
-        self.system = build_system_prompt(self.root, self.ext)
-        if self.helper:
-            self.system += HELPER_NOTE
-        if self.agent_type is not None:
-            self.system += f"\nYour role ({self.agent_type.name}):\n{self.agent_type.prompt}\n"
+        self._folders_read = set()  # subfolder instruction files already shown to Claude
+        self.output_style = self.output_style or str(self.ext.settings.get("outputStyle") or "default")
+        self.reload_instructions()
         if self.procs is None:
             self.procs = ProcessManager(self.root)
         if self.sandbox is None and not self.helper and isinstance(self.ext.settings.get("sandbox"), dict) \
@@ -300,6 +306,21 @@ class Agent:
         self._session_started = False
         self.refresh_tools()
         self.cancelled = threading.Event()
+
+    def reload_instructions(self) -> None:
+        """Rebuild the system prompt (after instruction files or the output style change)."""
+        style = self.ext.output_styles.get(self.output_style.lower()) if self.output_style != "default" else None
+        self.system = build_system_prompt(self.root, self.ext, style)
+        if self.helper:
+            self.system += HELPER_NOTE
+        if self.agent_type is not None:
+            self.system += f"\nYour role ({self.agent_type.name}):\n{self.agent_type.prompt}\n"
+
+    def set_output_style(self, name: str) -> None:
+        if name.lower() != "default" and name.lower() not in self.ext.output_styles:
+            raise ValueError(f"no output style {name!r}; choose from: default, {', '.join(self.ext.output_styles)}")
+        self.output_style = name.lower()
+        self.reload_instructions()
 
     # ------------------------------------------------------------- tools
 
@@ -419,6 +440,7 @@ class Agent:
             ask = getattr(self.display, "ask", None)
             if ask is None:
                 return "No one can answer questions right now. Choose sensible defaults and say what you chose.", False
+            self.notify_user("Docks has a question for you")
             with self._confirm_lock:
                 answers = ask(args["questions"])
             if answers is None:
@@ -428,6 +450,8 @@ class Agent:
             if self.active_mode != "plan":
                 return "Plan mode isn't on; go ahead with the work.", False
             review = getattr(self.display, "review_plan", None)
+            if review:
+                self.notify_user("Docks has a plan ready for you to review")
             decision, feedback = review(args["plan"]) if review else ("approve", "")
             if decision == "approve_auto":
                 self.set_mode("auto")
@@ -485,6 +509,15 @@ class Agent:
 
     def _run_helper(self, helper: "Agent", prompt: str) -> tuple[str, bool]:
         helper.run(prompt)
+        for round_ in range(MAX_STOP_HOOK_ROUNDS):  # SubagentStop hooks can send a helper back to work
+            if not self.ext.hooks or not helper.last_text():
+                break
+            verdict = self.ext.run_hooks("SubagentStop", {"stop_hook_active": round_ > 0, "session_id": self.session_id,
+                                                          "agent_type": getattr(helper.agent_type, "name", "general"),
+                                                          "last_message": helper.last_text()[:20_000]})
+            if not (verdict.block and verdict.reason):
+                break
+            helper.run(f"<system-reminder>Before finishing: {verdict.reason}</system-reminder>")
         for key in self.usage:
             self.usage[key] += helper.usage[key]
         report = helper.last_text()
@@ -493,8 +526,17 @@ class Agent:
         return report, False
 
     def _locked_confirm(self, name: str, args: dict) -> str:
+        self.notify_user(f"Docks needs your permission to use {TOOL_ALIASES.get(name, name)}")
         with self._confirm_lock:  # helpers run in parallel; ask the user one question at a time
             return (self.confirm or self.display.confirm)(name, args)
+
+    def notify_user(self, message: str) -> None:
+        """Docks is waiting for the person: run Notification hooks and let the display alert them."""
+        if self.ext.hooks:
+            self.ext.run_hooks("Notification", {"message": message, "session_id": self.session_id})
+        alert = getattr(self.display, "alert", None)
+        if alert:
+            alert(message)
 
     def _take_background_reports(self) -> list[dict]:
         blocks = []
@@ -512,7 +554,84 @@ class Agent:
 
     # ------------------------------------------------------------- session state
 
+    def compact(self, focus: str = "") -> str:
+        """Replace the conversation with Claude's summary of it, to free up room. Returns the summary.
+
+        (Very long sessions are also summarized automatically, on Claude's side, as they go.)"""
+        if len(self.messages) < 2:
+            raise ValueError("nothing to summarize yet")
+        if self.client is None:
+            raise ValueError(NO_KEY)
+        if self.ext.hooks:
+            verdict = self.ext.run_hooks("PreCompact", {"trigger": "manual", "custom_instructions": focus,
+                                                        "session_id": self.session_id})
+            if verdict.block:
+                raise ValueError(f"a PreCompact hook stopped it: {verdict.reason or 'no reason given'}")
+        ask = COMPACT_PROMPT + (f"\nPay special attention to: {focus}" if focus else "")
+        with self.client.beta.messages.stream(
+            model=self.model, max_tokens=16_000, system=self.system, tools=self.tools,
+            tool_choice={"type": "none"}, messages=self.messages + [{"role": "user", "content": ask}],
+            thinking={"type": "adaptive"}, output_config={"effort": "medium"}, context_management={"edits": [{"type": "compact_20260112"}]},
+            betas=BETAS,
+        ) as stream:
+            for _ in stream:
+                self._check_cancel()
+            response = stream.get_final_message()
+        self._track_usage(response.usage)
+        summary = "".join(getattr(b, "text", "") for b in response.content if getattr(b, "type", "") == "text").strip()
+        if not summary:
+            raise ValueError("Claude didn't return a summary; nothing was changed")
+        self.messages[:] = [
+            {"role": "user", "content": f"<conversation-summary>\nThis conversation was summarized to save room. "
+                                        f"What happened so far:\n\n{summary}\n</conversation-summary>"},
+            {"role": "assistant", "content": [{"type": "text", "text": "Got it. I'll continue from this summary."}]},
+        ]
+        self.turns.clear()  # undo points from before the summary can't be reached any more
+        self.save_session()
+        return summary
+
+    def context_report(self) -> dict:
+        """What's taking up the context window (estimates from text size, plus the API's real count)."""
+        def tokens(value) -> int:
+            return len(json.dumps(value, default=str)) // 4
+
+        system_parts = {"Instructions files and memory": tokens(instructions.system_section(self.root)) + tokens(memory.load(self.root))}
+        system_parts["Docks' own instructions"] = max(tokens(self.system) - sum(system_parts.values()), 0)
+        mcp_names = {t["name"] for t in self.tools if t["name"].startswith("mcp__")}
+        parts = {**system_parts,
+                 "Tools": tokens([t for t in self.tools if t["name"] not in mcp_names]),
+                 "MCP tools": tokens([t for t in self.tools if t["name"] in mcp_names])}
+        chat = {"Your messages": 0, "Claude's replies": 0, "Tool results": 0}
+        for m in self.messages:
+            blocks = m["content"] if isinstance(m["content"], list) else [{"type": "text", "text": m["content"]}]
+            for b in blocks:
+                kind = _block(b, "type")
+                if kind == "tool_result":
+                    chat["Tool results"] += tokens(_block(b, "content"))
+                elif m["role"] == "user":
+                    chat["Your messages"] += tokens(_block(b, "text", "")) if kind == "text" else 1500
+                else:
+                    chat["Claude's replies"] += tokens(sessions.plain(b))
+        parts.update(chat)
+        return {"parts": parts, "estimated": sum(parts.values()), "measured": self.context_used,
+                "window": self._window_size(), "messages": len(self.messages)}
+
+    def _window_size(self) -> int | None:
+        if not hasattr(self, "_window"):
+            try:
+                self._window = int(self.client.models.retrieve(self.model).max_input_tokens)
+            except Exception:  # offline, an old SDK, or a router that doesn't list models
+                self._window = None
+        return self._window
+
+    def end_session(self, reason: str = "other") -> None:
+        """Run SessionEnd hooks (on exit, /clear, or a new chat)."""
+        if self.ext.hooks and self._session_started:
+            self.ext.run_hooks("SessionEnd", {"reason": reason, "session_id": self.session_id})
+
     def reset(self):
+        self.end_session("clear")
+        self._folders_read.clear()
         self.messages.clear()
         self.turns.clear()
         self.plan = []
@@ -828,7 +947,7 @@ class Agent:
             else:
                 self.always_allowed.add(name)
         elif answer != "yes":
-            return False, "The user declined this tool call. Ask what they want instead."
+            return False, getattr(self.display, "declined_message", "The user declined this tool call. Ask what they want instead.")
         return True, ""
 
     def _execute(self, block) -> dict:
@@ -865,6 +984,8 @@ class Agent:
         except Exception as e:  # tool bugs shouldn't kill the session
             self.display.tool_output(repr(e), is_error=True, id=block.id)
             return _error_result(block.id, f"{type(e).__name__}: {e}")
+        if block.name in ("read_file", "write_file", "edit_file") and not failed and isinstance(output, str):
+            output += instructions.folder_instructions(self.root, args.get("path", ""), self._folders_read)
         if block.name in ("write_file", "edit_file") and not failed and self.lsp.available() \
                 and self.ext.settings.get("codeIntelligence", True) is not False:
             errors = self.lsp.errors_after_edit(args.get("path", ""))
@@ -891,6 +1012,8 @@ class Agent:
         return {**result, "is_error": True} if failed else result
 
     def _track_usage(self, usage) -> None:
+        self.context_used = ((usage.input_tokens or 0) + (usage.cache_read_input_tokens or 0)
+                             + (getattr(usage, "cache_creation_input_tokens", 0) or 0) + (usage.output_tokens or 0))
         self.usage["input"] += usage.input_tokens or 0
         self.usage["output"] += usage.output_tokens or 0
         self.usage["cache_read"] += usage.cache_read_input_tokens or 0
