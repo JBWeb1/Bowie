@@ -16,7 +16,35 @@ cd my-project
 docks                                   # interactive session
 docks "build a snake game in the browser"   # one-shot task
 docks -y "add tests for utils.py and make them pass"   # no approval prompts
+docks --plan "add user accounts"        # research and propose a plan first
+docks --continue                        # pick up your last conversation here
+docks --resume "todo app"               # or any saved one, by name or id
+docks sessions                          # list saved conversations
 ```
+
+Inside a session, `/help` lists everything. Highlights:
+
+| Command | What it does |
+| --- | --- |
+| `/mode ask\|auto\|plan\|yolo` | How Docks asks before changes (see below) |
+| `/plan` | Switch to plan mode |
+| `/sessions`, `/resume NAME`, `/rename NAME` | Saved conversations |
+| `/bookmark`, `/bookmarks` | Keep a reply to find later |
+| `/copy` | Copy Claude's last reply to the clipboard |
+| `/undo` | Put files back to before the last task |
+| `/review`, `/feature`, `/commit`, `/commit-push-pr`, `/init` | Built-in workflows (below) |
+| `/commands`, `/agents`, `/skills`, `/hooks` | What's installed |
+
+Type `@path/to/file` (or a folder) in a message to attach it. In the browser, `/` and `@` open an autocomplete menu, ↑ in an empty box recalls your last message, an unsent draft survives a reload, and math like `$$E = mc^2$$` is typeset.
+
+### Modes
+
+- **Ask first** (default): every change or command waits for your OK.
+- **Auto**: safe actions run on their own: reading, edits inside the project (they can be undone), tests and builds. Risky ones ask: deletes outside the project, force pushes, `sudo`, publishing, GitHub writes. Clear cases are decided by rules; anything in between goes to a small, fast model, and if it can't decide, Docks asks.
+- **Plan first**: Docks researches without changing anything, may ask you multiple-choice questions, then shows a plan. Approve it, or send feedback and it revises.
+- **Full auto** (`-y`): never asks. Use it when you trust the task.
+
+If the API is overloaded or rate-limited, Docks waits and retries on its own (up to 6 times), and tells you it's doing so.
 
 ### In the browser
 
@@ -134,6 +162,29 @@ Not supported yet: the OpenAI Responses API, which current Codex CLI requires.
 - **Undo anything.** Before every task, Docks snapshots the project's files. In the terminal, `/undo` puts the files back and forgets the last task (repeat to go further back). In the browser, hover any of your messages and click **Undo from here**: files go back to how they were before that message, and the message reappears in the box so you can edit and resend it. Snapshots are kept in `~/.docks/checkpoints`, never in your repo's own git, and skip ignored files and heavy folders like `node_modules`. Changes outside the project, like installed packages, databases or pushes, can't be undone.
 - **Helpers in parallel.** For big jobs, Claude can hand self-contained pieces to helper agents that run at the same time, each with a fresh context and the same tools. In the browser, each helper's steps appear inside its own card, and its final report goes back to the main agent.
 - **A live plan.** On multi-step tasks, Claude keeps a checklist that's pinned above the message box in the browser (and printed in the terminal), with a progress bar.
+
+## Plugins, commands, agents, skills and hooks
+
+Docks reads the same file layout as Claude Code, so existing plugins and `.claude/` folders work as they are.
+
+```bash
+docks plugin install anthropics/claude-code --plugin commit-commands   # from a git repo or marketplace
+docks plugin install ./my-plugin                                       # or a local folder
+docks plugin list | enable NAME | disable NAME | remove NAME
+```
+
+- **Commands**: `commands/NAME.md` becomes `/NAME`. Supports frontmatter, `$ARGUMENTS`, `$1`…`$9`, and `` !`git status` `` to inline command output (only for commands from your home folder or plugins, never from a project you just cloned). Plugin commands are `/plugin:NAME`, or just `/NAME` when no other command shares it.
+- **Agents**: `agents/NAME.md` (with `name`, `description`, `tools`, `model`) defines a specialist helper Claude can delegate to. Helpers can also run **in the background** while you keep working; their report arrives when they finish.
+- **Skills**: `skills/NAME/SKILL.md` is loaded only when a task needs it.
+- **Hooks**: `hooks/hooks.json`, or `"hooks"` in `.claude/settings.json`, run your scripts on `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `SessionStart` and `Stop`. Exit code 2 (or `{"decision": "block"}`) blocks the action and tells Claude why. A project's own hooks run only after you approve them once.
+
+Docks looks in `~/.claude`, `~/.docks`, enabled plugins, and the project's `.claude/` and `.docks/` folders.
+
+Built-in workflows:
+- `/review`: several reviewers check the changes in parallel; only findings that survive a second check are reported.
+- `/feature IDEA`: explore the code, ask questions, design, build, then review.
+- `/commit`, `/commit-push-pr`: a good commit message (and a PR) in one go.
+- `/init`: write a `DOCKS.md` that teaches Docks your project.
 
 ## Project instructions
 

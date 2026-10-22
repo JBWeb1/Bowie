@@ -301,7 +301,7 @@ def repl(agent: Agent) -> None:
                     continue
             except EOFError:
                 return
-            if text.split()[0][1:] not in agent.ext.commands:
+            if not agent.ext.find_command(text.split()[0][1:]):
                 ui.error(f"unknown command {text.split()[0]} (see /help)")
                 continue
         agent.run(text)

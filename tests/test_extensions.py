@@ -141,6 +141,7 @@ def test_install_plugin_and_use_everything_it_ships(tmp_path):
     ext = Extensions.load(project)
     installed = plugins.plugins_dir() / "toolkit"
     assert ext.expand("/toolkit:hello")[0] == f"Say hello from {installed}"
+    assert ext.expand("/hello")[0] == f"Say hello from {installed}"  # short name works when unique
     assert ext.agents["reviewer"].tools == ["Read", "Grep"] and ext.agents["reviewer"].model == "claude-haiku-5-5"
     assert "Use a 4px grid." in ext.skills["styling"].load() and "palette.md" in ext.skills["styling"].load()
     assert ext.plugin_mcp == {"toolkit-db": {"command": f"{installed}/db-server"}}
