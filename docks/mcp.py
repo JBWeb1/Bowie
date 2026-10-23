@@ -28,6 +28,14 @@ PROTOCOL_VERSION = "2025-06-18"
 TIMEOUT = 60
 
 
+class MCPAuthRequired(Exception):
+    """A remote server wants you to sign in (HTTP 401)."""
+
+    def __init__(self, url: str, www_authenticate: str = ""):
+        super().__init__(f"{url} needs you to sign in")
+        self.url, self.www_authenticate = url, www_authenticate
+
+
 class MCPError(Exception):
     pass
 
@@ -193,12 +201,27 @@ class HttpClient:
     def __init__(self, spec: dict, cwd: Path):
         spec = _expand(spec)
         self.url = spec["url"]
-        self.headers = spec.get("headers", {})
+        self.headers = dict(spec.get("headers", {}))
+        self.auth = spec.get("auth")  # "github": use your connected GitHub account; otherwise OAuth if asked
+        self._authorize()
         self.session_id = None
         self.protocol = None
         self.ids = itertools.count(1)
 
-    def _post(self, msg: dict, timeout: float):
+    def _authorize(self) -> None:
+        if any(k.lower() == "authorization" for k in self.headers) and not getattr(self, "_oauth", False):
+            return  # you gave a header yourself
+        if self.auth == "github":
+            from . import github
+            token = github.token()
+        else:
+            from . import mcp_oauth
+            token = mcp_oauth.access_token(self.url)
+        self._oauth = bool(token)
+        if token:
+            self.headers["Authorization"] = f"Bearer {token}"
+
+    def _post(self, msg: dict, timeout: float, retried: bool = False):
         headers = {"content-type": "application/json", "accept": "application/json, text/event-stream",
                    **self.headers}
         if self.session_id:
@@ -209,6 +232,12 @@ class HttpClient:
         try:
             return urllib.request.urlopen(req, timeout=timeout)
         except urllib.error.HTTPError as e:
+            if e.code == 401:
+                from . import mcp_oauth
+                if not retried and self.auth != "github" and mcp_oauth.refresh(self.url):
+                    self._authorize()  # the token had expired: try once more with a fresh one
+                    return self._post(msg, timeout, retried=True)
+                raise MCPAuthRequired(self.url, e.headers.get("www-authenticate", ""))
             raise MCPError(f"HTTP {e.code}: {e.read().decode(errors='replace')[:300]}")
         except urllib.error.URLError as e:
             raise MCPError(f"could not reach {self.url}: {e.reason}")
@@ -260,8 +289,9 @@ class Server:
         self.name, self.spec, self.scope = name, spec, scope
         self.client = None
         self.tools: list[dict] = []
-        self.status = "stopped"  # stopped | running | error | needs-approval
+        self.status = "stopped"  # stopped | running | error | needs-approval | needs-auth
         self.error = ""
+        self.www_authenticate = ""
 
     def start(self, cwd: Path) -> None:
         try:
@@ -269,7 +299,7 @@ class Server:
             self.client = (HttpClient if kind in ("http", "streamable-http") else StdioClient)(self.spec, cwd)
             init = self.client.request("initialize", {
                 "protocolVersion": PROTOCOL_VERSION, "capabilities": {},
-                "clientInfo": {"name": "docks", "version": __version__}}, timeout=30)
+                "clientInfo": {"name": "bowers", "version": __version__}}, timeout=30)
             if isinstance(self.client, HttpClient):
                 self.client.protocol = init.get("protocolVersion", PROTOCOL_VERSION)
             self.client.notify("notifications/initialized")
@@ -282,6 +312,9 @@ class Server:
                     break
             self.tools = tools
             self.status, self.error = "running", ""
+        except MCPAuthRequired as e:
+            self.status, self.error, self.www_authenticate = "needs-auth", f"sign in: bowers mcp login {self.name}", e.www_authenticate
+            self.close()
         except (MCPError, KeyError, OSError) as e:
             self.status, self.error = "error", str(e)
             self.close()
@@ -331,6 +364,61 @@ class MCPManager:
             if server.status == "running":
                 for tool in server.tools:
                     self.routes[_tool_name(server.name, tool["name"])] = (server, tool)
+
+    def start_login(self, name: str):
+        """Begin signing in to a remote server. Returns an mcp_oauth.Login: open .url, then finish_login()."""
+        from . import mcp_oauth
+        server = self.servers.get(name)
+        if server is None or not server.spec.get("url"):
+            raise MCPError(f"no remote MCP server named {name!r}")
+        try:
+            return mcp_oauth.Login(_expand(server.spec)["url"], server.www_authenticate, server.spec.get("oauth"))
+        except mcp_oauth.OAuthError as e:
+            raise MCPError(str(e))
+
+    def finish_login(self, name: str, login, timeout: float = 300) -> Server:
+        from . import mcp_oauth
+        try:
+            login.wait(timeout)
+        except mcp_oauth.OAuthError as e:
+            raise MCPError(str(e))
+        server = self.servers[name]
+        server.start(self.root)
+        self._index()
+        return server
+
+    def logout(self, name: str) -> bool:
+        from . import mcp_oauth
+        server = self.servers.get(name)
+        if server is None or not server.spec.get("url"):
+            return False
+        server.close()
+        server.status, server.tools = "needs-auth", []
+        self._index()
+        return mcp_oauth.forget(_expand(server.spec)["url"])
+
+    def add(self, name: str, spec: dict, scope: str = "user") -> Server:
+        """Save a new server and start it now."""
+        write_server(user_config_path() if scope == "user" else project_config_path(self.root), name, spec)
+        if scope == "project":
+            trust(self.root, name, spec)  # you added it yourself
+        old = self.servers.get(name)
+        if old:
+            old.close()
+        server = self.servers[name] = Server(name, spec, scope)
+        server.start(self.root)
+        self._index()
+        return server
+
+    def remove(self, name: str) -> bool:
+        server = self.servers.pop(name, None)
+        if server is None:
+            return False
+        server.close()
+        if server.scope in ("user", "project"):
+            write_server(user_config_path() if server.scope == "user" else project_config_path(self.root), name, None)
+        self._index()
+        return True
 
     def pending_approval(self) -> list[Server]:
         return [s for s in self.servers.values() if s.status == "needs-approval"]

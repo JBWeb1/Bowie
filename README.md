@@ -290,6 +290,19 @@ bowers mcp remove files
 
 Your servers live in `~/.docks/mcp.json`. A project can also ship a `.mcp.json` (the same format Claude Code uses). Because a project's servers run commands on your machine, Bowers asks before starting each one, and asks again if its command changes. In the browser, approve them under the gear menu. Read-only tools run freely. Others ask for approval like any change. `${VAR}` in a config is filled in from your environment, so secrets stay out of the file.
 
+### Connect apps
+
+Bowers has a catalog of ready-made app connections: Notion, Linear, Sentry, Stripe, Supabase, Figma, Vercel, Hugging Face and GitHub's own MCP server, plus local tools (folder access, knowledge-graph memory, web fetch, SQLite, time zones). In the browser, open **Explore → Connect apps** (or **Settings → Tools & safety**) and press **Connect**. From the terminal:
+
+```bash
+bowers mcp apps              # the catalog, with what's connected
+bowers mcp connect notion    # adds it, then opens your browser to sign in
+bowers mcp login linear      # sign in again to an app you already added
+bowers mcp logout linear     # forget the sign-in
+```
+
+Signing in uses the MCP authorization spec, which is standard OAuth. Bowers finds the app's sign-in server, registers itself, and sends you to the app's own page to approve. Bowers never sees your password. The approval comes back to a one-time address on your computer (`127.0.0.1`), and Bowers checks it with PKCE and a random state value. It also checks the issuer when the server sends one. Sign-ins are stored in `~/.docks/mcp-auth.json`, readable only by you, and refresh themselves when they expire. A server that doesn't support registration needs a client ID you create with the app, set in its config as `"oauth": {"clientId": "..."}`. The GitHub entry uses your connected GitHub account instead. Local tools need Node.js (`npx`) or [uv](https://docs.astral.sh/uv/) (`uvx`), and the page tells you when one is missing.
+
 ## Bowers Router: one endpoint for every coding tool
 
 `bowers router` is a self-hosted gateway, similar to OmniRoute but focused on coding. Point Claude Code, Cline, Aider, Continue, OpenCode, Cursor or Bowers at it, and it sends each request to whichever AI provider is available right now.

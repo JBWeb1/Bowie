@@ -227,7 +227,7 @@ svg { flex: none; }
 .mcp-list { display: flex; flex-direction: column; gap: 6px; }
 .mcp-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fg); }
 .mcp-row .d { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
-.mcp-row .d.running { background: var(--ok); } .mcp-row .d.error { background: var(--bad); } .mcp-row .d.needs-approval { background: var(--warn); }
+.mcp-row .d.running { background: var(--ok); } .mcp-row .d.error { background: var(--bad); } .mcp-row .d.needs-approval, .mcp-row .d.needs-auth { background: var(--warn); }
 .mcp-row small { color: var(--muted); }
 .mcp-row .btn { height: 26px; padding: 0 8px; font-size: 12px; margin-left: auto; }
 .composer { max-width: 760px; margin: 0 auto; border: 1px solid var(--line-strong); background: var(--surface); border-radius: 18px; box-shadow: var(--shadow); padding: 10px 10px 10px 16px; transition: border-color .15s, box-shadow .15s; }
@@ -544,6 +544,17 @@ body { font-feature-settings: "ss01"; }
 
 /* Explore */
 .ex-section { margin-bottom: 28px; }
+.apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.app-card { display: flex; flex-direction: column; gap: 6px; padding: 14px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); min-width: 0; }
+.app-card .app-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.app-card .app-top small { display: block; color: var(--muted); font-size: 11.5px; }
+.app-card .logo { width: 32px; height: 32px; border-radius: 9px; background: var(--accent-soft); color: var(--accent-ink); display: grid; place-items: center; font-weight: 700; flex: none; }
+.app-card b { font-size: 14px; } .app-card p { margin: 0; color: var(--muted); font-size: 13px; flex: 1; }
+.app-card .pill { margin-left: auto; font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--line); color: var(--muted); white-space: nowrap; }
+.app-card .pill.running { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+.app-card .pill.needs-auth, .app-card .pill.waiting { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
+.app-card .pill.error { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
+.app-card .acts { display: flex; gap: 6px; flex-wrap: wrap; } .app-card .acts .btn { height: 30px; padding: 0 10px; font-size: 12.5px; }
 .ex-section h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 12px; }
 .model-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
 .mcard { position: relative; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); padding: 18px 16px 16px; text-align: center; cursor: pointer; transition: transform .15s, box-shadow .15s, border-color .15s; }
@@ -883,6 +894,7 @@ a.btn { text-decoration: none; color: inherit; }
   <div class="page-head"><h2>Explore</h2></div>
   <div class="ex-section"><h3>Bowers models</h3><div class="model-cards" id="model-cards"></div></div>
   <div class="ex-section"><h3>Start from a template</h3><div class="ideas" id="explore-templates"></div></div>
+  <div class="ex-section"><h3>Connect apps</h3><div class="apps" id="explore-apps"></div></div>
   <div class="ex-section"><h3>Commands and skills</h3><div class="cmd-list" id="explore-commands"></div></div>
 </section>
 <section class="page hidden" id="page-settings">
@@ -917,6 +929,7 @@ a.btn { text-decoration: none; color: inherit; }
       <div><div class="set-label">Permission rules</div><div class="ext-info" id="perm-info"></div></div>
     </div>
     <div class="set-card"><div class="set-label">MCP servers</div><div class="mcp-list" id="mcp-list"></div></div>
+    <div class="set-card"><div class="set-label">Connect apps</div><div class="apps" id="settings-apps"></div></div>
     <div class="set-card"><div class="set-label">Plugins and extensions</div><div class="ext-info" id="ext-info"></div></div>
   </div>
   <div class="set-panel hidden" data-sp="appearance">
@@ -1392,6 +1405,10 @@ function handle(ev) {
       thread.appendChild(n); alertUser(ev.text); toast(ev.text);
       break;
     }
+    case 'mcp_login': {
+      toast(ev.status === 'connected' ? `Signed in to ${ev.name}` : (ev.error || 'Sign-in failed'));
+      refreshApps(); api('/api/state').then(r => r.json()).then(s => s.mcp && renderMcp(s.mcp)); break;
+    }
     case 'github_login': {
       if (ev.status === 'connected') toast('Connected to GitHub as ' + ev.login); else toast(ev.error || 'GitHub sign-in failed');
       loadGit(); break;
@@ -1814,9 +1831,9 @@ document.querySelectorAll('[data-dtab]').forEach(t => t.onclick = () => openDraw
 document.addEventListener('keydown', e => { if (e.key === 'Escape') $('drawer').classList.add('hidden'); });
 function renderMcp(list) {
   const box = $('mcp-list'); box.innerHTML = '';
-  if (!list.length) { box.innerHTML = '<div class="mcp-row"><small>None yet. Add one with <code>bowers mcp add</code>.</small></div>'; return; }
+  if (!list.length) { box.innerHTML = '<div class="mcp-row"><small>None yet. Connect an app below, or add one with <code>bowers mcp add</code>.</small></div>'; return; }
   for (const m of list) {
-    const label = { running: `${m.tools.length} tools`, error: 'failed', 'needs-approval': 'needs approval', stopped: 'stopped' }[m.status];
+    const label = { running: `${m.tools.length} tools`, error: 'failed', 'needs-approval': 'needs approval', 'needs-auth': 'sign-in needed', stopped: 'stopped' }[m.status];
     const row = h('div', 'mcp-row', `<span class="d ${m.status}"></span><span></span><small>${esc(label)}</small>`);
     row.children[1].textContent = m.name; row.title = m.error || m.command;
     if (m.status === 'needs-approval') {
@@ -2571,8 +2588,55 @@ function renderExplore() {
     const b = h('button', 'idea', `<span class="ic">${icon(ic, 18)}</span><span><b>${esc(title)}</b><span class="stack">${esc(stack)}</span></span>`);
     b.onclick = () => prefill(prompt); tpl.appendChild(b);
   }
+  renderApps($('explore-apps'));
   const cl = $('explore-commands'); cl.innerHTML = '';
   for (const c of commands) { const b = h('button', null, `<b></b><small></small>`); b.querySelector('b').textContent = '/' + c.name; b.querySelector('small').textContent = c.description; b.onclick = () => prefill('/' + c.name + ' '); cl.appendChild(b); }
+}
+
+// Connect apps (MCP catalog)
+const APP_STATUS = { running: 'Connected', 'needs-auth': 'Sign in needed', waiting: 'Waiting for sign-in…', error: 'Problem', 'needs-approval': 'Needs approval', stopped: 'Stopped', 'not-connected': '' };
+let appsBoxes = new Set();
+async function renderApps(box) {
+  appsBoxes.add(box);
+  const r = await api('/api/mcp/apps'); if (!r.ok) { box.innerHTML = '<div class="muted">Could not load apps</div>'; return; }
+  const { apps, logins } = await r.json(); box.innerHTML = '';
+  for (const a of apps) {
+    const st = logins[a.id]?.status === 'waiting' && a.status !== 'running' ? 'waiting' : a.status;
+    const card = h('div', 'app-card', `<div class="app-top"><span class="logo">${esc(a.name[0])}</span><span><b>${esc(a.name)}</b><small>${esc(a.category)}</small></span>${APP_STATUS[st] ? `<span class="pill ${st}">${APP_STATUS[st]}</span>` : ''}</div><p>${esc(a.description)}</p><div class="acts"></div>`);
+    const acts = card.querySelector('.acts');
+    const btn = (label, primary, fn) => { const b = h('button', 'btn' + (primary ? ' primary' : ''), esc(label)); b.onclick = fn; acts.appendChild(b); };
+    if (a.missing) acts.appendChild(h('small', 'muted', 'Needs ' + esc(a.missing)));
+    else if (a.status === 'not-connected') btn('Connect', true, () => connectApp(a));
+    else {
+      if (a.status === 'needs-auth' && a.auth === 'github') btn('Connect GitHub first', true, () => { showPage('settings'); document.querySelector('[data-st=account]').click(); });
+      else if (a.status === 'needs-auth') btn(st === 'waiting' ? 'Open sign-in again' : 'Sign in', true, () => signInApp(a.id, logins[a.id]));
+      if (a.status === 'running' && a.auth === 'oauth') btn('Sign out', false, () => appAction('logout', a.id));
+      btn('Remove', false, () => { if (confirm(`Disconnect ${a.name}?`)) appAction('remove', a.id); });
+    }
+    box.appendChild(card);
+  }
+}
+function refreshApps() { for (const b of appsBoxes) if (b.offsetParent) renderApps(b); }
+async function appAction(action, name, extra = {}) {
+  const r = await api('/api/mcp/' + action, { name, ...extra }); const d = await r.json();
+  if (!r.ok) { toast(d.error); return null; }
+  if (d.mcp) renderMcp(d.mcp); refreshApps(); return d;
+}
+async function connectApp(a) {
+  const values = {};
+  for (const i of a.inputs) { const v = prompt(i.label, i.default); if (v === null) return; values[i.key] = v; }
+  if (a.auth === 'none' && !confirm(`Connect ${a.name}? Bowers will run it on this computer.`)) return;
+  const d = await appAction('connect', a.id, { app: a.id, values }); if (!d) return;
+  const now = d.apps.find(x => x.id === a.id);
+  if (now?.status === 'needs-auth' && a.auth === 'oauth') signInApp(a.id);
+  else if (now?.status === 'running') toast(`${a.name} connected`);
+}
+async function signInApp(name, pending) {
+  const w = window.open('', '_blank');  // opened now so popup blockers allow it
+  const url = pending?.url || (await appAction('login', name))?.url;
+  if (!url) { w?.close(); return; }
+  if (w) w.location = url; else toast('Allow pop-ups to sign in');
+  refreshApps();
 }
 
 // Settings page
@@ -2580,6 +2644,7 @@ document.querySelectorAll('.set-tabs button').forEach(b => b.onclick = () => {
   document.querySelectorAll('.set-tabs button').forEach(x => x.classList.toggle('on', x === b));
   document.querySelectorAll('.set-panel').forEach(p => p.classList.toggle('hidden', p.dataset.sp !== b.dataset.st));
   if (b.dataset.st === 'account') renderAccount();
+  if (b.dataset.st === 'tools') renderApps($('settings-apps'));
 });
 async function openSettings() { $('profile-name').value = profileName; }
 async function renderAccount() { const card = $('account-card'); const g = await (await api('/api/git')).json().catch(() => ({})); card.replaceChildren(await accountCard(g)); }

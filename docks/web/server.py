@@ -22,6 +22,7 @@ from pathlib import Path
 from .. import github, models
 from ..agent import Agent
 from ..checkpoints import CheckpointError
+from ..mcp import MCPError
 from ..sandbox import SandboxUnavailable, engine as sandbox_engine, unavailable_reason as sandbox_reason
 from ..tools import SKIP_DIRS
 from ..ui import _summarize_args
@@ -57,6 +58,7 @@ class Session:
         agent.procs.on_change = lambda info: self.publish({"type": "process", **info})
         agent.on_background_done = self._background_done
         self.github_login = {}  # a sign-in through GitHub in progress
+        self.mcp_logins = {}  # app sign-ins in progress, by server name
         from ..pr_watch import Watcher
         self.pr_watcher = Watcher(lambda u: self.publish({"type": "pr_update", "text": "; ".join(u["changes"]),
                                                            "url": u["url"], "title": u["title"]}))
@@ -114,6 +116,49 @@ class Session:
             self.publish({"type": "github_login", **self.github_login})
         threading.Thread(target=wait, daemon=True).start()
         return self.github_login
+
+    def _mcp_manager(self):
+        from ..mcp import MCPManager
+        if self.agent.mcp is None:
+            self.agent.mcp = MCPManager(self.agent.root)
+        return self.agent.mcp
+
+    def mcp_action(self, action: str, body: dict) -> dict:
+        """Connect an app from the catalog, sign in to it, sign out or remove it."""
+        from .. import mcp_catalog
+        mgr = self._mcp_manager()
+        name = str(body.get("app") or body.get("name") or "")
+        if action == "connect":
+            app = mcp_catalog.find(name)
+            if app is None:
+                raise ValueError(f"no app named {name!r} in the catalog")
+            missing = mcp_catalog.missing_tool(app)
+            if missing:
+                raise ValueError(f"{app['name']} needs {missing} installed first")
+            values = body.get("values") if isinstance(body.get("values"), dict) else {}
+            mgr.add(app["id"], mcp_catalog.build_spec(app, values))
+        elif action == "login":
+            login = mgr.start_login(name)
+            self.mcp_logins[name] = {"status": "waiting", "url": login.url}
+
+            def wait():
+                try:
+                    mgr.finish_login(name, login)
+                    self.mcp_logins[name] = {"status": "connected"}
+                    self.agent.refresh_tools()
+                except MCPError as e:
+                    self.mcp_logins[name] = {"status": "error", "error": str(e)}
+                self.publish({"type": "mcp_login", "name": name, **self.mcp_logins[name]})
+            threading.Thread(target=wait, daemon=True).start()
+            return {"name": name, "url": login.url, "mcp": mgr.summary()}
+        elif action == "logout":
+            if not mgr.logout(name):
+                raise ValueError(f"{name!r} has no saved sign-in")
+        elif action == "remove":
+            if not mgr.remove(name):
+                raise ValueError(f"no MCP server named {name!r}")
+        self.agent.refresh_tools()
+        return {"name": name, "mcp": mgr.summary(), "apps": mcp_catalog.listing(mgr)}
 
     def publish(self, event: dict) -> None:
         with self.lock:
@@ -498,6 +543,10 @@ def make_handler(session: Session, token: str, preview: dict):
                         return self._json(200, {"repos": context_repos.items(root)})
                 except github.GitHubError as e:
                     return self._json(400, {"error": str(e)})
+            if path == "/api/mcp/apps":
+                from .. import mcp_catalog
+                return self._json(200, {"apps": mcp_catalog.listing(session.agent.mcp),
+                                        "logins": session.mcp_logins})
             if path == "/api/context":
                 return self._json(200, session.agent.context_report())
             if path == "/api/doctor":
@@ -599,6 +648,13 @@ def make_handler(session: Session, token: str, preview: dict):
                 mgr.approve(body["name"])
                 session.agent.refresh_tools()
                 return self._json(200, {"mcp": mgr.summary()})
+            if path in ("/api/mcp/connect", "/api/mcp/login", "/api/mcp/logout", "/api/mcp/remove"):
+                if session.busy:
+                    return self._json(409, {"error": "stop the current task first"})
+                try:
+                    return self._json(200, session.mcp_action(path.rsplit("/", 1)[1], body))
+                except (MCPError, ValueError) as e:
+                    return self._json(400, {"error": str(e)})
             if path == "/api/process/stop":
                 session.agent.procs.stop(int(body.get("id", 0)))
                 return self._json(200, {"processes": session.agent.procs.list()})

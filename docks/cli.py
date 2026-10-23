@@ -89,8 +89,15 @@ def mcp_main(argv) -> int:
     rm.add_argument("name")
     rm.add_argument("--scope", choices=["user", "project"], default="user")
     sub.add_parser("list", help="show servers and their tools")
+    sub.add_parser("apps", help="apps you can connect in one step")
+    con = sub.add_parser("connect", help="connect an app from the catalog: bowers mcp connect notion")
+    con.add_argument("app")
+    con.add_argument("--path", help="for apps that need a folder or file")
+    con.add_argument("--scope", choices=["user", "project"], default="user")
+    for name, text in (("login", "sign in to a remote server"), ("logout", "forget a server's sign-in")):
+        sub.add_parser(name, help=text).add_argument("name")
     parser.add_argument("-C", "--dir", default=".")
-    args = parser.parse_args(argv)
+    args = parser.parse_args(_hoist_dir(argv))
     root = Path(args.dir).expanduser().resolve()
     path = lambda scope: mcp.user_config_path() if scope == "user" else mcp.project_config_path(root)
 
@@ -114,6 +121,8 @@ def mcp_main(argv) -> int:
         mcp.write_server(path(args.scope), args.name, None)
         print(f"removed '{args.name}'")
         return 0
+    if args.cmd in ("apps", "connect", "login", "logout"):
+        return _mcp_apps(args, root)
     mgr = start_mcp(root, interactive=sys.stdin.isatty())
     if not mgr or not mgr.servers:
         print("No MCP servers yet. Add one, e.g.:\n  bowers mcp add files -- npx -y @modelcontextprotocol/server-filesystem .")
@@ -125,6 +134,66 @@ def mcp_main(argv) -> int:
             print(ui.red(f"    {s['error']}"))
         for t in s["tools"]:
             print(ui.dim(f"    - {t}"))
+    mgr.close()
+    return 0
+
+
+def _mcp_apps(args, root: Path) -> int:
+    import webbrowser
+    from . import mcp, mcp_catalog
+    mgr = mcp.MCPManager(root)
+    if args.cmd == "apps":
+        mgr.start()
+        current = None
+        for app in mcp_catalog.listing(mgr):
+            if app["category"] != current:
+                current = app["category"]
+                print(ui.bold(current))
+            mark = {"running": ui.green("● connected"), "needs-auth": ui.yellow("● needs sign-in")}.get(app["status"], "")
+            note = ui.dim(f" (needs {app['missing']})") if app["missing"] else ""
+            print(f"  {app['id']:<13} {app['name']:<24} {ui.dim(app['description'][:70])} {mark}{note}")
+        print(ui.dim("connect one with: bowers mcp connect NAME"))
+        mgr.close()
+        return 0
+    if args.cmd == "connect":
+        app = mcp_catalog.find(args.app)
+        if not app:
+            ui.error(f"no app called {args.app!r}; see bowers mcp apps")
+            return 1
+        if mcp_catalog.missing_tool(app):
+            ui.error(f"{app['name']} needs {mcp_catalog.missing_tool(app)} installed first")
+            return 1
+        values = {"path": args.path} if args.path else {}
+        for item in app.get("inputs", []):
+            if item["key"] not in values and sys.stdin.isatty():
+                values[item["key"]] = input(f"{item['label']} [{item['default']}]: ").strip() or item["default"]
+        server = mgr.add(app["id"], mcp_catalog.build_spec(app, values), args.scope)
+        if server.status == "running":
+            print(ui.green(f"connected {app['name']}") + ui.dim(f"  ({len(server.tools)} tools)"))
+            return 0
+        if server.status != "needs-auth":
+            ui.error(f"{app['name']} didn't start: {server.error}")
+            return 1
+        args.name = app["id"]
+    name = args.name
+    if args.cmd == "logout":
+        print("signed out" if mgr.logout(name) else ui.dim("there was no sign-in to forget"))
+        return 0
+    try:  # login (or connect, for an app that needs one)
+        server = mgr.servers.get(name)
+        if server and server.status == "stopped":
+            server.start(root)
+        login = mgr.start_login(name)
+        print(f"Opening your browser to sign in to {name}. If it doesn't open, go to:\n  {login.url}")
+        webbrowser.open(login.url)
+        server = mgr.finish_login(name, login)
+    except mcp.MCPError as e:
+        ui.error(str(e))
+        return 1
+    if server.status != "running":
+        ui.error(f"signed in, but {name} didn't start: {server.error}")
+        return 1
+    print(ui.green(f"signed in to {name}") + ui.dim(f"  ({len(server.tools)} tools)"))
     mgr.close()
     return 0
 
