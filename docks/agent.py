@@ -30,7 +30,7 @@ from .lsp import SCHEMA as LSP_SCHEMA, LSPError, LSPManager
 from .sandbox import Sandbox, SandboxUnavailable
 from .tools import ToolError, _check, is_mutating, run_tool, tool_definitions, validate
 
-DEFAULT_MODEL = "claude-opus-5-5"
+DEFAULT_MODEL = "syntra"  # Bowers Syntra: the newest Opus, tuned for building software
 BETAS = [
     "server-side-fallback-2026-07-01",   # re-run declined requests on a fallback model
     "thinking-display-updates-2026-08-18",  # show progress notes between tool calls

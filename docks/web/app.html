@@ -4,40 +4,48 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bowers</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%235b5bd6'/%3E%3Cpath d='m12 11-5 5 5 5M20 11l5 5-5 5M17.5 8.5l-3 15' stroke='white' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23d06b46'/%3E%3Cg transform='translate(9 12) scale(.092)'%3E%3Cpath fill='white' fill-rule='evenodd' d='M100 72Q100 55 117 55H388C448 55 482 95 482 150C482 190 462 220 434 238C476 256 500 292 500 342C500 406 456 455 390 455H372Q355 455 355 438V384Q355 366 337 366H322Q305 366 305 384V438Q305 455 288 455H252Q235 455 235 438V384Q235 366 217 366H198Q180 366 180 384V438Q180 455 163 455H117Q100 455 100 438V322H30Q12 322 12 304V256Q12 238 30 238H100ZM188 148H230Q236 148 236 154V230Q236 236 230 236H188Q182 236 182 230V154Q182 148 188 148Z'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #f8f7f4; --surface: #ffffff; --surface-2: #f2f0ec; --line: #e7e4de; --line-strong: #d6d2ca;
-  --fg: #1d1b18; --fg-2: #4a4640; --muted: #7b766e;
-  --accent: #5b5bd6; --accent-hover: #4b4bc4; --accent-fg: #ffffff; --accent-soft: #ededfc; --accent-ink: #3e3eb0;
-  --ok: #18794e; --ok-soft: #e6f4ec; --bad: #c4321c; --bad-soft: #fbeae6; --warn: #a35b06; --warn-soft: #fdf1e1;
+  --bg: #f6f1eb; --surface: #fffcf8; --surface-2: #f1e9e0; --line: #eadfd4; --line-strong: #d9cbbd;
+  --fg: #1f1d1b; --fg-2: #4a433d; --muted: #8a7f75;
+  --accent: #d06b46; --accent-hover: #b95a37; --accent-fg: #ffffff; --accent-soft: #f8e5da; --accent-ink: #a64f2e;
+  --mint: #9cb4ac; --mint-soft: #e2ebe7; --cream: #ecddcd;
+  --side: #1f1d1b; --side-2: #2b2825; --side-fg: #ece5dd; --side-muted: #958b81;
+  --ok: #2f7a5b; --ok-soft: #e3efe9; --bad: #c4321c; --bad-soft: #fbeae6; --warn: #a35b06; --warn-soft: #fdf1e1;
   --add: #e6f4ea; --add-ink: #1a6b3c; --del: #fbe9e7; --del-ink: #a62b1a;
-  --shadow: 0 1px 2px rgba(30, 25, 20, .05), 0 4px 16px rgba(30, 25, 20, .06);
-  --shadow-lg: 0 8px 40px rgba(30, 25, 20, .14);
-  --radius: 12px;
+  --shadow: 0 1px 2px rgba(60, 35, 20, .05), 0 6px 20px rgba(60, 35, 20, .06);
+  --shadow-lg: 0 10px 44px rgba(60, 35, 20, .16);
+  --radius: 14px;
   --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
-  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   color-scheme: light;
 }
 :root[data-theme="dark"] {
-  --bg: #121211; --surface: #1b1a19; --surface-2: #232220; --line: #2d2b28; --line-strong: #3b3935;
-  --fg: #edebe7; --fg-2: #c9c5bf; --muted: #9b968e;
-  --accent: #8e8ff3; --accent-hover: #a3a4f7; --accent-fg: #11111c; --accent-soft: #24243d; --accent-ink: #b9baff;
-  --ok: #4cc38a; --ok-soft: #16291f; --bad: #ff8a73; --bad-soft: #351b16; --warn: #f0b45a; --warn-soft: #33260f;
+  --bg: #171513; --surface: #1f1c1a; --surface-2: #2a2623; --line: #34302c; --line-strong: #463f39;
+  --fg: #efe8e1; --fg-2: #cfc6bd; --muted: #a0958a;
+  --accent: #e07a55; --accent-hover: #ea8c69; --accent-fg: #1a0f0a; --accent-soft: #3b2418; --accent-ink: #f2a584;
+  --mint: #9cb4ac; --mint-soft: #1e2a26; --cream: #3a2f27;
+  --side: #121110; --side-2: #1f1d1b; --side-fg: #ece5dd; --side-muted: #8f857b;
+  --ok: #6fc59c; --ok-soft: #16291f; --bad: #ff8a73; --bad-soft: #351b16; --warn: #f0b45a; --warn-soft: #33260f;
   --add: #15281c; --add-ink: #7ad79f; --del: #33191a; --del-ink: #ff9c8a;
-  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 4px 16px rgba(0, 0, 0, .25);
-  --shadow-lg: 0 8px 40px rgba(0, 0, 0, .5);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 20px rgba(0, 0, 0, .25);
+  --shadow-lg: 0 10px 44px rgba(0, 0, 0, .5);
   color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #121211; --surface: #1b1a19; --surface-2: #232220; --line: #2d2b28; --line-strong: #3b3935;
-    --fg: #edebe7; --fg-2: #c9c5bf; --muted: #9b968e;
-    --accent: #8e8ff3; --accent-hover: #a3a4f7; --accent-fg: #11111c; --accent-soft: #24243d; --accent-ink: #b9baff;
-    --ok: #4cc38a; --ok-soft: #16291f; --bad: #ff8a73; --bad-soft: #351b16; --warn: #f0b45a; --warn-soft: #33260f;
+    --bg: #171513; --surface: #1f1c1a; --surface-2: #2a2623; --line: #34302c; --line-strong: #463f39;
+    --fg: #efe8e1; --fg-2: #cfc6bd; --muted: #a0958a;
+    --accent: #e07a55; --accent-hover: #ea8c69; --accent-fg: #1a0f0a; --accent-soft: #3b2418; --accent-ink: #f2a584;
+    --mint: #9cb4ac; --mint-soft: #1e2a26; --cream: #3a2f27;
+    --side: #121110; --side-2: #1f1d1b; --side-fg: #ece5dd; --side-muted: #8f857b;
+    --ok: #6fc59c; --ok-soft: #16291f; --bad: #ff8a73; --bad-soft: #351b16; --warn: #f0b45a; --warn-soft: #33260f;
     --add: #15281c; --add-ink: #7ad79f; --del: #33191a; --del-ink: #ff9c8a;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 4px 16px rgba(0, 0, 0, .25);
-    --shadow-lg: 0 8px 40px rgba(0, 0, 0, .5);
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 20px rgba(0, 0, 0, .25);
+    --shadow-lg: 0 10px 44px rgba(0, 0, 0, .5);
     color-scheme: dark;
   }
 }
@@ -480,47 +488,287 @@ svg { flex: none; }
 .lb-close { position: absolute; top: 8px; right: 8px; background: var(--surface); border-radius: 50%; }
 @media (max-width: 760px) { .lb-inner { flex-direction: column; } .lb-inner img { max-width: 100%; max-height: 60dvh; } .lb-side { width: auto; } .img-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (prefers-reduced-motion: reduce) { .shimmer, #img-go.working [data-icon] { animation: none; } .img-card img, .lightbox, .lb-inner { transition: none; } }
+
+/* ================================================================ Bowers shell */
+body { font-feature-settings: "ss01"; }
+.shell { flex: 1; display: flex; min-height: 0; }
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+.bmark { display: inline-grid; place-items: center; color: var(--accent); line-height: 0; }
+.side { width: 236px; flex: none; background: var(--side); color: var(--side-fg); display: flex; flex-direction: column; gap: 14px; padding: 18px 12px 12px; min-height: 0; }
+.side-logo { display: flex; align-items: center; gap: 10px; padding: 2px 8px 6px; }
+.side-logo b, .splash-logo b { display: block; font-size: 18px; font-weight: 800; letter-spacing: -.02em; line-height: 1.05; }
+.side-logo small, .splash-logo small { display: block; font-size: 9.5px; letter-spacing: .32em; color: var(--side-muted); margin-top: 2px; }
+.side-new { display: flex; align-items: center; justify-content: center; gap: 8px; height: 40px; border: 0; border-radius: 11px; background: var(--accent); color: #fff; font-weight: 600; cursor: pointer; transition: background .15s, transform .1s; }
+.side-new:hover { background: var(--accent-hover); } .side-new:active { transform: scale(.98); }
+.side-nav { display: flex; flex-direction: column; gap: 2px; }
+.side-nav button, .side-recent button { display: flex; align-items: center; gap: 11px; height: 38px; padding: 0 12px; border: 0; border-radius: 10px; background: none; color: var(--side-fg); font-size: 14px; cursor: pointer; text-align: left; transition: background .15s, color .15s; opacity: .86; }
+.side-nav button:hover, .side-recent button:hover { background: var(--side-2); opacity: 1; }
+.side-nav button.on { background: color-mix(in srgb, var(--accent) 88%, black); color: #fff; opacity: 1; }
+.side-recent { flex: 1; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 1px; }
+.side-recent .side-h { font-size: 11.5px; color: var(--side-muted); padding: 10px 12px 4px; letter-spacing: .02em; }
+.side-recent button { height: 32px; font-size: 13px; color: var(--side-muted); }
+.side-recent button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side-recent button.on { color: var(--side-fg); background: var(--side-2); }
+.side-me { display: flex; align-items: center; gap: 10px; padding: 8px; border: 0; border-top: 1px solid var(--side-2); background: none; color: var(--side-fg); cursor: pointer; text-align: left; border-radius: 0 0 10px 10px; }
+.side-me:hover { background: var(--side-2); border-radius: 10px; }
+.side-me span:nth-child(2) { flex: 1; min-width: 0; }
+.side-me b { display: block; font-size: 13.5px; } .side-me small { display: block; font-size: 11.5px; color: var(--side-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.me-face { width: 34px; height: 34px; border-radius: 50%; background: var(--cream); object-fit: cover; flex: none; }
+.show-mobile { display: none !important; }
+.top { background: transparent; border-bottom: 1px solid var(--line); }
+.page { flex: 1; overflow-y: auto; padding: 28px clamp(16px, 4vw, 44px) 40px; animation: page-in .25s ease; }
+@keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.page-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.page-head h2 { margin: 0; font-size: 24px; letter-spacing: -.02em; }
+.page-search { position: relative; max-width: 420px; margin-bottom: 18px; color: var(--muted); }
+.page-search [data-icon] { position: absolute; left: 11px; top: 9px; }
+.page-search .input { width: 100%; padding-left: 34px; height: 38px; border-radius: 11px; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.pcard { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); overflow: hidden; cursor: pointer; text-align: left; padding: 0; transition: transform .15s, box-shadow .15s, border-color .15s; display: flex; flex-direction: column; }
+.pcard:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--line-strong); }
+.pcard .pthumb { aspect-ratio: 16 / 10; background: linear-gradient(135deg, var(--accent-soft), var(--cream)); display: grid; place-items: center; color: var(--accent); overflow: hidden; position: relative; }
+.pcard .pthumb img { width: 100%; height: 100%; object-fit: cover; }
+.pcard .pthumb iframe { position: absolute; top: 0; left: 0; width: 400%; height: 400%; transform: scale(.25); transform-origin: 0 0; border: 0; pointer-events: none; background: #fff; }
+.pcard .pthumb .big { font-size: 34px; font-weight: 800; opacity: .8; }
+.pcard .pc-body { padding: 12px 14px; display: flex; align-items: flex-start; gap: 8px; }
+.pcard .pc-body div { flex: 1; min-width: 0; }
+.pcard b { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pcard small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pill.here { background: var(--mint-soft); color: var(--ok); }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.filters button { height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: 13px; color: var(--fg-2); transition: all .15s; }
+.filters button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.empty-page { grid-column: 1 / -1; text-align: center; padding: 50px 16px; color: var(--muted); }
+.empty-page img { width: 92px; height: 92px; border-radius: 50%; background: var(--cream); margin-bottom: 10px; }
+.empty-page b { display: block; color: var(--fg); font-size: 15px; margin-bottom: 4px; }
+
+/* Explore */
+.ex-section { margin-bottom: 28px; }
+.ex-section h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 12px; }
+.model-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.mcard { position: relative; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); padding: 18px 16px 16px; text-align: center; cursor: pointer; transition: transform .15s, box-shadow .15s, border-color .15s; }
+.mcard:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.mcard.on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.mcard img { width: 76px; height: 76px; border-radius: 50%; background: var(--cream); object-fit: cover; margin-bottom: 8px; }
+.mcard b { display: block; font-size: 15px; } .mcard p { margin: 4px 0 10px; color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+.badge-soft { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); }
+.badge-soft.mint { background: var(--mint-soft); color: var(--ok); }
+.cmd-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+.cmd-list button { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 12px; cursor: pointer; }
+.cmd-list button:hover { border-color: var(--accent); }
+.cmd-list b { font-family: var(--mono); font-size: 13px; } .cmd-list small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+/* Settings page */
+.page .settings-page { max-width: 760px; }
+.set-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 18px; overflow-x: auto; }
+.set-tabs button { border: 0; background: none; padding: 9px 12px; font-size: 13.5px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.set-tabs button.on { color: var(--fg); border-bottom-color: var(--accent); font-weight: 600; }
+.set-card { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); padding: 16px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 14px; }
+.set-card label { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.set-card .input { height: 38px; }
+.set-row { display: flex !important; flex-direction: row !important; align-items: center; gap: 12px; color: var(--fg) !important; font-weight: 400 !important; }
+.set-row > div { flex: 1; min-width: 0; } .set-row b { display: block; font-size: 14px; } .set-row small { display: block; color: var(--muted); font-size: 12.5px; font-weight: 400; }
+.set-row .input { width: 220px; }
+.set-ic { width: 38px; height: 38px; border-radius: 11px; background: var(--surface-2); display: grid; place-items: center; flex: none; color: var(--accent-ink); }
+.set-ic .me-face { width: 38px; height: 38px; }
+.set-label { font-size: 12.5px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+.set-note { font-weight: 400; color: var(--muted); font-size: 12px; }
+.set-card.meta { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.switch-row .switch { flex: none; }
+
+/* Home */
+.chat.home { justify-content: safe center; overflow-y: auto; }
+.chat.home #bg { opacity: .32; }
+.chat.home #log { flex: none; overflow: visible; padding: 0 0 6px; }
+.chat.home .composer-wrap { padding-bottom: 6px; }
+.home-extra { display: none; max-width: 760px; margin: 0 auto; }
+.chat.home .home-extra { display: block; }
+.app.home-mode { grid-template-columns: minmax(0, 1fr) 0; }
+.app.home-mode .panel { display: none; }
+.greet { text-align: center; padding: 10px 24px 4px; position: relative; z-index: 1; animation: page-in .35s ease; }
+.greet img { width: 84px; height: 84px; border-radius: 50%; background: var(--cream); box-shadow: 0 8px 26px color-mix(in srgb, var(--accent) 22%, transparent); animation: bob 4s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translateY(-4px); } }
+.greet h1 { font-size: 30px; letter-spacing: -.025em; margin: 12px 0 4px; }
+.greet p { color: var(--muted); margin: 0 0 6px; font-size: 15.5px; }
+.quick-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 4px 0 18px; }
+.quick-chips .chip { height: 32px; background: color-mix(in srgb, var(--surface) 85%, transparent); }
+.home-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.hcard { display: flex; gap: 14px; align-items: center; text-align: left; padding: 16px; border-radius: 16px; border: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 92%, transparent); cursor: pointer; transition: transform .15s, box-shadow .15s, border-color .15s; }
+.hcard:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.hcard .hc-ic { width: 42px; height: 42px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex: none; }
+.hcard b { display: block; font-size: 14.5px; } .hcard small { color: var(--muted); font-size: 12.5px; }
+.home-foot { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--muted); font-size: 12.5px; margin: 16px 0 4px; }
+.home-foot img { width: 26px; height: 26px; border-radius: 50%; background: var(--cream); }
+.bowie-av { width: 30px; height: 30px; border-radius: 50%; background: var(--cream); object-fit: cover; flex: none; margin-top: -2px; }
+.typing .bowie-av { animation: bob 1.6s ease-in-out infinite; }
+.live-card { margin-left: 42px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 12px 14px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; box-shadow: var(--shadow); }
+.live-card b { display: block; } .live-card small { color: var(--muted); }
+.live-dot { width: 9px; height: 9px; border-radius: 50%; background: #2fbf71; box-shadow: 0 0 0 4px rgba(47, 191, 113, .18); animation: pulse 1.6s infinite; }
+
+/* Model chip and selector */
+.model-chip { font-weight: 600; color: var(--fg); }
+.model-chip img { width: 18px; height: 18px; border-radius: 50%; background: var(--cream); }
+.modal { position: fixed; inset: 0; z-index: 55; background: rgba(20, 14, 10, .55); display: grid; place-items: center; padding: 16px; backdrop-filter: blur(3px); animation: fade .15s ease; }
+@keyframes fade { from { opacity: 0; } }
+.modal-box { background: var(--surface); border-radius: 20px; width: min(920px, 100%); max-height: 100%; overflow-y: auto; padding: 22px; box-shadow: var(--shadow-lg); animation: page-in .2s ease; }
+.modal-box .page-head { margin-bottom: 14px; }
+.modal-box h2 { font-size: 19px; }
+.mfeat { display: flex; flex-wrap: wrap; gap: 18px; padding: 14px 4px 0; color: var(--muted); font-size: 12px; }
+.mfeat span { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 70px; }
+.mfeat [data-icon], .mfeat .icon { color: var(--accent); }
+
+/* Splash / onboarding */
+.splash { position: fixed; inset: 0; z-index: 70; display: grid; grid-template-columns: 1.1fr 1fr; background: #171310; color: #f6efe7; animation: fade .3s ease; }
+.splash-art { position: relative; overflow: hidden; }
+.splash-art img { width: 100%; height: 100%; object-fit: cover; filter: saturate(1.05); }
+.splash-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 55%, #171310); }
+.splash-copy { display: flex; flex-direction: column; justify-content: center; padding: 48px clamp(24px, 6vw, 80px); gap: 16px; }
+.splash-logo { display: flex; align-items: center; gap: 12px; } .splash-logo small { color: #b5a99c; }
+.splash h1 { font-size: clamp(32px, 4.4vw, 52px); line-height: 1.08; letter-spacing: -.03em; margin: 12px 0 0; }
+.splash p { color: #c9bcae; margin: 0; font-size: 17px; }
+.splash-name { display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #c9bcae; max-width: 360px; margin-top: 10px; }
+.splash-name .input { height: 44px; border-radius: 12px; background: #231d19; border-color: #3a302a; color: #f6efe7; font-size: 15px; }
+.splash-go { height: 46px; padding: 0 22px; border-radius: 999px; font-size: 15px; align-self: flex-start; }
+.steps-dots { display: flex; gap: 6px; } .steps-dots i { width: 22px; height: 4px; border-radius: 4px; background: #3a302a; } .steps-dots i.on { background: var(--accent); }
+.ob-list { display: flex; flex-direction: column; gap: 8px; max-width: 420px; }
+.ob-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: #221c18; border: 1px solid #342a24; }
+.ob-item b { display: block; font-size: 14px; } .ob-item small { color: #b5a99c; font-size: 12.5px; }
+.ob-item .ok { margin-left: auto; color: #6fc59c; font-size: 12.5px; white-space: nowrap; } .ob-item .no { margin-left: auto; color: #f0b45a; font-size: 12.5px; white-space: nowrap; }
+.ob-models { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; max-width: 560px; }
+.ob-models .mcard { background: #221c18; border-color: #342a24; color: #f6efe7; padding: 14px 10px; }
+.ob-models .mcard p { color: #b5a99c; } .ob-models .mcard.on { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(208, 107, 70, .3); }
+.ob-models .mcard img { width: 58px; height: 58px; }
+
+/* Mobile "More" sheet */
+.sheet { position: fixed; inset: 0; z-index: 50; background: rgba(20, 14, 10, .4); display: flex; align-items: flex-end; animation: fade .15s ease; }
+.sheet-inner { width: 100%; background: var(--surface); border-radius: 20px 20px 0 0; padding: 8px 16px calc(18px + env(safe-area-inset-bottom)); animation: sheet-up .2s ease; }
+@keyframes sheet-up { from { transform: translateY(30px); opacity: .5; } }
+.sheet-grip { width: 40px; height: 4px; border-radius: 4px; background: var(--line-strong); margin: 4px auto 14px; }
+.sheet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.sheet-grid button { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px; border-radius: 14px; border: 0; background: var(--surface-2); font-size: 12px; color: var(--fg-2); cursor: pointer; }
+.sheet-grid [data-icon] { color: var(--accent); }
+
+@media (max-width: 1180px) and (min-width: 921px) {
+  .side { width: 72px; padding: 16px 10px; align-items: center; }
+  .side-logo span:nth-child(2), .side-nav button, .side-new { font-size: 0; }
+  .side-new { width: 44px; } .side-nav button { width: 48px; justify-content: center; padding: 0; gap: 0; }
+  .side-recent, .side-me span:nth-child(2), .side-me [data-icon] { display: none; }
+}
+@media (max-width: 920px) {
+  .side { display: none; }
+  .show-mobile { display: flex !important; }
+  .logo.show-mobile { align-items: center; gap: 7px; font-weight: 800; }
+  .page { padding: 18px 14px 28px; }
+  .home-cards { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .chat.home { justify-content: flex-start; padding-top: 6px; }
+  .chat.home #bg { opacity: .14; }
+  .quick-chips { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; margin: 4px -12px 14px; padding: 0 12px; scrollbar-width: none; }
+  .quick-chips::-webkit-scrollbar { display: none; }
+  .quick-chips .chip { flex: none; }
+  #gh-chip, .model-chip .m-prefix { display: none; }
+  .home-extra { padding-bottom: 8px; }
+  .hcard { padding: 12px 14px; }
+  .greet img { width: 64px; height: 64px; } .greet h1 { font-size: 24px; }
+  .splash { grid-template-columns: 1fr; grid-template-rows: 42vh 1fr; }
+  .splash-art::after { background: linear-gradient(180deg, transparent 50%, #171310); }
+  .splash-copy { padding: 8px 22px 28px; gap: 12px; justify-content: flex-start; overflow-y: auto; }
+  .ob-models { grid-template-columns: minmax(0, 1fr); }
+  .set-row .input { width: 100%; } .set-row { flex-wrap: wrap; }
+  .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .live-card { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .greet img, .typing .bowie-av, .live-dot, .page { animation: none; } }
+
+.tasks-split { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr); gap: 16px; align-items: start; }
+.task-list { display: flex; flex-direction: column; gap: 8px; }
+.trow { display: grid; grid-template-columns: 40px minmax(0, 1fr) 120px 110px; gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); cursor: pointer; text-align: left; transition: border-color .15s, box-shadow .15s; }
+.trow:hover { border-color: var(--line-strong); box-shadow: var(--shadow); } .trow.on { border-color: var(--accent); }
+.trow .t-ic { width: 40px; height: 40px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; }
+.trow b { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .trow small { color: var(--muted); font-size: 12px; }
+.prog { height: 6px; border-radius: 6px; background: var(--surface-2); overflow: hidden; } .prog i { display: block; height: 100%; background: var(--accent); border-radius: 6px; transition: width .4s ease; }
+.prog.done i { background: #2fbf71; }
+.prog-l { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); } .prog-l .prog { flex: 1; }
+.st { justify-self: end; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.st.active { background: #e3ecfb; color: #2a5bd7; } .st.completed { background: var(--ok-soft); color: var(--ok); }
+.st.pending { background: var(--accent); color: #fff; } .st.not_started { background: var(--surface-2); color: var(--muted); }
+:root[data-theme="dark"] .st.active { background: #1c2740; color: #8fb0ff; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .st.active { background: #1c2740; color: #8fb0ff; } }
+.task-detail { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); padding: 16px; position: sticky; top: 0; }
+.task-detail h3 { margin: 0 0 4px; font-size: 16px; } .task-detail .muted { color: var(--muted); font-size: 12.5px; }
+.td-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.td-plan { list-style: none; padding: 0; margin: 10px 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.td-plan li { display: flex; gap: 8px; align-items: flex-start; } .td-plan li.done { color: var(--muted); text-decoration: line-through; }
+.td-plan .m { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--line-strong); flex: none; margin-top: 2px; display: grid; place-items: center; }
+.td-plan li.done .m { background: #2fbf71; border-color: #2fbf71; color: #fff; } .td-plan li.in_progress .m { border-color: var(--accent); box-shadow: inset 0 0 0 3px var(--surface), inset 0 0 0 8px var(--accent); }
+.approve-box { display: flex; gap: 10px; padding: 12px; border-radius: 12px; background: var(--accent-soft); margin: 12px 0; font-size: 13px; }
+.task-detail .btn.primary { width: 100%; justify-content: center; height: 40px; }
+.studio-hero { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 24px; border-radius: 20px; background: linear-gradient(120deg, #2a1f19, #4a2a1c 60%, #d06b46); color: #fbefe5; margin-bottom: 20px; overflow: hidden; }
+.studio-hero h2 { margin: 0 0 4px; font-size: 24px; } .studio-hero p { margin: 0; color: #e8d3c3; }
+.studio-hero img { width: 96px; height: 96px; border-radius: 50%; background: var(--cream); flex: none; }
+.studio-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.stool { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 18px; padding: 0; overflow: hidden; cursor: pointer; transition: transform .15s, box-shadow .15s; display: flex; flex-direction: column; }
+.stool:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.stool .s-art { height: 110px; display: grid; place-items: center; color: #fff; position: relative; }
+.stool .s-art .icon { width: 40px; height: 40px; stroke-width: 1.6; filter: drop-shadow(0 4px 10px rgba(0,0,0,.25)); }
+.stool .s-body { padding: 12px 14px 14px; } .stool b { display: block; font-size: 14.5px; } .stool small { color: var(--muted); font-size: 12.5px; }
+.stool .how { display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 600; color: var(--accent-ink); background: var(--accent-soft); padding: 2px 8px; border-radius: 999px; }
+.studio-form { display: flex; flex-direction: column; gap: 12px; }
+.studio-form textarea { min-height: 110px; padding: 10px 12px; resize: vertical; height: auto; }
+@media (max-width: 920px) {
+  .tasks-split { grid-template-columns: minmax(0, 1fr); }
+  .trow { grid-template-columns: 36px minmax(0, 1fr) auto; } .trow .prog-l { grid-column: 2 / 4; grid-row: 2; }
+  .task-detail { position: static; }
+  .studio-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .stool .s-art { height: 80px; }
+  .mobile-nav button { font-size: 10.5px; }
+}
+
+.live-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #1f8f57; background: #e2f5eb; padding: 3px 10px; border-radius: 999px; }
+.live-badge i { width: 7px; height: 7px; border-radius: 50%; background: #2fbf71; animation: pulse 1.6s infinite; }
+:root[data-theme="dark"] .live-badge { background: #16291f; color: #6fc59c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .live-badge { background: #16291f; color: #6fc59c; } }
+.deploy-btn { height: 32px; }
+
+a.btn { text-decoration: none; color: inherit; }
+@media (max-width: 920px) {
+  .live-card > span:nth-child(2) { flex: 1 1 calc(100% - 30px); }
+  .live-card .btn { flex: 1; justify-content: center; }
+}
 </style>
 </head>
 <body>
 <div id="gate" class="hidden"><div><div class="logo-mark" style="margin:0 auto 14px;width:44px;height:44px"></div><h2 style="margin:0 0 6px">Open Bowers from your terminal</h2><p style="color:var(--muted);margin:0">Use the link printed when you ran <code>bowers web</code>. It contains a private key for this session.</p></div></div>
 
+<div class="shell">
+<nav class="side" id="side" aria-label="Bowers">
+  <div class="side-logo"><span class="bmark" data-mark></span><span><b>Bowers</b><small>AI AGENT</small></span></div>
+  <button class="side-new" id="side-new"><span data-icon="plus"></span>New chat</button>
+  <div class="side-nav">
+    <button class="on" data-page="home"><span data-icon="home"></span>Home</button>
+    <button data-page="projects"><span data-icon="folder"></span>Projects</button>
+    <button data-page="tasks"><span data-icon="check"></span>Tasks</button>
+    <button data-page="library"><span data-icon="library"></span>Library</button>
+    <button data-page="studio"><span data-icon="sparkle"></span>Creation Studio</button>
+    <button data-page="explore"><span data-icon="compass"></span>Explore</button>
+    <button data-page="settings"><span data-icon="gear"></span>Settings</button>
+  </div>
+  <div class="side-recent" id="side-recent"></div>
+  <button class="side-me" id="side-me" title="Your settings"><img class="me-face" src="/assets/bowie-happy.webp" alt=""><span><b id="me-name">You</b><small id="me-model">Bowers</small></span><span data-icon="chevron"></span></button>
+</nav>
+<div class="main">
 <header class="top">
-  <div class="logo"><div class="logo-mark" data-icon="logo"></div><span class="hide-mobile">Bowers</span></div>
-  <span class="crumb hide-mobile">/</span>
+  <div class="logo show-mobile"><span class="bmark" data-mark></span><span>Bowers</span></div>
   <div class="project"><span id="project-name"></span></div>
   <span class="branch" id="branch-chip"></span>
   <span class="status" id="status"><span class="dot"></span><span id="status-text">Ready</span></span>
+  <span class="live-badge hidden" id="live-badge"><i></i>Live</span>
   <span class="spacer"></span>
+  <button class="btn primary hide-mobile deploy-btn" id="deploy-top" title="Put this project online"><span data-icon="rocket"></span>Deploy</button>
   <button class="btn ghost hide-mobile" id="new-chat"><span data-icon="plus"></span>New chat</button>
   <button class="btn ghost icon-only hide-mobile" id="toggle-panel" title="Show or hide the side panel" aria-label="Toggle side panel"><span data-icon="panel"></span></button>
   <button class="btn ghost icon-only" id="open-history" title="Conversations and bookmarks" aria-label="Conversations and bookmarks"><span data-icon="history"></span></button>
   <button class="btn ghost icon-only" id="open-settings" title="Settings" aria-label="Settings"><span data-icon="gear"></span></button>
 </header>
 
-<div class="pop hidden" id="settings" role="dialog" aria-label="Settings">
-  <label>Model<select class="input" id="model"></select></label>
-  <label>Effort
-    <select class="input" id="effort"><option value="low">Low: fastest</option><option value="medium">Medium</option><option value="high">High: recommended</option><option value="xhigh">Extra high</option><option value="max">Max: most thorough</option></select>
-  </label>
-  <label>Mode
-    <select class="input" id="mode-select"><option value="ask">Ask first: confirm each change</option><option value="auto">Auto: only risky changes ask</option><option value="plan">Plan first: change nothing until approved</option><option value="yolo">Full auto: never ask</option></select>
-  </label>
-  <label>Output style
-    <select class="input" id="style-select"></select>
-  </label>
-  <label class="switch-row" id="sandbox-row">Sandbox commands (writes only inside the project)<span class="switch"><input type="checkbox" id="sandbox"><i></i></span></label>
-  <label class="switch-row">Notify me when Bowers needs me<span class="switch"><input type="checkbox" id="notify"><i></i></span></label>
-  <div><div style="font-size:12.5px;font-weight:500;color:var(--muted);margin-bottom:6px">Permission rules</div><div class="ext-info" id="perm-info"></div></div>
-  <label class="switch-row">Animated background<span class="switch"><input type="checkbox" id="anim"><i></i></span></label>
-  <div><div style="font-size:12.5px;font-weight:500;color:var(--muted);margin-bottom:6px">MCP servers</div><div class="mcp-list" id="mcp-list"></div></div>
-  <div><div style="font-size:12.5px;font-weight:500;color:var(--muted);margin-bottom:6px">Plugins and extensions</div><div class="ext-info" id="ext-info"></div></div>
-  <label>Theme
-    <select class="input" id="theme"><option value="system">Match system</option><option value="light">Light</option><option value="dark">Dark</option></select>
-  </label>
-  <button class="btn" id="new-chat-2"><span data-icon="plus"></span>New chat</button>
-  <div class="meta"><div id="usage">No usage yet</div><div id="root-path" style="margin-top:4px"></div></div>
-</div>
 
 <aside class="drawer hidden" id="drawer" aria-label="Conversations and bookmarks">
   <div class="drawer-head"><div class="tabs" style="padding:0;border:0"><button class="tab on" data-dtab="sessions">Conversations</button><button class="tab" data-dtab="bookmarks">Bookmarks</button></div><span class="spacer"></span><button class="btn ghost icon-only" id="close-drawer" aria-label="Close">✕</button></div>
@@ -541,12 +789,14 @@ svg { flex: none; }
           <button class="chip" id="attach" title="Attach a screenshot, mockup or design"><span data-icon="image"></span><span class="hide-mobile">Image</span></button>
           <input type="file" id="file-input" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
           <button class="chip" id="gh-chip" title="GitHub actions"><span data-icon="github"></span>GitHub</button>
+          <button class="chip model-chip" id="model-chip" title="Choose a Bowers model"><img src="/assets/bowie-happy.webp" alt=""><span id="model-chip-text">Bowers</span><span data-icon="chevron-down"></span></button>
           <span class="mode-wrap"><button class="chip" id="mode-chip" title="How Bowers asks before changes"><span id="mode-icon"></span><span id="mode-text">Ask first</span></button><div class="mode-menu hidden" id="mode-menu" role="menu"></div></span>
           <span class="spacer"></span>
           <button class="send" id="send" aria-label="Send"><span data-icon="arrow-up"></span></button>
         </div>
       </div>
       <div class="hint hide-mobile">Enter to send · Shift + Enter for a new line</div>
+      <div class="home-extra" id="home-extra"></div>
     </div>
   </section>
 
@@ -609,13 +859,108 @@ svg { flex: none; }
   </aside>
 </div>
 
+<section class="page hidden" id="page-projects">
+  <div class="page-head"><h2>Projects</h2><span class="spacer"></span><button class="btn primary" id="new-project"><span data-icon="plus"></span>New project</button></div>
+  <div class="page-search"><span data-icon="search"></span><input class="input" id="project-search" placeholder="Search projects…"></div>
+  <div class="card-grid" id="project-grid"></div>
+</section>
+<section class="page hidden" id="page-tasks">
+  <div class="page-head"><h2>Tasks &amp; Plans</h2></div>
+  <div class="filters" id="task-filters"></div>
+  <div class="tasks-split"><div class="task-list" id="task-list"></div><aside class="task-detail" id="task-detail"></aside></div>
+</section>
+<section class="page hidden" id="page-studio">
+  <div class="studio-hero"><div><h2>Creation Studio</h2><p>Choose a tool and start creating. Bowers builds it with you.</p></div><img src="/assets/bowie-excited.webp" alt=""></div>
+  <div class="studio-grid" id="studio-grid"></div>
+</section>
+<section class="page hidden" id="page-library">
+  <div class="page-head"><h2>Library</h2></div>
+  <div class="filters" id="lib-filters"></div>
+  <div class="page-search"><span data-icon="search"></span><input class="input" id="lib-search" placeholder="Search your creations…"></div>
+  <div class="card-grid" id="lib-grid"></div>
+</section>
+<section class="page hidden" id="page-explore">
+  <div class="page-head"><h2>Explore</h2></div>
+  <div class="ex-section"><h3>Bowers models</h3><div class="model-cards" id="model-cards"></div></div>
+  <div class="ex-section"><h3>Start from a template</h3><div class="ideas" id="explore-templates"></div></div>
+  <div class="ex-section"><h3>Commands and skills</h3><div class="cmd-list" id="explore-commands"></div></div>
+</section>
+<section class="page hidden" id="page-settings">
+  <div class="page-head"><h2>Settings</h2></div>
+<div class="settings-page" id="settings">
+  <div class="set-tabs" role="tablist"><button class="on" data-st="general">General</button><button data-st="model">Model</button><button data-st="account">Account</button><button data-st="tools">Tools &amp; safety</button><button data-st="appearance">Appearance</button></div>
+  <div class="set-panel" data-sp="general">
+    <div class="set-card"><div class="set-row"><span class="set-ic"><img class="me-face" src="/assets/bowie-happy.webp" alt=""></span><div><b>Your name</b><small>Bowie greets you with it</small></div><input class="input" id="profile-name" placeholder="Your name" autocomplete="name"></div>
+      <label class="set-row switch-row"><span class="set-ic" data-icon="bell"></span><div><b>Notifications</b><small>When Bowers needs you or finishes, while this tab is in the background</small></div><span class="switch"><input type="checkbox" id="notify"><i></i></span></label>
+    </div>
+    <div class="set-card meta"><div id="usage">No usage yet</div><div id="root-path" style="margin-top:4px"></div></div>
+  </div>
+  <div class="set-panel hidden" data-sp="model">
+    <div class="set-card">
+      <label>Model<select class="input" id="model"></select><small class="set-note" id="model-note"></small></label>
+      <label>Effort
+        <select class="input" id="effort"><option value="low">Low: fastest</option><option value="medium">Medium</option><option value="high">High: recommended</option><option value="xhigh">Extra high</option><option value="max">Max: most thorough</option></select>
+      </label>
+      <label>Mode
+        <select class="input" id="mode-select"><option value="ask">Ask first: confirm each change</option><option value="auto">Auto: only risky changes ask</option><option value="plan">Plan first: change nothing until approved</option><option value="yolo">Full auto: never ask</option></select>
+      </label>
+      <label>Output style<select class="input" id="style-select"></select></label>
+    </div>
+  </div>
+  <div class="set-panel hidden" data-sp="account">
+    <div class="set-card" id="account-card"></div>
+    <div class="set-card"><div class="set-row"><span class="set-ic" data-icon="shield"></span><div><b>Setup check</b><small>API keys, GitHub, browser, code intelligence, sandbox</small></div><button class="btn" id="run-doctor">Run check</button></div><div id="doctor-out"></div></div>
+  </div>
+  <div class="set-panel hidden" data-sp="tools">
+    <div class="set-card">
+      <label class="set-row switch-row" id="sandbox-row"><span class="set-ic" data-icon="shield"></span><div><b>Sandbox commands</b><small>Commands can only write inside the project</small></div><span class="switch"><input type="checkbox" id="sandbox"><i></i></span></label>
+      <div><div class="set-label">Permission rules</div><div class="ext-info" id="perm-info"></div></div>
+    </div>
+    <div class="set-card"><div class="set-label">MCP servers</div><div class="mcp-list" id="mcp-list"></div></div>
+    <div class="set-card"><div class="set-label">Plugins and extensions</div><div class="ext-info" id="ext-info"></div></div>
+  </div>
+  <div class="set-panel hidden" data-sp="appearance">
+    <div class="set-card">
+      <label>Theme<select class="input" id="theme"><option value="system">Match system</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+      <label class="set-row switch-row"><span class="set-ic" data-icon="sparkle"></span><div><b>Animated background</b><small>Code drifting behind the chat</small></div><span class="switch"><input type="checkbox" id="anim"><i></i></span></label>
+    </div>
+  </div>
+</div>
+</section>
+</div>
+</div>
+
 <nav class="mobile-nav">
-  <button class="btn ghost" data-m="chat"><span data-icon="chat"></span>Chat</button>
-  <button class="btn ghost" data-m="preview"><span data-icon="eye"></span>Preview</button>
-  <button class="btn ghost" data-m="code"><span data-icon="code"></span>Code</button>
-  <button class="btn ghost" data-m="github"><span data-icon="github"></span>GitHub</button>
-  <button class="btn ghost" data-m="images"><span data-icon="image"></span>Images</button>
+  <button class="btn ghost" data-m="chat"><span data-icon="home"></span>Home</button>
+  <button class="btn ghost" data-m="projects"><span data-icon="folder"></span>Projects</button>
+  <button class="btn ghost" data-m="library"><span data-icon="library"></span>Library</button>
+  <button class="btn ghost" data-m="studio"><span data-icon="sparkle"></span>Studio</button>
+  <button class="btn ghost" data-m="more"><span data-icon="grid"></span>More</button>
 </nav>
+<div class="sheet hidden" id="more-sheet"><div class="sheet-inner">
+  <div class="sheet-grip"></div>
+  <div class="sheet-grid">
+    <button data-m="preview"><span data-icon="eye"></span>Preview</button>
+    <button data-m="code"><span data-icon="code"></span>Code</button>
+    <button data-m="github"><span data-icon="github"></span>GitHub</button>
+    <button data-m="images"><span data-icon="image"></span>Images</button>
+    <button data-m="tasks"><span data-icon="check"></span>Tasks</button>
+    <button data-m="explore"><span data-icon="compass"></span>Explore</button>
+    <button data-m="history"><span data-icon="history"></span>History</button>
+    <button data-m="settings"><span data-icon="gear"></span>Settings</button>
+  </div>
+</div></div>
+
+<div class="splash hidden" id="splash">
+  <div class="splash-art"><img src="/assets/bowie-hero.webp" alt="Bowie, the Bowers mascot"></div>
+  <div class="splash-copy">
+    <div class="splash-logo"><span class="bmark" data-mark></span><span><b>Bowers</b><small>AI AGENT</small></span></div>
+    <h1>Your ideas<br>have a home here.</h1>
+    <p>Think. Create. Build. Together.</p>
+    <label class="splash-name">What should Bowie call you?<input class="input" id="splash-name" placeholder="Your name" autocomplete="name"></label>
+    <button class="btn primary splash-go" id="splash-go">Get started <span data-icon="arrow-right"></span></button>
+  </div>
+</div>
 <div class="lightbox hidden" id="lightbox"><div class="lb-inner"><img alt=""><div class="lb-side"><p class="lb-prompt"></p><code class="lb-path"></code><div class="lb-actions"></div></div><button class="btn ghost icon-only lb-close" aria-label="Close">✕</button></div></div>
 
 <script>
@@ -670,9 +1015,24 @@ const ICONS = {
   chart: '<path d="M3 3v18h18M7 15l4-4 3 3 5-6"/>',
   smartphone: '<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/>',
   puzzle: '<path d="M9 3h6v3a2 2 0 1 0 4 0V9h2v6h-3a2 2 0 1 0 0 4h3v2H9v-3a2 2 0 1 0-4 0v3H3V9h3a2 2 0 1 0 0-4H3V3z"/>',
+  home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/>',
+  library: '<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 14h3"/>',
+  compass: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
+  grid: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>',
+  chevron: '<path d="m9 6 6 6-6 6"/>',
+  'chevron-down': '<path d="m6 9 6 6 6-6"/>',
+  bell: '<path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+  'arrow-right': '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  box: '<path d="M12 3 4 7v10l8 4 8-4V7z"/><path d="m4 7 8 4 8-4M12 11v10"/>',
+  bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
+  dots: '<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
 };
+const MARK = 'M100 72Q100 55 117 55H388C448 55 482 95 482 150C482 190 462 220 434 238C476 256 500 292 500 342C500 406 456 455 390 455H372Q355 455 355 438V384Q355 366 337 366H322Q305 366 305 384V438Q305 455 288 455H252Q235 455 235 438V384Q235 366 217 366H198Q180 366 180 384V438Q180 455 163 455H117Q100 455 100 438V322H30Q12 322 12 304V256Q12 238 30 238H100ZM188 148H230Q236 148 236 154V230Q236 236 230 236H188Q182 236 182 230V154Q182 148 188 148Z';
+const markSvg = (size = 22) => `<svg viewBox="4 45 504 420" width="${size}" height="${Math.round(size * 420 / 504)}" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="${MARK}"/></svg>`;
+const BOWIE = mood => `/assets/bowie-${mood}.webp`;
 const icon = (name, size = 16) => `<svg class="icon" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 document.querySelectorAll('[data-icon]').forEach(e => { e.innerHTML = icon(e.dataset.icon, e.classList.contains('ic') ? 24 : e.classList.contains('logo-mark') ? 18 : 16); });
+document.querySelectorAll('[data-mark]').forEach(e => { e.innerHTML = markSvg(e.closest('.splash') ? 40 : 24); });
 function hydrateIcons(root) { root.querySelectorAll('[data-icon]').forEach(e => { if (!e.innerHTML) e.innerHTML = icon(e.dataset.icon, 16); }); }
 
 // ---------------------------------------------------------------- basics
@@ -794,7 +1154,7 @@ log.addEventListener('scroll', () => { stick = log.scrollHeight - log.scrollTop 
 const scrollDown = () => { if (stick) log.scrollTop = log.scrollHeight; };
 
 function add(el) {
-  thread.querySelector('.welcome')?.remove();
+  if (thread.querySelector('.welcome')) { thread.querySelector('.welcome').remove(); setHome(false); }
   if (typing) thread.insertBefore(el, typing); else thread.appendChild(el);
   scrollDown(); return el;
 }
@@ -825,18 +1185,10 @@ const QUICK = [
 ];
 function welcome() {
   thread.innerHTML = '';
-  const w = h('div', 'welcome', `<div class="hero"><div class="mark">${icon('logo', 26)}</div><h1>What do you want to <span class="grad">build</span>?</h1><p>Describe it, paste a screenshot, or start from a template. Bowers writes the code, runs it, and fixes what breaks.</p></div><div class="section-label">Start from a template</div><div class="ideas"></div><div class="section-label">Or work on this project</div><div class="quick"></div>`);
-  for (const [ic, title, stack, prompt] of TEMPLATES) {
-    const b = h('button', 'idea', `<span class="ic">${icon(ic, 18)}</span><span><b>${esc(title)}</b><span class="stack">${esc(stack)}</span></span>`);
-    b.onclick = () => { $('input').value = prompt; autosize(); $('input').focus(); };
-    w.querySelector('.ideas').appendChild(b);
-  }
-  for (const [ic, title, prompt] of QUICK) {
-    const b = h('button', 'chip', `${icon(ic)}${esc(title)}`);
-    b.onclick = () => prompt ? send(prompt) : deploy();
-    w.querySelector('.quick').appendChild(b);
-  }
+  const w = h('div', 'welcome greet', `<img class="bowie-live" src="${BOWIE(mood)}" alt="Bowie"><h1></h1><p>What would you like to work on today?</p>`);
+  w.querySelector('h1').textContent = `${greetWord()}${profileName ? ', ' + profileName : ''}`;
   thread.appendChild(w);
+  setHome(true);
   $('chat').classList.remove('busy-convo');
 }
 
@@ -874,7 +1226,7 @@ function setBusy(busy) {
   send.classList.toggle('stop', busy);
   send.innerHTML = icon(busy ? 'stop' : 'arrow-up');
   send.setAttribute('aria-label', busy ? 'Stop' : 'Send');
-  if (busy && !typing) { typing = h('div', 'typing', `<span class="avatar">${icon('logo')}</span><span class="dots"><i></i><i></i><i></i></span><span>Working on it…</span>`); thread.appendChild(typing); scrollDown(); }
+  if (busy && !typing) { typing = h('div', 'typing', `<img class="bowie-av bowie-live" src="${BOWIE('thinking')}" alt=""><span class="dots"><i></i><i></i><i></i></span><span class="t-label">Thinking…</span>`); thread.appendChild(typing); scrollDown(); setMood('thinking'); }
   if (!busy && typing) { typing.remove(); typing = null; }
   updateStatus();
 }
@@ -898,6 +1250,7 @@ function applyState(s) {
   $('model').value = s.model; $('effort').value = s.effort;
   if (s.mode) showMode(s.mode);
   if (s.extensions) renderExt(s.extensions);
+  if (s.models || s.model_label) showModelState();
   if (s.output_styles) {
     $('style-select').innerHTML = s.output_styles.map(o => `<option value="${esc(o.name)}">${esc(o.name[0].toUpperCase() + o.name.slice(1))}: ${esc(o.description)}</option>`).join('');
     $('style-select').value = s.output_style;
@@ -979,8 +1332,8 @@ function unifiedDiff(text) {
 let refreshTimer = null;
 function handle(ev) {
   switch (ev.type) {
-    case 'reset': thread.innerHTML = ''; blocks = {}; group = null; lastStep = null; typing = null; pending = 0; steps = {}; quietCalls = new Set(); userCount = 0; applyState(ev.state); renderPlan(ev.state.plan); if (!thread.children.length || (thread.children.length === 1 && typing)) { if (!state.busy) welcome(); } break;
-    case 'cleared': blocks = {}; group = null; lastStep = null; steps = {}; userCount = 0; planShown = false; renderPlan([]); welcome(); refreshAll(); break;
+    case 'reset': setHome(false); thread.innerHTML = ''; blocks = {}; group = null; lastStep = null; typing = null; pending = 0; steps = {}; quietCalls = new Set(); userCount = 0; applyState(ev.state); renderPlan(ev.state.plan); if (!thread.children.length || (thread.children.length === 1 && typing)) { if (!state.busy) welcome(); } break;
+    case 'cleared': loadRecent(); blocks = {}; group = null; lastStep = null; steps = {}; userCount = 0; planShown = false; renderPlan([]); welcome(); refreshAll(); break;
     case 'rewound': if (!rewinding) location.reload(); break;
     case 'plan': renderPlan(ev.items); break;
     case 'user': {
@@ -998,7 +1351,7 @@ function handle(ev) {
       endGroup();
       let b = blocks[ev.id];
       if (!b) {
-        const wrap = add(h('div', 'msg-ai', `<span class="avatar">${icon('logo')}</span><div style="flex:1;min-width:0"><div class="prose"></div><div class="msg-actions"><button class="btn ghost" data-act="copy">${icon('copy', 13)} Copy</button><button class="btn ghost" data-act="star">${icon('star', 13)} Bookmark</button></div></div>`));
+        const wrap = add(h('div', 'msg-ai', `<img class="bowie-av" src="${BOWIE('happy')}" alt="Bowie"><div style="flex:1;min-width:0"><div class="prose"></div><div class="msg-actions"><button class="btn ghost" data-act="copy">${icon('copy', 13)} Copy</button><button class="btn ghost" data-act="star">${icon('star', 13)} Bookmark</button></div></div>`));
         b = blocks[ev.id] = { el: wrap.querySelector('.prose'), text: '' };
         const bb = b;
         wrap.querySelector('[data-act="copy"]').onclick = () => navigator.clipboard?.writeText(bb.text).then(() => toast('Copied'));
@@ -1015,6 +1368,7 @@ function handle(ev) {
       break;
     }
     case 'tool_call': {
+      if (state.busy) setMood('focused');
       if (ev.name === 'update_plan') { quietCalls.add(ev.id); break; }
       if (!ev.helper) finishRunning();
       if (!group) group = add(h('div', 'activity'));
@@ -1063,6 +1417,7 @@ function handle(ev) {
       break;
     }
     case 'approval': {
+      setMood('curious');
       pending++; updateStatus(); alertUser('Bowers needs your OK to continue');
       const a = ev.args || {}; const ask = ASK[ev.name];
       const mm = String(ev.name).match(/^mcp__(.+?)__(.+)$/);
@@ -1092,6 +1447,7 @@ function handle(ev) {
       break;
     }
     case 'question': {
+      setMood('curious');
       alertUser('Bowers has a question for you');
       pending++; updateStatus();
       const card = h('div', 'qcard', `<div class="q-head">${icon('question')}<span>Bowers has ${ev.questions.length > 1 ? 'some questions' : 'a question'}</span></div>`);
@@ -1130,6 +1486,7 @@ function handle(ev) {
       card.replaceWith(done); break;
     }
     case 'plan_review': {
+      setMood('curious');
       alertUser('Bowers has a plan for you to review');
       pending++; updateStatus();
       const card = h('div', 'plancard', `<div class="q-head">${icon('book')}<span>Bowers has a plan. Review it before anything changes</span></div><div class="prose"></div><textarea placeholder="What should change? (only needed for Request changes)"></textarea><div class="q-actions"><button class="btn primary" data-d="approve">Approve</button><button class="btn" data-d="approve_auto">Approve and auto mode</button><button class="btn" data-d="reject">Request changes</button></div>`);
@@ -1160,8 +1517,9 @@ function handle(ev) {
     case 'error': endGroup(); add(h('div', 'notice error', icon('alert') + esc(ev.text))); break;
     case 'notice': add(h('div', 'notice', icon('sparkle') + esc(ev.text))); refreshAll(); break;
     case 'usage': showUsage(ev.usage); break;
-    case 'process': onProcess(ev); break;
-    case 'idle': if (state.busy) alertUser('Bowers finished'); endGroup(); pending = 0; setBusy(false); refreshAll(); break;
+    case 'process': onProcess(ev); if (ev.url && ev.running) liveCard(ev); break;
+    case 'project_changed': location.reload(); break;
+    case 'idle': if (state.busy) { alertUser('Bowers finished'); setMood('excited', 4000); } loadRecent(); endGroup(); pending = 0; setBusy(false); refreshAll(); break;
   }
 }
 
@@ -1470,12 +1828,10 @@ function renderMcp(list) {
   }
 }
 async function newChat() {
-  const r = await api('/api/clear', {}); if (!r.ok) toast('Stop the current task first'); $('settings').classList.add('hidden');
+  const r = await api('/api/clear', {}); if (!r.ok) toast('Stop the current task first');
 }
-$('new-chat').onclick = newChat; $('new-chat-2').onclick = newChat;
-$('open-settings').onclick = e => { e.stopPropagation(); $('settings').classList.toggle('hidden'); };
-document.addEventListener('click', e => { if (!e.target.closest('#settings')) $('settings').classList.add('hidden'); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') $('settings').classList.add('hidden'); });
+$('new-chat').onclick = () => { showPage('home'); newChat(); };
+$('open-settings').onclick = () => showPage('settings');
 $('toggle-panel').onclick = () => { const closed = $('app').classList.toggle('panel-closed'); store.set('docks-panel', closed ? 'closed' : 'open'); };
 if (store.get('docks-panel', 'open') === 'closed') $('app').classList.add('panel-closed');
 $('gh-chip').onclick = () => { $('app').classList.remove('panel-closed'); showTab('github'); mobile('github'); };
@@ -1490,11 +1846,17 @@ function showTab(name) {
 }
 document.querySelectorAll('.tab[data-tab]').forEach(t => t.onclick = () => showTab(t.dataset.tab));
 function mobile(which) {
+  if (which === 'more') { $('more-sheet').classList.remove('hidden'); return; }
+  $('more-sheet').classList.add('hidden');
+  if (which === 'history') { openDrawer('sessions'); return; }
+  if (PAGES.includes(which)) { showPage(which); return; }
+  if (page !== 'home') showPage('home');
   $('app').classList.toggle('show-panel', which !== 'chat');
-  if (which !== 'chat') showTab(which);
-  document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.toggle('on', b.dataset.m === which));
+  if (which !== 'chat') { setHome(false); showTab(which); } else if (thread.querySelector('.welcome')) setHome(true);
+  document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.toggle('on', b.dataset.m === (which === 'chat' ? 'chat' : 'more')));
 }
-document.querySelectorAll('.mobile-nav button').forEach(b => b.onclick = () => mobile(b.dataset.m));
+document.querySelectorAll('.mobile-nav button, .sheet-grid button').forEach(b => b.onclick = () => mobile(b.dataset.m));
+$('more-sheet').onclick = e => { if (e.target.id === 'more-sheet') $('more-sheet').classList.add('hidden'); };
 document.querySelector('.mobile-nav [data-m="chat"]').classList.add('on');
 
 let files = [], changed = new Set(), previewPicked = false;
@@ -1543,6 +1905,7 @@ function onProcess(info) {
   renderApps(); reloadPreview();
 }
 function renderApps() {
+  $('live-badge').classList.toggle('hidden', !Object.values(processes).some(p => p.running && p.url));
   const box = $('apps'); box.innerHTML = '';
   for (const p of Object.values(processes)) {
     if (!p.running || !p.url) continue;
@@ -1785,6 +2148,7 @@ async function loadGit() {
   $('changes-badge').textContent = g.changes.length; $('changes-badge').classList.toggle('hidden', !g.changes.length);
   $('branch-chip').innerHTML = g.branch ? `${icon('pr', 12)} ${esc(g.branch)}` : ''; $('branch-chip').classList.toggle('hidden', !g.branch);
   renderTree();
+  if (currentTab !== 'github') return;  // the cards below talk to GitHub: only build them when they're shown
   const gh = $('gh'); gh.innerHTML = '';
 
   const repoCard = h('div', 'card');
@@ -1948,11 +2312,338 @@ Background.setEnabled($('anim').checked);
 $('anim').onchange = () => { store.set('docks-anim', $('anim').checked ? 'on' : 'off'); Background.setEnabled($('anim').checked); };
 
 // ---------------------------------------------------------------- start
+// ================================================================ Bowers: pages, home, Bowie, models
+let page = 'home', profileName = '';
+const PAGES = ['projects', 'tasks', 'library', 'studio', 'explore', 'settings'];
+function showPage(name) {
+  page = name;
+  const home = name === 'home';
+  $('app').classList.toggle('hidden', !home);
+  for (const p of PAGES) $('page-' + p).classList.toggle('hidden', p !== name);
+  document.querySelectorAll('.side-nav button').forEach(b => b.classList.toggle('on', b.dataset.page === name));
+  document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.toggle('on', home ? b.dataset.m === 'chat' : b.dataset.m === name));
+  $('more-sheet').classList.add('hidden');
+  ({ projects: loadProjects, tasks: loadTasks, library: loadLibrary, studio: renderStudio, explore: renderExplore, settings: openSettings })[name]?.();
+  if (home) { $('app').classList.remove('show-panel'); }
+}
+document.querySelectorAll('.side-nav button').forEach(b => b.onclick = () => showPage(b.dataset.page));
+$('side-new').onclick = () => { showPage('home'); newChat(); };
+$('side-me').onclick = () => showPage('settings');
+
+// Bowie's moods follow what Bowers is doing
+let mood = 'happy', moodTimer = null, idleTimer = null;
+const MOOD_TEXT = { thinking: 'Thinking…', focused: 'Working on it…', curious: 'Waiting for you…', happy: 'Working on it…' };
+function setMood(m, revertAfter = 0) {
+  mood = m; clearTimeout(moodTimer); clearTimeout(idleTimer);
+  document.querySelectorAll('img.bowie-live').forEach(i => { i.src = BOWIE(m); });
+  const label = typing?.querySelector('.t-label'); if (label) label.textContent = MOOD_TEXT[m] || 'Working on it…';
+  if (revertAfter) moodTimer = setTimeout(() => setMood(state.busy ? 'thinking' : 'happy'), revertAfter);
+  if (!state.busy && m === 'happy') idleTimer = setTimeout(() => setMood('relaxed'), 180000);
+}
+
+// Greeting home
+const greetWord = () => { const hr = new Date().getHours(); return hr < 5 ? 'Good evening' : hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening'; };
+function setHome(on) {
+  $('chat').classList.toggle('home', on);
+  $('app').classList.toggle('home-mode', on);
+  $('deploy-top').classList.toggle('hidden', on);
+}
+const HOME_CHIPS = [
+  ['globe', 'Build a website', () => prefill('Build a website for ')],
+  ['image', 'Create an image', () => openStudioTool('image')],
+  ['code', 'Write code', () => prefill('Write code that ')],
+  ['chart', 'Analyze data', () => prefill('Analyze the data in @')],
+  ['book', 'Plan a project', () => { setMode('plan'); prefill('Help me plan a project: '); }],
+];
+const HOME_CARDS = [
+  ['box', 'Build something', 'Apps, websites and tools', () => showPage('explore')],
+  ['file', 'Work with files', 'Documents and research', () => { prefill('@'); updatePalette(); }],
+  ['sparkle', 'Create designs', 'Visuals, images and prototypes', () => showPage('studio')],
+  ['bulb', 'Explore ideas', 'Plan, analyse and improve', () => prefill('Help me explore ideas for ')],
+];
+function prefill(text) { showPage('home'); const t = $('input'); t.value = text; autosize(); t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
+function renderHomeExtra() {
+  const box = $('home-extra'); box.innerHTML = '';
+  const chips = h('div', 'quick-chips');
+  for (const [ic, label, fn] of HOME_CHIPS) { const b = h('button', 'chip', `${icon(ic, 14)}${esc(label)}`); b.onclick = fn; chips.appendChild(b); }
+  const cards = h('div', 'home-cards');
+  for (const [ic, title, sub, fn] of HOME_CARDS) { const b = h('button', 'hcard', `<span class="hc-ic">${icon(ic, 20)}</span><span><b>${esc(title)}</b><small>${esc(sub)}</small></span>`); b.onclick = fn; cards.appendChild(b); }
+  box.append(chips, cards, h('div', 'home-foot', `<img class="bowie-live" src="${BOWIE(mood)}" alt="">Bowie is here to help!`));
+}
+renderHomeExtra();
+
+// The model chip and the model picker
+const MODEL_ART = { syntra: 'focused', aether: 'thinking', solace: 'relaxed' };
+const MODEL_BADGE = { syntra: ['Recommended', ''], aether: ['Most capable', ''], solace: ['Calm and clear', 'mint'] };
+function modelCard(m, current, onPick) {
+  const art = MODEL_ART[m.id] || 'happy', [badge, tone] = MODEL_BADGE[m.id] || [m.group === 'Engines' ? 'Engine' : '', 'mint'];
+  const c = h('button', 'mcard' + (m.id === current ? ' on' : ''), `<img src="${BOWIE(art)}" alt=""><b></b><p></p>${badge ? `<span class="badge-soft ${tone}">${esc(badge)}</span>` : ''}`);
+  c.querySelector('b').textContent = m.label; c.querySelector('p').textContent = m.note;
+  c.onclick = () => onPick(m.id); return c;
+}
+async function pickModel(id) {
+  const r = await api('/api/settings', { model: id });
+  if (!r.ok) { toast((await r.json()).error || 'Could not switch'); return false; }
+  applyState(await r.json()); toast('Now using ' + state.model_label); return true;
+}
+function openModelPicker() {
+  const modal = h('div', 'modal', `<div class="modal-box"><div class="page-head"><h2>Select model</h2><span class="spacer"></span><button class="btn ghost icon-only" aria-label="Close">✕</button></div><div class="filters"><button class="on" data-g="Bowers">Bowers family</button><button data-g="Engines">Engines</button></div><div class="model-cards"></div><div class="mfeat"></div></div>`);
+  const grid = modal.querySelector('.model-cards');
+  const show = g => {
+    modal.querySelectorAll('.filters button').forEach(b => b.classList.toggle('on', b.dataset.g === g));
+    grid.innerHTML = ''; (state.models || []).filter(m => m.group === g).forEach(m => grid.appendChild(modelCard(m, state.model, async id => { if (await pickModel(id)) modal.remove(); })));
+  };
+  modal.querySelectorAll('.filters button').forEach(b => b.onclick = () => show(b.dataset.g));
+  modal.querySelector('.mfeat').innerHTML = [['code', 'Text and code'], ['image', 'Image generation'], ['file', 'File analysis'], ['globe', 'Web search'], ['eye', 'Sees screenshots']].map(([i, t]) => `<span>${icon(i, 18)}${t}</span>`).join('');
+  modal.onclick = e => { if (e.target === modal || e.target.closest('.page-head button')) modal.remove(); };
+  document.body.appendChild(modal); show((state.models || []).find(m => m.id === state.model)?.group || 'Bowers');
+}
+$('model-chip').onclick = openModelPicker;
+$('deploy-top').onclick = () => { showPage('home'); deploy(); };
+function showModelState() {
+  const lbl = state.model_label || 'Bowers', short = lbl.replace(/^Bowers /, '');
+  $('model-chip-text').innerHTML = short !== lbl ? `<span class="m-prefix">Bowers </span>${esc(short)}` : esc(lbl);
+  $('me-model').textContent = state.model_label || '';
+  const m = (state.models || []).find(x => x.id === state.model);
+  $('model-chip').querySelector('img').src = BOWIE(MODEL_ART[state.model] || 'happy');
+  if ($('model-note')) $('model-note').textContent = m ? m.note : '';
+}
+
+// Sidebar: recent conversations
+async function loadRecent() {
+  const r = await api('/api/sessions'); if (!r.ok) return;
+  const { sessions, current } = await r.json(), box = $('side-recent'); box.innerHTML = '';
+  if (!sessions.length) return;
+  box.appendChild(h('div', 'side-h', 'Recent chats'));
+  for (const sn of sessions.slice(0, 12)) {
+    const b = h('button', sn.id === current ? 'on' : '', `${icon('chat', 14)}<span></span>`); b.querySelector('span').textContent = sn.name;
+    b.onclick = async () => { showPage('home'); if (sn.id === current) return; const rr = await api('/api/sessions/resume', { id: sn.id }); if (!rr.ok) toast((await rr.json()).error || 'Could not open it'); };
+    box.appendChild(b);
+  }
+}
+
+// Projects
+async function loadProjects() {
+  const r = await api('/api/projects'); if (!r.ok) return;
+  const d = await r.json(), grid = $('project-grid'), q = ($('project-search').value || '').toLowerCase();
+  grid.innerHTML = '';
+  for (const p of d.projects.filter(p => p.name.toLowerCase().includes(q))) {
+    const c = h('button', 'pcard', `<div class="pthumb"><span class="big"></span></div><div class="pc-body"><div><b></b><small></small></div>${p.current ? '<span class="pill here">Open</span>' : ''}</div>`);
+    c.querySelector('.big').textContent = p.name.slice(0, 1).toUpperCase();
+    c.querySelector('b').textContent = p.name;
+    c.querySelector('small').textContent = `${p.files} file${p.files === 1 ? '' : 's'} · ${ago(p.updated)}${p.conversations ? ` · ${p.conversations} chat${p.conversations === 1 ? '' : 's'}` : ''}`;
+    c.title = p.root;
+    if (p.thumbnail) api('/api/projects/thumb?root=' + encodeURIComponent(p.root)).then(async rr => { if (rr.ok) { const img = h('img'); img.src = URL.createObjectURL(await rr.blob()); img.alt = ''; c.querySelector('.pthumb').replaceChildren(img); } });
+    c.onclick = async () => {
+      if (p.current) return showPage('home');
+      if (!confirm(`Open ${p.name}?\n\n${p.root}`)) return;
+      const rr = await api('/api/projects/open', { root: p.root }); if (!rr.ok) toast((await rr.json()).error);
+    };
+    grid.appendChild(c);
+  }
+  if (!grid.children.length) grid.appendChild(h('div', 'empty-page', `<img src="${BOWIE('curious')}" alt=""><b>No projects found</b>Start one with New project.`));
+}
+$('project-search').addEventListener('input', () => loadProjects());
+$('new-project').onclick = async () => {
+  const name = prompt('Name your new project'); if (!name) return;
+  const r = await api('/api/projects/new', { name }); if (!r.ok) toast((await r.json()).error);
+};
+const ago = t => { const s = Date.now() / 1000 - t; return s < 90 ? 'just now' : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)}h ago` : `${Math.round(s / 86400)}d ago`; };
+
+// Library
+const LIB_FILTERS = [['all', 'All'], ['design', 'Designs'], ['website', 'Websites'], ['image', 'Images'], ['document', 'Documents'], ['code', 'Code']];
+let libFilter = 'all', libItems = [];
+$('lib-filters').innerHTML = LIB_FILTERS.map(([k, l]) => `<button data-f="${k}"${k === 'all' ? ' class="on"' : ''}>${l}</button>`).join('');
+$('lib-filters').querySelectorAll('button').forEach(b => b.onclick = () => { libFilter = b.dataset.f; $('lib-filters').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); renderLibrary(); });
+$('lib-search').addEventListener('input', () => renderLibrary());
+async function loadLibrary() { const r = await api('/api/library'); if (r.ok) { libItems = (await r.json()).items; renderLibrary(); } }
+const KIND_LABEL = { design: 'Design', website: 'Website', image: 'Image', document: 'Document', code: 'Code' };
+function renderLibrary() {
+  const grid = $('lib-grid'), q = ($('lib-search').value || '').toLowerCase(); grid.innerHTML = '';
+  let frames = 0;
+  for (const it of libItems.filter(i => (libFilter === 'all' || i.kind === libFilter) && `${i.title} ${i.path || ''}`.toLowerCase().includes(q))) {
+    const c = h('button', 'pcard', `<div class="pthumb"></div><div class="pc-body"><div><b></b><small></small></div></div>`);
+    const th = c.querySelector('.pthumb');
+    if ((it.kind === 'design' || it.kind === 'image') && it.path) { const img = h('img'); img.loading = 'lazy'; img.src = imgUrl(it.path); img.alt = ''; th.appendChild(img); }
+    else if (it.kind === 'website' && it.path && frames++ < 8 && state.preview) { const f = h('iframe'); f.src = imgUrl(it.path); f.loading = 'lazy'; f.tabIndex = -1; f.setAttribute('sandbox', 'allow-scripts allow-same-origin') /* a different port: its own origin, not Bowers' */; th.appendChild(f); }
+    else th.innerHTML = icon({ website: 'globe', document: 'file', code: 'code' }[it.kind] || 'file', 34);
+    c.querySelector('b').textContent = it.title;
+    c.querySelector('small').textContent = `${KIND_LABEL[it.kind]} · ${ago(it.updated)}`;
+    c.onclick = () => openLibraryItem(it);
+    grid.appendChild(c);
+  }
+  if (!grid.children.length) grid.appendChild(h('div', 'empty-page', `<img src="${BOWIE('relaxed')}" alt=""><b>Nothing here yet</b>Images, websites, documents and code you make show up here.`));
+}
+function openLibraryItem(it) {
+  if (it.kind === 'design' || it.kind === 'image') return openLightbox({ path: it.path, prompt: it.title, created: it.updated });
+  if (it.kind === 'website') { showPage('home'); setHome(false); $('preview-path').value = it.path; appUrl = null; previewPicked = true; reloadPreview(); showTab('preview'); mobile('preview'); return; }
+  if (it.path) { showPage('home'); setHome(false); showTab('code'); mobile('code'); openFile(it.path); return; }
+  const modal = h('div', 'modal', `<div class="modal-box"><div class="page-head"><h2>Bookmarked</h2><span class="spacer"></span><button class="btn">Copy</button><button class="btn ghost icon-only" aria-label="Close">✕</button></div><div class="prose"></div></div>`);
+  modal.querySelector('.prose').innerHTML = md(it.text);
+  modal.querySelector('.btn:not(.icon-only)').onclick = () => navigator.clipboard?.writeText(it.text).then(() => toast('Copied'));
+  modal.onclick = e => { if (e.target === modal || e.target.closest('.icon-only')) modal.remove(); };
+  document.body.appendChild(modal);
+}
+
+// Tasks & plans
+const TASK_FILTERS = [['all', 'All'], ['active', 'Active'], ['completed', 'Completed'], ['pending', 'Pending approval']];
+const TASK_STATUS = { active: 'In progress', completed: 'Completed', pending: 'Needs approval', not_started: 'Not started' };
+let taskFilter = 'all', tasks = [], taskOn = null;
+$('task-filters').innerHTML = TASK_FILTERS.map(([k, l]) => `<button data-f="${k}"${k === 'all' ? ' class="on"' : ''}>${l}</button>`).join('');
+$('task-filters').querySelectorAll('button').forEach(b => b.onclick = () => { taskFilter = b.dataset.f; $('task-filters').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); renderTasks(); });
+async function loadTasks() { const r = await api('/api/tasks'); if (r.ok) { tasks = (await r.json()).tasks; renderTasks(); } }
+function renderTasks() {
+  const list = $('task-list'); list.innerHTML = '';
+  const shown = tasks.filter(t => taskFilter === 'all' || t.status === taskFilter);
+  for (const t of shown) {
+    const row = h('button', 'trow' + (taskOn === t.id ? ' on' : ''), `<span class="t-ic">${icon(t.status === 'completed' ? 'check' : 'box', 18)}</span><span><b></b><small></small></span><span class="prog-l"><span class="prog${t.progress === 100 ? ' done' : ''}"><i style="width:${t.progress}%"></i></span>${t.progress}%</span><span class="st ${t.status}">${TASK_STATUS[t.status]}</span>`);
+    row.querySelector('b').textContent = t.title; row.querySelector('small').textContent = `${t.project}${t.live ? ' · open now' : ''} · ${ago(t.updated)}`;
+    row.onclick = () => { taskOn = t.id; renderTasks(); };
+    list.appendChild(row);
+  }
+  if (!shown.length) list.appendChild(h('div', 'empty-page', `<img src="${BOWIE('relaxed')}" alt=""><b>No tasks here</b>When Bowers plans a multi-step job, it shows up here with its progress.`));
+  renderTaskDetail(shown.find(t => t.id === taskOn) || shown[0]);
+}
+function renderTaskDetail(t) {
+  const box = $('task-detail'); box.innerHTML = '';
+  if (!t) { box.appendChild(h('p', 'muted', 'Pick a task to see its plan.')); return; }
+  taskOn = t.id;
+  box.innerHTML = `<div class="muted">Task details</div><h3></h3><div class="muted proj"></div>
+    <div class="td-row"><span>Progress</span><b>${t.progress}%</b></div><div class="prog${t.progress === 100 ? ' done' : ''}" style="margin:8px 0"><i style="width:${t.progress}%"></i></div>
+    <div class="td-row"><span>Status</span><span class="st ${t.status}">${TASK_STATUS[t.status]}</span></div>
+    <div class="td-row"><span>Updated</span><span>${ago(t.updated)}</span></div><ul class="td-plan"></ul><div class="td-actions"></div>`;
+  box.querySelector('h3').textContent = t.title; box.querySelector('.proj').textContent = t.root;
+  const ul = box.querySelector('.td-plan');
+  for (const it of t.plan) { const li = h('li', it.status, `<span class="m">${it.status === 'done' ? icon('check', 10) : ''}</span><span></span>`); li.children[1].textContent = it.text; ul.appendChild(li); }
+  const acts = box.querySelector('.td-actions');
+  if (t.status === 'pending') {
+    acts.appendChild(h('div', 'approve-box', `${icon('alert', 18)}<span><b>Approval required</b><br>Bowers is waiting for your OK before it continues.</span>`));
+    const go = h('button', 'btn primary', 'Review and approve'); go.onclick = () => { showPage('home'); setHome(false); document.querySelector('.approval')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }; acts.appendChild(go);
+  } else {
+    const go = h('button', 'btn primary', t.live ? 'Open conversation' : 'Continue this task');
+    go.onclick = async () => {
+      if (!t.live) {
+        if (t.root && t.root !== state.root) { const rr = await api('/api/projects/open', { root: t.root }); if (!rr.ok) return toast((await rr.json()).error); sessionStorage.setItem('bowers-resume', t.id); return; }
+        const rr = await api('/api/sessions/resume', { id: t.id }); if (!rr.ok) return toast((await rr.json()).error || 'Could not open it');
+      }
+      showPage('home');
+    };
+    acts.appendChild(go);
+  }
+}
+
+// Creation Studio
+const STUDIO = [
+  ['image', 'Image Generator', 'Create stunning images with AI', 'Real image generation', 'linear-gradient(135deg,#f0a35e,#7a3f8f)', 'image'],
+  ['play', 'Video Creator', 'Animated videos and motion pieces', 'Built as code: an animated HTML video', 'linear-gradient(135deg,#1b2a6b,#6a2fb8)', 'Make a short animated video (an HTML page with CSS/canvas animation and a play button, 1920x1080, about 15 seconds) about: '],
+  ['code', 'Code Editor', 'Write, debug and deploy code', 'Opens the editor', 'linear-gradient(135deg,#2b3a8f,#4f7df2)', 'code'],
+  ['layout', 'Design Studio', 'UI/UX, logos and graphics', 'Designs as HTML, plus images', 'linear-gradient(135deg,#3b3b48,#8a6bd1)', 'Design a polished UI mockup as a single responsive HTML page (and make any images it needs) for: '],
+  ['file', 'Document Writer', 'Docs, reports and content', 'Writes Markdown or Word files', 'linear-gradient(135deg,#3a6fe0,#8fb2ff)', 'Write a well-structured document (save it as a .docx with python-docx if available, otherwise Markdown) about: '],
+  ['box', '3D Creator', '3D models and scenes', 'Built as code: a three.js scene', 'linear-gradient(135deg,#1e63c9,#38c6e8)', 'Build an interactive 3D scene with three.js (a single index.html, orbit controls, nice lighting) showing: '],
+  ['zap', 'Music Studio', 'Music and sound', 'Built as code: a Tone.js player', 'linear-gradient(135deg,#4b1fa8,#c13fd6)', 'Compose a short piece of music as a web page that plays it with Tone.js (with play/stop buttons and a visualizer). The music should be: '],
+  ['chart', 'Presentation Builder', 'Slides and pitch decks', 'Makes .pptx or HTML slides', 'linear-gradient(135deg,#1f4fbf,#2f8cf0)', 'Build a presentation (a .pptx with python-pptx if available, otherwise an HTML slide deck with keyboard navigation) about: '],
+];
+function renderStudio() {
+  const grid = $('studio-grid'); if (grid.children.length) return;
+  for (const [ic, title, sub, how, bg, action] of STUDIO) {
+    const c = h('button', 'stool', `<div class="s-art" style="background:${bg}">${icon(ic, 40)}</div><div class="s-body"><b>${esc(title)}</b><small>${esc(sub)}</small><br><span class="how">${esc(how)}</span></div>`);
+    c.onclick = () => openStudioTool(action, title);
+    grid.appendChild(c);
+  }
+}
+function openStudioTool(action, title) {
+  if (action === 'image') { showPage('home'); setHome(false); showTab('images'); mobile('images'); setTimeout(() => $('img-prompt').focus(), 100); return; }
+  if (action === 'code') { showPage('home'); setHome(false); showTab('code'); mobile('code'); return; }
+  const modal = h('div', 'modal', `<div class="modal-box" style="width:min(560px,100%)"><div class="page-head"><h2></h2><span class="spacer"></span><button class="btn ghost icon-only" aria-label="Close">✕</button></div><div class="studio-form"><textarea class="input" placeholder="Describe what you want…"></textarea><button class="btn primary">Start creating ${icon('arrow-right')}</button></div></div>`);
+  modal.querySelector('h2').textContent = title;
+  const ta = modal.querySelector('textarea');
+  modal.querySelector('.btn.primary').onclick = () => { const v = ta.value.trim(); if (!v) return ta.focus(); modal.remove(); showPage('home'); send(action + v); };
+  modal.onclick = e => { if (e.target === modal || e.target.closest('.icon-only')) modal.remove(); };
+  document.body.appendChild(modal); ta.focus();
+}
+
+// Explore
+function renderExplore() {
+  const cards = $('model-cards'); cards.innerHTML = '';
+  (state.models || []).filter(m => m.group === 'Bowers').forEach(m => cards.appendChild(modelCard(m, state.model, async id => { await pickModel(id); renderExplore(); })));
+  const tpl = $('explore-templates');
+  if (!tpl.children.length) for (const [ic, title, stack, prompt] of TEMPLATES) {
+    const b = h('button', 'idea', `<span class="ic">${icon(ic, 18)}</span><span><b>${esc(title)}</b><span class="stack">${esc(stack)}</span></span>`);
+    b.onclick = () => prefill(prompt); tpl.appendChild(b);
+  }
+  const cl = $('explore-commands'); cl.innerHTML = '';
+  for (const c of commands) { const b = h('button', null, `<b></b><small></small>`); b.querySelector('b').textContent = '/' + c.name; b.querySelector('small').textContent = c.description; b.onclick = () => prefill('/' + c.name + ' '); cl.appendChild(b); }
+}
+
+// Settings page
+document.querySelectorAll('.set-tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.set-tabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.set-panel').forEach(p => p.classList.toggle('hidden', p.dataset.sp !== b.dataset.st));
+  if (b.dataset.st === 'account') renderAccount();
+});
+async function openSettings() { $('profile-name').value = profileName; }
+async function renderAccount() { const card = $('account-card'); const g = await (await api('/api/git')).json().catch(() => ({})); card.replaceChildren(await accountCard(g)); }
+$('profile-name').addEventListener('change', async () => { const r = await api('/api/profile', { name: $('profile-name').value }); if (r.ok) { setProfile((await r.json()).name); toast('Saved'); } });
+$('run-doctor').onclick = async () => {
+  const out = $('doctor-out'); out.innerHTML = '<div class="muted">Checking…</div>';
+  const r = await api('/api/doctor'); if (!r.ok) return out.textContent = 'Could not run the checks';
+  out.innerHTML = ''; const marks = { ok: '✓', warn: '!', fail: '✗' };
+  for (const [st, what, detail] of (await r.json()).results) out.appendChild(h('div', 'doc-row ' + st, `<span>${marks[st]}</span><b>${esc(what)}</b><small>${esc(detail)}</small>`));
+};
+function setProfile(name) {
+  profileName = name || '';
+  $('me-name').textContent = profileName || 'You';
+  const g = thread.querySelector('.greet h1'); if (g) g.textContent = `${greetWord()}${profileName ? ', ' + profileName : ''}`;
+}
+
+// Onboarding
+async function onboarding() {
+  const sp = $('splash'); sp.classList.remove('hidden');
+  const copy = sp.querySelector('.splash-copy'), first = copy.innerHTML;
+  const dots = n => `<div class="steps-dots">${[0, 1, 2].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</div>`;
+  copy.insertAdjacentHTML('afterbegin', '');
+  copy.querySelector('#splash-go').onclick = async () => {
+    const name = $('splash-name').value.trim();
+    if (name) { await api('/api/profile', { name }); setProfile(name); }
+    const st = await (await api('/api/onboarding')).json();
+    const row = (ok, ic, title, sub, fix) => `<div class="ob-item">${icon(ic, 20)}<span><b>${title}</b><small>${sub}</small></span><span class="${ok ? 'ok' : 'no'}">${ok ? 'Ready' : fix}</span></div>`;
+    copy.innerHTML = `${dots(1)}<h1 style="font-size:34px">Connect your tools</h1><p>Bowers runs on your computer. These connect it to the services it uses.</p><div class="ob-list">
+      ${row(st.claude, 'sparkle', 'Claude', 'Powers the Bowers models', 'Add ANTHROPIC_API_KEY')}
+      ${row(st.openai, 'image', 'OpenAI', 'Image generation, Codex and ChatGPT models (optional)', 'Optional')}
+      ${row(st.github, 'github', 'GitHub', 'Repos, branches and pull requests (optional)', 'Connect later')}</div>
+      <button class="btn primary splash-go" id="ob-next">Next ${icon('arrow-right')}</button>`;
+    copy.querySelector('#ob-next').onclick = () => {
+      copy.innerHTML = `${dots(2)}<h1 style="font-size:34px">Choose your Bowers</h1><p>You can switch any time.</p><div class="ob-models"></div><button class="btn primary splash-go" id="ob-done">Start creating ${icon('arrow-right')}</button>`;
+      const grid = copy.querySelector('.ob-models');
+      const draw = () => { grid.innerHTML = ''; (state.models || []).filter(m => m.group === 'Bowers').forEach(m => grid.appendChild(modelCard(m, state.model, async id => { await pickModel(id); draw(); }))); };
+      draw();
+      copy.querySelector('#ob-done').onclick = () => { store.set('bowers-onboarded', '1'); sp.classList.add('hidden'); copy.innerHTML = first; if (thread.querySelector('.welcome')) welcome(); $('input').focus(); };
+    };
+  };
+  setTimeout(() => $('splash-name').focus(), 200);
+  $('splash-name').addEventListener('keydown', e => { if (e.key === 'Enter') $('splash-go').click(); });
+}
+
+// A card in the chat when an app starts running
+const liveShown = new Set();
+function liveCard(info) {
+  if (liveShown.has(info.id)) return; liveShown.add(info.id);
+  const c = h('div', 'live-card', `<span class="live-dot"></span><span style="flex:1;min-width:0"><b>Your app is live</b><small></small></span><button class="btn">Open preview</button><a class="btn ghost" target="_blank" rel="noopener">${icon('external')} New tab</a>`);
+  c.querySelector('small').textContent = info.url;
+  c.querySelector('a').href = info.url;
+  c.querySelector('button').onclick = () => { setHome(false); appUrl = info.url; $('preview-path').value = info.url; renderApps(); showTab('preview'); mobile('preview'); };
+  add(c);
+}
+
 (async () => {
   const res = await api('/api/state');
   if (res.status === 401) { $('gate').classList.remove('hidden'); return; }
   applyState(await res.json());
+  try { setProfile((await (await api('/api/profile')).json()).name); } catch (e) {}
   if (!thread.children.length) welcome();
+  loadRecent(); setMood('happy');
+  if (store.get('bowers-onboarded', '') !== '1') onboarding();
+  try { const again = sessionStorage.getItem('bowers-resume'); if (again) { sessionStorage.removeItem('bowers-resume'); api('/api/sessions/resume', { id: again }); } } catch (e) {}
   try {
     const draft = sessionStorage.getItem('docks-draft'), note = sessionStorage.getItem('docks-toast');
     if (draft !== null) { $('input').value = draft; autosize(); $('input').focus(); sessionStorage.removeItem('docks-draft'); }

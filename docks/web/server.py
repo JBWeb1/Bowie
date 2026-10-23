@@ -11,6 +11,7 @@ import functools
 import json
 import mimetypes
 import queue
+import re
 import secrets
 import threading
 import uuid
@@ -24,6 +25,7 @@ from ..checkpoints import CheckpointError
 from ..sandbox import SandboxUnavailable, engine as sandbox_engine, unavailable_reason as sandbox_reason
 from ..tools import SKIP_DIRS
 from ..ui import _summarize_args
+from . import library, profile
 
 MAX_HISTORY = 20_000
 MAX_IMAGES = 5
@@ -36,6 +38,9 @@ def _clip(value, limit=4000):
     if isinstance(value, str) and len(value) > limit:
         return value[:limit] + f"\n… ({len(value) - limit} more chars)"
     return value
+
+
+ASSETS = Path(__file__).parent / "assets"
 
 
 class Session:
@@ -56,6 +61,34 @@ class Session:
         self.pr_watcher = Watcher(lambda u: self.publish({"type": "pr_update", "text": "; ".join(u["changes"]),
                                                            "url": u["url"], "title": u["title"]}))
         self.pr_watcher.start()
+
+    def open_project(self, root: Path) -> None:
+        """Switch to another project folder without restarting: a fresh agent there, same model and settings."""
+        root = Path(root).expanduser().resolve()
+        if not root.is_dir():
+            raise ValueError(f"not a folder: {root}")
+        if self.busy:
+            raise ValueError("Bowers is working; stop it or wait before switching projects")
+        from ..mcp import MCPManager
+        from ..plugins import Extensions
+        old = self.agent
+        ext = Extensions.load(root)
+        mgr = MCPManager(root, ext.plugin_mcp)
+        mgr.start()  # the project's own servers wait for approval in the browser
+        agent = Agent(root=root, model=old.profile or old.model, effort=old.effort, mode=old.mode,
+                      auto_approve=old.auto_approve, client=old.claude_client, ext=ext, mcp=mgr, save=True)
+        for stop in (old.procs.stop_all, getattr(old.mcp, "close", None), old.lsp.shutdown):
+            try:
+                stop and stop()
+            except Exception:
+                pass
+        agent.display = WebDisplay(self)
+        agent.procs.on_change = lambda info: self.publish({"type": "process", **info})
+        agent.on_background_done = self._background_done
+        self.agent = agent
+        with self.lock:
+            self.history.clear()
+        self.publish({"type": "project_changed", "root": str(root)})
 
     def start_github_login(self) -> dict:
         """Begin signing in on github.com; a thread waits for the person to approve and reports back."""
@@ -342,8 +375,6 @@ def list_files(root: Path, limit: int = 3000) -> list[str]:
 
 def make_handler(session: Session, token: str, preview: dict):
     page = resources.files("docks.web").joinpath("app.html").read_text()
-    root = session.agent.root
-
     class Handler(BaseHTTPRequestHandler):
         server_version = "Bowers"
 
@@ -372,7 +403,10 @@ def make_handler(session: Session, token: str, preview: dict):
                 return {}
 
         def do_GET(self):
+            root = session.agent.root  # the open project (you can switch projects while Bowers runs)
             path, _, query = self.path.partition("?")
+            if path.startswith("/assets/"):
+                return self._asset(path[len("/assets/"):])
             if path == "/":
                 body = page.encode()
                 self.send_response(200)
@@ -407,6 +441,33 @@ def make_handler(session: Session, token: str, preview: dict):
                                          "current": session.agent.session_id})
             if path == "/api/git":
                 return self._json(200, github.status(root))
+            if path == "/api/profile":
+                return self._json(200, profile.load())
+            if path == "/api/onboarding":
+                from .. import images
+                a = session.agent
+                return self._json(200, {"claude": a.claude_client is not None and a.client_error is None,
+                                         "openai": images.available(), "github": github.token() is not None,
+                                         "profile": profile.load()})
+            if path == "/api/tasks":
+                return self._json(200, {"tasks": library.tasks(session)})
+            if path == "/api/projects":
+                return self._json(200, {"projects": library.projects(root), "current": str(root),
+                                         "home": str(library.projects_home())})
+            if path == "/api/projects/thumb":
+                from urllib.parse import parse_qs
+                q = {k: v[0] for k, v in parse_qs(query).items()}
+                found = library.thumbnail_file(Path(q.get("root", "")))
+                if not found:
+                    return self._json(404, {"error": "no thumbnail"})
+                data = found.read_bytes()
+                self.send_response(200)
+                self.send_header("content-type", mimetypes.guess_type(found.name)[0] or "image/png")
+                self.send_header("content-length", str(len(data)))
+                self.end_headers()
+                return self.wfile.write(data)
+            if path == "/api/library":
+                return self._json(200, {"items": library.items(root, session.agent)})
             if path == "/api/images":
                 from .. import images
                 return self._json(200, {"available": images.available(), "images": images.gallery(root),
@@ -476,7 +537,20 @@ def make_handler(session: Session, token: str, preview: dict):
             finally:
                 session.unsubscribe(q)
 
+        def _asset(self, name: str):
+            target = ASSETS / name
+            if not re.fullmatch(r"[\w.-]+", name) or not target.is_file():
+                return self._json(404, {"error": "not found"})
+            data = target.read_bytes()
+            self.send_response(200)
+            self.send_header("content-type", mimetypes.guess_type(name)[0] or "application/octet-stream")
+            self.send_header("content-length", str(len(data)))
+            self.send_header("cache-control", "max-age=86400")
+            self.end_headers()
+            self.wfile.write(data)
+
         def do_POST(self):
+            root = session.agent.root
             if not self._authorized():
                 return self._json(401, {"error": "missing or wrong token"})
             path, body = self.path, self._body()
@@ -580,6 +654,15 @@ def make_handler(session: Session, token: str, preview: dict):
                     return self._json(409, {"error": "stop the current task first"})
                 session.new_chat()
                 return self._json(200, {"ok": True})
+            if path == "/api/profile":
+                return self._json(200, profile.save(name=str(body.get("name", ""))))
+            if path in ("/api/projects/open", "/api/projects/new"):
+                try:
+                    target = library.new_project(str(body.get("name", ""))) if path.endswith("/new") else Path(str(body.get("root", "")))
+                    session.open_project(target)
+                except ValueError as e:
+                    return self._json(400, {"error": str(e)})
+                return self._json(200, session.state())
             if path in ("/api/images/generate", "/api/images/delete"):
                 from .. import images
                 if path == "/api/images/delete":
@@ -716,7 +799,7 @@ def serve(agent: Agent, host: str = "127.0.0.1", port: int = 8788, open_browser:
     preview_prefix = f"/{secrets.token_urlsafe(12)}/"
     app = ThreadingHTTPServer((host, port), make_handler(session, token, {"port": port + 1, "prefix": preview_prefix}))
     handler = type("Preview", (PreviewHandler,), {"prefix": preview_prefix})
-    preview = ThreadingHTTPServer((host, port + 1), functools.partial(handler, directory=str(agent.root)))
+    preview = ThreadingHTTPServer((host, port + 1), lambda *a: handler(*a, directory=str(session.agent.root)))
     for server in (app, preview):
         server.daemon_threads = True
         threading.Thread(target=server.serve_forever, daemon=True).start()
