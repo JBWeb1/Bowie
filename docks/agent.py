@@ -15,7 +15,7 @@ from typing import Callable
 
 import anthropic
 
-from . import automode, memory, sessions
+from . import automode, events, memory, observer, sessions
 from . import ui as term
 from .checkpoints import CheckpointError, Checkpoints
 from .mcp import MCPError
@@ -311,6 +311,10 @@ class Agent:
         self._ids = itertools.count(1)
         self._running = False
         self._session_started = False
+        self.turn_events = []     # this turn's step-by-step log (see events.py)
+        self.observations = []    # the observer's latest findings, for /fix
+        self._log_parent, self._log_by = None, ""  # helpers log into the agent that started them
+        self._log_lock = threading.Lock()
         self.refresh_tools()
         self.cancelled = threading.Event()
 
@@ -563,6 +567,7 @@ class Agent:
                        agent_type=agent_type, display=HelperDisplay(self.display, description),
                        confirm=self._locked_confirm)
         helper.cancelled = self.cancelled  # stopping the lead agent stops its helpers
+        helper._log_parent, helper._log_by = self, description
         return helper
 
     def _delegate(self, description: str, prompt: str, agent_name: str | None = None,
@@ -817,6 +822,8 @@ class Agent:
             if not self.helper:
                 self.turns.append({"index": turn_start, "text": text,
                                    "checkpoint": self.checkpoints.snapshot(text.splitlines()[0] if text else "task")})
+                self.turn_events = []
+                self._log("turn_start", text=text)
             if extra:
                 base = [{"type": "text", "text": user_input}] if isinstance(user_input, str) else list(user_input)
                 user_input = base + extra
@@ -847,6 +854,11 @@ class Agent:
             del self.messages[turn_start:]
         finally:
             self._running = False
+            if not self.helper and self.turn_events:
+                ok = len(self.messages) > turn_start
+                self._log("turn_end", ok=ok, usage=dict(self.usage))
+                if ok:
+                    self._observe(text)
             self.save_session()
             self.display.turn_done(self.usage)
 
@@ -899,6 +911,9 @@ class Agent:
                 raise TurnAborted("Claude declined this request; the turn was discarded.")
 
             self.messages.append({"role": "assistant", "content": response.content})
+            said = "".join(getattr(b, "text", "") or "" for b in response.content if getattr(b, "type", None) == "text").strip()
+            if said:
+                self._log("reply", text=said)
 
             if stop == "pause_turn":
                 continue
@@ -1029,7 +1044,52 @@ class Agent:
             return False, getattr(self.display, "declined_message", "The user declined this tool call. Ask what they want instead.")
         return True, ""
 
+    def _log(self, kind: str, **data) -> None:
+        """Add a step to the session's event log (helpers' steps go to the agent that started them)."""
+        if self._log_parent is not None:
+            return self._log_parent._log(kind, **{"by": self._log_by, **data})
+        event = {"t": time.time(), "kind": kind, **data}
+        with self._log_lock:
+            self.turn_events.append(event)
+        if self.save and not self.helper:
+            events.append(self.session_id, event)
+
+    def _observe(self, request: str) -> None:
+        """Let the observer check a turn that changed something (see observer.py)."""
+        if self.ext.settings.get("observer", True) is False or self.claude_client is None:
+            return
+        if not observer.worth_checking(self.turn_events):
+            return
+        model = self.ext.settings.get("observerModel") or models.current("haiku")
+        result = observer.check(self.claude_client, model, request, self.last_text(), self.turn_events,
+                                observer.diff(self.root))
+        if result is None:
+            return
+        self.observations = result["findings"]
+        self._log("observer", **result)
+        show = getattr(self.display, "observer", None)
+        if show:
+            show(result)
+        else:
+            self.display.notice(observer.format_text(result))
+
     def _execute(self, block) -> dict:
+        args = block.input
+        logged = {k: v if isinstance(v, (int, float, bool)) or len(json.dumps(v, default=str)) <= 1000 else events.clip(v, 1000)
+                  for k, v in args.items()} if isinstance(args, dict) else events.clip(args, 1000)
+        self._log("tool_call", id=block.id, name=block.name, args=logged,
+                  mutating=bool(self._mutating(block.name)) if isinstance(args, dict) else False)
+        start = time.monotonic()
+        result = self._execute_step(block)
+        content = result.get("content")
+        text = content if isinstance(content, str) else "\n".join(
+            b.get("text", "") for b in content if isinstance(b, dict) and b.get("type") == "text") \
+            if isinstance(content, list) else ""
+        self._log("tool_result", id=block.id, name=block.name, ok=not result.get("is_error"),
+                  output=events.clip(text), ms=int((time.monotonic() - start) * 1000))
+        return result
+
+    def _execute_step(self, block) -> dict:
         self._check_cancel()
         args = block.input
         self.display.tool_call(block.name, args, id=block.id)

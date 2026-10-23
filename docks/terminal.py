@@ -152,17 +152,23 @@ def setup_keys(agent) -> list[str]:
     return notes
 
 
-def set_vim(agent, on: bool) -> Path:
-    """Turn vim mode on or off and remember it in ~/.docks/settings.json."""
+def save_setting(agent, key: str, value) -> Path:
+    """Change a setting now and remember it in ~/.docks/settings.json."""
     path = Path(os.environ.get("DOCKS_HOME", Path.home() / ".docks")) / "settings.json"
     try:
         data = json.loads(path.read_text()) if path.is_file() else {}
     except json.JSONDecodeError:
         data = {}
-    data["editorMode"] = "vim" if on else "normal"
+    data[key] = value
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2) + "\n")
-    agent.ext.settings["editorMode"] = data["editorMode"]
+    agent.ext.settings[key] = value
+    return path
+
+
+def set_vim(agent, on: bool) -> Path:
+    """Turn vim mode on or off and remember it in ~/.docks/settings.json."""
+    path = save_setting(agent, "editorMode", "vim" if on else "normal")
     setup_keys(agent)
     return path
 

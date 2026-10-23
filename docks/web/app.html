@@ -346,6 +346,31 @@ svg { flex: none; }
 .srow.current { border-color: var(--accent); background: var(--accent-soft); }
 .srow b { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .srow small { color: var(--muted); font-size: 12px; }
+.srow-wrap { position: relative; } .srow-wrap .srow { width: 100%; padding-right: 92px; }
+.srow-wrap .replay-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); height: 28px; padding: 0 10px; font-size: 12px; }
+.obs { border: 1px solid var(--line); border-left: 4px solid #8a6bd0; border-radius: 12px; background: var(--surface); padding: 12px 14px; margin: 10px 0; }
+.obs .obs-h { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; }
+.obs .obs-h img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+.obs .obs-h small { color: var(--muted); font-weight: 400; display: block; font-size: 12px; }
+.obs ul { margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.obs li { font-size: 13.5px; display: flex; gap: 8px; align-items: baseline; }
+.obs li .k { font-size: 11px; padding: 1px 7px; border-radius: 99px; background: var(--line); color: var(--muted); white-space: nowrap; }
+.obs li .k.broken { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
+.obs li .k.missed, .obs li .k.unverified { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
+.obs li .k.remember { background: var(--accent-soft); color: var(--accent-ink); }
+.obs li small { display: block; color: var(--muted); }
+.obs .obs-acts { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; } .obs .obs-acts .btn { height: 30px; font-size: 12.5px; }
+.rp-list { display: flex; flex-direction: column; gap: 6px; max-height: 56dvh; overflow-y: auto; padding-right: 4px; }
+.rp-ev { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 13px; background: var(--bg); }
+.rp-ev.you { border-left: 4px solid var(--accent); } .rp-ev.observer { border-left: 4px solid #8a6bd0; } .rp-ev.bad .rp-h { color: var(--bad); }
+.rp-ev.now { box-shadow: 0 0 0 2px var(--accent); }
+.rp-h { display: flex; gap: 8px; font-weight: 600; min-width: 0; } .rp-h span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+.rp-h time { color: var(--muted); font-weight: 400; font-size: 11.5px; flex: none; }
+.rp-ev pre { white-space: pre-wrap; word-break: break-word; font-size: 12px; margin: 6px 0 0; max-height: 160px; overflow: auto; color: var(--muted); }
+.rp-ev .txt { white-space: pre-wrap; margin-top: 4px; }
+.rp-bar { display: flex; gap: 8px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+.rp-bar input[type=range] { flex: 1; min-width: 120px; accent-color: var(--accent); } .rp-bar .muted { font-size: 12.5px; min-width: 64px; text-align: right; }
+.rp-meta { color: var(--muted); font-size: 13px; margin: -8px 0 12px; }
 .bm { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 13.5px; }
 .bm .bm-actions { display: flex; gap: 6px; margin-top: 8px; }
 .rename-row { display: flex; gap: 6px; }
@@ -925,6 +950,7 @@ a.btn { text-decoration: none; color: inherit; }
   </div>
   <div class="set-panel hidden" data-sp="tools">
     <div class="set-card">
+      <label class="set-row switch-row"><span class="set-ic" data-icon="sparkle"></span><div><b>Observer</b><small>After each task that changes things, a second check compares what Bowers said with what actually ran</small></div><span class="switch"><input type="checkbox" id="observer"><i></i></span></label>
       <label class="set-row switch-row" id="sandbox-row"><span class="set-ic" data-icon="shield"></span><div><b>Sandbox commands</b><small>Commands can only write inside the project</small></div><span class="switch"><input type="checkbox" id="sandbox"><i></i></span></label>
       <div><div class="set-label">Permission rules</div><div class="ext-info" id="perm-info"></div></div>
     </div>
@@ -980,6 +1006,7 @@ a.btn { text-decoration: none; color: inherit; }
 // ---------------------------------------------------------------- icons
 const ICONS = {
   logo: '<path d="m8 7-5 5 5 5M16 7l5 5-5 5M13.5 4.5l-3 15"/>',
+  play: '<path d="M7 5v14l11-7z"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   panel: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/>',
   gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
@@ -1268,6 +1295,7 @@ function applyState(s) {
     $('style-select').innerHTML = s.output_styles.map(o => `<option value="${esc(o.name)}">${esc(o.name[0].toUpperCase() + o.name.slice(1))}: ${esc(o.description)}</option>`).join('');
     $('style-select').value = s.output_style;
   }
+  if (typeof s.observer === 'boolean') $('observer').checked = s.observer;
   if (s.sandbox) {
     $('sandbox').checked = s.sandbox.on; $('sandbox').disabled = !s.sandbox.available;
     $('sandbox-row').title = s.sandbox.available ? '' : s.sandbox.reason;
@@ -1407,7 +1435,7 @@ function handle(ev) {
     }
     case 'mcp_login': {
       toast(ev.status === 'connected' ? `Signed in to ${ev.name}` : (ev.error || 'Sign-in failed'));
-      refreshApps(); api('/api/state').then(r => r.json()).then(s => s.mcp && renderMcp(s.mcp)); break;
+      refreshAppCatalog(); api('/api/state').then(r => r.json()).then(s => s.mcp && renderMcp(s.mcp)); break;
     }
     case 'github_login': {
       if (ev.status === 'connected') toast('Connected to GitHub as ' + ev.login); else toast(ev.error || 'GitHub sign-in failed');
@@ -1532,6 +1560,7 @@ function handle(ev) {
     }
     case 'warn': endGroup(); add(h('div', 'notice warn', icon('alert') + esc(ev.text))); break;
     case 'error': endGroup(); add(h('div', 'notice error', icon('alert') + esc(ev.text))); break;
+    case 'observer': add(observerCard(ev)); break;
     case 'notice': add(h('div', 'notice', icon('sparkle') + esc(ev.text))); refreshAll(); break;
     case 'usage': showUsage(ev.usage); break;
     case 'process': onProcess(ev); if (ev.url && ev.running) liveCard(ev); break;
@@ -1760,6 +1789,10 @@ async function refreshState() { const r = await api('/api/state'); if (r.ok) { c
 $('model').onchange = () => saveSettings(); $('effort').onchange = () => saveSettings();
 $('mode-select').onchange = () => setMode($('mode-select').value);
 $('style-select').onchange = async () => { const r = await api('/api/settings', { output_style: $('style-select').value }); if (r.ok) { applyState(await r.json()); toast('Output style: ' + $('style-select').value); } };
+$('observer').onchange = async () => {
+  const r = await api('/api/settings', { observer: $('observer').checked });
+  if (r.ok) toast($('observer').checked ? 'The observer will check tasks that change things' : 'Observer off');
+};
 $('sandbox').onchange = async () => {
   const r = await api('/api/settings', { sandbox: $('sandbox').checked });
   if (r.ok) { applyState(await r.json()); toast($('sandbox').checked ? 'Commands now run in a sandbox' : 'Sandbox off'); }
@@ -1801,7 +1834,10 @@ async function openDrawer(tab) {
     body.appendChild(rename);
     if (!sessions.length) body.appendChild(h('div', 'empty-state', 'No saved conversations yet. They appear here after your first message.'));
     for (const sn of sessions) {
+      const wrap = h('div', 'srow-wrap');
       const row = h('button', 'srow' + (sn.id === current ? ' current' : ''), `<b></b><small></small>`);
+      const rb = h('button', 'btn replay-btn', `${icon('play', 12)} Replay`); rb.onclick = () => openReplay(sn.id, sn.name);
+      wrap.append(row, rb);
       row.querySelector('b').textContent = sn.name;
       row.querySelector('small').textContent = `${new Date(sn.updated * 1000).toLocaleString()} · ${sn.turns} message${sn.turns === 1 ? '' : 's'}${sn.id === current ? ' · open now' : ''}`;
       row.onclick = async () => {
@@ -1810,7 +1846,7 @@ async function openDrawer(tab) {
         if (!rr.ok) { toast((await rr.json()).error || 'Could not open it'); return; }
         toast('Resumed: ' + sn.name); $('drawer').classList.add('hidden');
       };
-      body.appendChild(row);
+      body.appendChild(wrap);
     }
   } else {
     const r = await api('/api/state'); if (r.ok) state.bookmarks = (await r.json()).bookmarks;
@@ -2588,15 +2624,92 @@ function renderExplore() {
     const b = h('button', 'idea', `<span class="ic">${icon(ic, 18)}</span><span><b>${esc(title)}</b><span class="stack">${esc(stack)}</span></span>`);
     b.onclick = () => prefill(prompt); tpl.appendChild(b);
   }
-  renderApps($('explore-apps'));
+  renderAppCatalog($('explore-apps'));
   const cl = $('explore-commands'); cl.innerHTML = '';
   for (const c of commands) { const b = h('button', null, `<b></b><small></small>`); b.querySelector('b').textContent = '/' + c.name; b.querySelector('small').textContent = c.description; b.onclick = () => prefill('/' + c.name + ' '); cl.appendChild(b); }
+}
+
+// Observer: checks each task's claims against what actually ran
+const OBS_KIND = { unverified: 'Not verified', missed: 'Missed', broken: 'Failed step', remember: 'Worth remembering' };
+function observerCard(ev) {
+  const clean = !ev.findings.length;
+  const card = h('div', 'obs', `<div class="obs-h"><img src="${BOWIE(clean ? 'happy' : 'curious')}" alt=""><span>Observer<small></small></span></div><ul></ul><div class="obs-acts"></div>`);
+  card.querySelector('small').textContent = ev.summary;
+  for (const f of ev.findings) {
+    const li = h('li', null, `<span class="k ${f.kind}">${OBS_KIND[f.kind]}</span><span><span></span><small></small></span>`);
+    li.querySelector('span:nth-child(2) > span').textContent = f.text;
+    li.querySelector('small').textContent = f.action ? (f.kind === 'remember' ? 'Note: ' : 'Next: ') + f.action : '';
+    if (f.kind === 'remember') {
+      const b = h('button', 'btn ghost', 'Save note'); b.style.cssText = 'height:24px;font-size:12px;margin-left:auto;flex:none';
+      b.onclick = async () => { const r = await api('/api/memory', { text: f.action || f.text }); if (r.ok) { toast('Saved to ' + (await r.json()).name); b.remove(); } else toast((await r.json()).error); };
+      li.appendChild(b);
+    }
+    card.querySelector('ul').appendChild(li);
+  }
+  if (ev.fixable) {
+    const acts = card.querySelector('.obs-acts');
+    const fix = h('button', 'btn primary', 'Fix it'); fix.onclick = async () => { const r = await api('/api/fix', {}); if (!r.ok) toast((await r.json()).error); else fix.disabled = true; };
+    acts.appendChild(fix);
+  }
+  return card;
+}
+
+// Replay: every step of a conversation, played back, and exported
+const clipLine = (v, n = 160) => { const t = typeof v === 'string' ? v : JSON.stringify(v); return t.length > n ? t.slice(0, n) + '…' : t; };
+function describeEvent(e) {
+  const who = e.by ? `[${e.by}] ` : '';
+  const a = Array.isArray(e.args?.items) ? `${e.args.items.filter(i => i.status === 'done').length} of ${e.args.items.length} steps done`
+    : e.args && typeof e.args === 'object' ? (e.args.command || e.args.path || e.args.pattern || e.args.url || e.args.query || e.args.description || e.args) : e.args;
+  switch (e.kind) {
+    case 'turn_start': return ['you', '›', 'You', e.text, true];
+    case 'reply': return ['', '◆', who + 'Bowers', e.text, true];
+    case 'tool_call': return ['', '⚙', `${who}${e.name}  ${clipLine(a ?? '')}`, ''];
+    case 'tool_result': return [e.ok ? '' : 'bad', e.ok ? '✓' : '✗', `${who}${e.name} ${e.ok ? 'done' : 'failed'}${e.ms ? ` in ${(e.ms / 1000).toFixed(1)}s` : ''}`, e.output || ''];
+    case 'observer': return ['observer', '◉', 'Observer: ' + e.summary, (e.findings || []).map(f => `${OBS_KIND[f.kind]}: ${f.text}${f.action ? ' → ' + f.action : ''}`).join('\n'), true];
+    case 'turn_end': return ['', '■', e.ok === false ? 'Turn stopped' : 'Turn finished', ''];
+    default: return ['', '·', e.kind, ''];
+  }
+}
+async function openReplay(id, name) {
+  const r = await api('/api/sessions/events?id=' + encodeURIComponent(id)); const d = await r.json();
+  if (!r.ok) return toast(d.error);
+  const modal = h('div', 'modal', `<div class="modal-box" style="width:min(780px,100%)"><div class="page-head"><h2>Replay</h2><span class="spacer"></span><button class="btn" data-f="md">Markdown</button><button class="btn" data-f="html">HTML</button><button class="btn" data-f="json">JSON</button><button class="btn ghost icon-only" aria-label="Close">✕</button></div><div class="rp-meta"></div><div class="rp-list"></div><div class="rp-bar"><button class="btn" data-a="prev">◀</button><button class="btn primary" data-a="play">Play</button><button class="btn" data-a="next">▶</button><input type="range" min="0"><span class="muted"></span></div></div>`);
+  const sm = d.summary;
+  modal.querySelector('.rp-meta').textContent = `${name || id} · ${sm.turns} message${sm.turns === 1 ? '' : 's'} · ${sm.tool_calls} action${sm.tool_calls === 1 ? '' : 's'} · ${sm.failed} failed${sm.observer_concerns ? ` · ${sm.observer_concerns} observer notes` : ''}`;
+  const list = modal.querySelector('.rp-list'), range = modal.querySelector('input'), count = modal.querySelector('.rp-bar .muted');
+  const rows = d.events.map(e => {
+    const [cls, ic, head, detail, prose] = describeEvent(e);
+    const row = h('div', 'rp-ev ' + cls, `<div class="rp-h"><span>${esc(ic)}</span><span></span><time>${new Date(e.t * 1000).toLocaleTimeString()}</time></div>`);
+    row.querySelector('.rp-h span:nth-child(2)').textContent = head; row.title = head;
+    if (detail) { const b = h(prose ? 'div' : 'pre', prose ? 'txt' : null); b.textContent = detail; row.appendChild(b); }
+    list.appendChild(row); return row;
+  });
+  if (!rows.length) list.appendChild(h('div', 'empty-state', 'This conversation was saved before Bowers kept step-by-step logs.'));
+  range.max = rows.length; let timer = null;
+  const show = n => { n = Math.max(0, Math.min(rows.length, n)); range.value = n; rows.forEach((row, i) => { row.classList.toggle('hidden', i >= n); row.classList.toggle('now', i === n - 1); }); count.textContent = `${n} / ${rows.length}`; rows[n - 1]?.scrollIntoView({ block: 'nearest' }); };
+  const stop = () => { clearInterval(timer); timer = null; modal.querySelector('[data-a=play]').textContent = 'Play'; };
+  modal.querySelector('[data-a=prev]').onclick = () => { stop(); show(+range.value - 1); };
+  modal.querySelector('[data-a=next]').onclick = () => { stop(); show(+range.value + 1); };
+  range.oninput = () => { stop(); show(+range.value); };
+  modal.querySelector('[data-a=play]').onclick = e => {
+    if (timer) return stop();
+    if (+range.value >= rows.length) show(0);
+    e.target.textContent = 'Pause';
+    timer = setInterval(() => { if (+range.value >= rows.length) return stop(); show(+range.value + 1); }, 650);
+  };
+  modal.querySelectorAll('[data-f]').forEach(b => b.onclick = async () => {
+    const rr = await api(`/api/sessions/export?id=${encodeURIComponent(id)}&format=${b.dataset.f}`);
+    if (!rr.ok) return toast((await rr.json()).error);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(await rr.blob()); a.download = `bowers-${id}.${b.dataset.f}`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  });
+  modal.onclick = e => { if (e.target === modal || e.target.closest('.icon-only')) { stop(); modal.remove(); } };
+  document.body.appendChild(modal); show(rows.length);
 }
 
 // Connect apps (MCP catalog)
 const APP_STATUS = { running: 'Connected', 'needs-auth': 'Sign in needed', waiting: 'Waiting for sign-in…', error: 'Problem', 'needs-approval': 'Needs approval', stopped: 'Stopped', 'not-connected': '' };
 let appsBoxes = new Set();
-async function renderApps(box) {
+async function renderAppCatalog(box) {
   appsBoxes.add(box);
   const r = await api('/api/mcp/apps'); if (!r.ok) { box.innerHTML = '<div class="muted">Could not load apps</div>'; return; }
   const { apps, logins } = await r.json(); box.innerHTML = '';
@@ -2616,11 +2729,11 @@ async function renderApps(box) {
     box.appendChild(card);
   }
 }
-function refreshApps() { for (const b of appsBoxes) if (b.offsetParent) renderApps(b); }
+function refreshAppCatalog() { for (const b of appsBoxes) if (b.offsetParent) renderAppCatalog(b); }
 async function appAction(action, name, extra = {}) {
   const r = await api('/api/mcp/' + action, { name, ...extra }); const d = await r.json();
   if (!r.ok) { toast(d.error); return null; }
-  if (d.mcp) renderMcp(d.mcp); refreshApps(); return d;
+  if (d.mcp) renderMcp(d.mcp); refreshAppCatalog(); return d;
 }
 async function connectApp(a) {
   const values = {};
@@ -2636,7 +2749,7 @@ async function signInApp(name, pending) {
   const url = pending?.url || (await appAction('login', name))?.url;
   if (!url) { w?.close(); return; }
   if (w) w.location = url; else toast('Allow pop-ups to sign in');
-  refreshApps();
+  refreshAppCatalog();
 }
 
 // Settings page
@@ -2644,7 +2757,7 @@ document.querySelectorAll('.set-tabs button').forEach(b => b.onclick = () => {
   document.querySelectorAll('.set-tabs button').forEach(x => x.classList.toggle('on', x === b));
   document.querySelectorAll('.set-panel').forEach(p => p.classList.toggle('hidden', p.dataset.sp !== b.dataset.st));
   if (b.dataset.st === 'account') renderAccount();
-  if (b.dataset.st === 'tools') renderApps($('settings-apps'));
+  if (b.dataset.st === 'tools') renderAppCatalog($('settings-apps'));
 });
 async function openSettings() { $('profile-name').value = profileName; }
 async function renderAccount() { const card = $('account-card'); const g = await (await api('/api/git')).json().catch(() => ({})); card.replaceChildren(await accountCard(g)); }

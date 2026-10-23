@@ -331,6 +331,29 @@ Set `DOCKS_ROUTER_KEY` to require a key from clients. It's required if you liste
 
 Not supported yet: the OpenAI Responses API, which current Codex CLI requires.
 
+## Observer and replay
+
+These two features are inspired by Meta's [Muse Code](https://techcrunch.com/2026/08/05/meta-launches-muse-code-an-ai-agent-for-large-code-bases/).
+
+**Observer.** After each task that changes something, a second, read-only check compares what Bowers *said* it did with what actually happened: every action, its result, and the git diff. It flags:
+
+- claims nothing backs up, such as "tests pass" when no tests ran
+- parts of your request that weren't done
+- failed steps that were never fixed
+- preferences worth saving as a note
+
+It never changes anything itself. Press **Fix it** (or type `/fix`) to send its points back to Bowers to verify or fix, and **Save note** to keep a preference. Turn it off with `/observer off`, the switch in **Settings → Tools & safety**, or `{"observer": false}` in settings.json. It uses a fast model; pick another with `{"observerModel": "..."}`.
+
+**Replay.** Every conversation keeps a step-by-step log in `~/.docks/sessions/<id>.events.jsonl`: your messages, replies, each action with its result and timing, what helpers did, and the observer's notes. Watch it back or export it:
+
+```bash
+bowers replay                         # the latest conversation in this project
+bowers replay NAME --step             # one step at a time
+bowers replay --export html -o run.html   # a standalone page with play / step controls (also md or json)
+```
+
+In the browser, open **History** and press **Replay** on any conversation for the same timeline and the export buttons. `/replay` shows the current conversation in the terminal.
+
 ## Big and long tasks
 
 - **Long sessions keep going.** When a conversation gets long, Claude's API summarizes the earlier part on its own (server-side compaction), and Bowers carries on instead of stopping at the context limit.

@@ -264,7 +264,8 @@ class Session:
                                  [{"name": k, "description": v.description} for k, v in a.ext.output_styles.items()],
                 "sandbox": {"on": a.sandbox is not None, "available": sandbox_engine() is not None,
                             "reason": "" if sandbox_engine() else sandbox_reason()},
-                "permissions": a.ext.permissions.summary(), "context_used": a.context_used}
+                "permissions": a.ext.permissions.summary(), "context_used": a.context_used,
+                "observer": a.ext.settings.get("observer", True) is not False}
 
 
 def history_from_messages(messages: list, turns: list) -> list[dict]:
@@ -355,6 +356,10 @@ class WebDisplay:
 
     def notice(self, msg: str) -> None:
         self.session.publish({"type": "notice", "text": msg})
+
+    def observer(self, result: dict) -> None:
+        from ..observer import followup
+        self.session.publish({"type": "observer", **result, "fixable": bool(followup(result["findings"]))})
 
     def plan(self, items: list) -> None:
         self.session.publish({"type": "plan", "items": items})
@@ -480,6 +485,32 @@ def make_handler(session: Session, token: str, preview: dict):
                 return self._json(200, {"path": rel, "text": text})
             if path == "/api/commands":
                 return self._json(200, session.agent.ext.summary())
+            if path in ("/api/sessions/events", "/api/sessions/export"):
+                from urllib.parse import parse_qs
+                from .. import events
+                q = parse_qs(query)
+                sid = q.get("id", [session.agent.session_id])[0]
+                if not re.fullmatch(r"[\w.-]+", sid):
+                    return self._json(400, {"error": "bad session id"})
+                try:
+                    if path.endswith("/events"):
+                        log = events.load(sid) if sid != session.agent.session_id or session.agent.save \
+                            else session.agent.turn_events
+                        return self._json(200, {"id": sid, "events": log, "summary": events.summary(log)})
+                    fmt = q.get("format", ["md"])[0]
+                    text = events.export(sid, fmt).encode()
+                except FileNotFoundError:
+                    return self._json(404, {"error": "no saved conversation with that id"})
+                except ValueError as e:
+                    return self._json(400, {"error": str(e)})
+                kind = {"md": "text/markdown", "html": "text/html", "json": "application/json"}[fmt]
+                self.send_response(200)
+                self.send_header("content-type", kind + "; charset=utf-8")
+                self.send_header("content-disposition", f'attachment; filename="bowers-{sid}.{fmt}"')
+                self.send_header("content-length", str(len(text)))
+                self.end_headers()
+                self.wfile.write(text)
+                return
             if path == "/api/sessions":
                 from .. import sessions
                 return self._json(200, {"sessions": sessions.list_sessions(root),
@@ -615,6 +646,15 @@ def make_handler(session: Session, token: str, preview: dict):
                 images = [{"media_type": i["media_type"], "data": i["data"]} for i in images]
                 if not session.start_turn(text or "Build what's shown in the image.", images):
                     return self._json(409, {"error": "Bowers is still working; stop it or wait"})
+                return self._json(202, {"ok": True})
+            if path == "/api/fix":
+                from ..observer import followup
+                prompt = followup(session.agent.observations)
+                if not prompt:
+                    return self._json(400, {"error": "the observer has nothing to fix right now"})
+                if not session.start_turn(prompt):
+                    return self._json(409, {"error": "Bowers is still working; stop it or wait"})
+                session.agent.observations = []
                 return self._json(202, {"ok": True})
             if path == "/api/github":
                 action, number = body.get("action"), body.get("number")
@@ -810,6 +850,9 @@ def make_handler(session: Session, token: str, preview: dict):
                         a.set_sandbox(body["sandbox"])
                     except SandboxUnavailable as e:
                         return self._json(400, {"error": str(e)})
+                if isinstance(body.get("observer"), bool):
+                    from ..terminal import save_setting
+                    save_setting(a, "observer", body["observer"])
                 if isinstance(body.get("auto_approve"), bool):
                     a.set_mode("yolo" if body["auto_approve"] else "ask")
                 if body.get("mode") in ("ask", "auto", "plan", "yolo"):

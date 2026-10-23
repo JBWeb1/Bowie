@@ -27,6 +27,9 @@ HELP = """Commands:
   /output-style      explanatory, learning, concise or your own
   /security-review   check changes for security holes
   /doctor            check your setup
+  /fix               have Bowers verify or fix what the observer found
+  /observer [on|off] check each task's claims against what actually ran
+  /replay [--step]   replay this conversation step by step (bowers replay exports it)
   /vim               vim keys on/off;  /statusline  show the status line
   /sandbox [on|off]  run commands in a sandbox (writes only inside the project)
   /permissions       show allow / ask / deny rules
@@ -406,6 +409,22 @@ def slash(agent: Agent, text: str) -> bool:
             ui.error(str(e))
             return True
         print(ui.dim(f"output style: {agent.output_style}"))
+    elif cmd == "/fix":
+        from . import observer
+        prompt = observer.followup(agent.observations)
+        if not prompt:
+            print(ui.dim("the observer has nothing for Bowers to fix right now"))
+            return True
+        agent.observations = []
+        agent.run(prompt)
+    elif cmd == "/observer":
+        from . import terminal
+        on = {"on": True, "off": False}.get(arg, agent.ext.settings.get("observer", True) is False)
+        terminal.save_setting(agent, "observer", on)
+        print(ui.dim(f"observer {'on: tasks that change things get checked' if on else 'off'} (saved in your settings)"))
+    elif cmd == "/replay":
+        from . import events
+        events.replay(events.load(agent.session_id) if agent.save else agent.turn_events, step=arg == "--step")
     elif cmd == "/doctor":
         from . import doctor
         print(doctor.report(doctor.check(agent.root, agent.ext, agent.mcp, agent)))
@@ -603,6 +622,43 @@ def sessions_main(argv) -> int:
         when = _time.strftime("%b %d %H:%M", _time.localtime(s_["updated"]))
         where = f" · {s_['root']}" if args.all else ""
         print(f"{ui.bold(s_['name'][:60])}  {ui.dim(when + ' · ' + str(s_['turns']) + ' msgs · ' + s_['id'] + where)}")
+    return 0
+
+
+def replay_main(argv) -> int:
+    parser = argparse.ArgumentParser(prog="bowers replay", description="Replay a saved conversation step by step, "
+                                     "or export it as Markdown, HTML (with a play button) or JSON.")
+    parser.add_argument("session", nargs="?", default="last", help="id, id prefix or name (default: the latest here)")
+    parser.add_argument("-C", "--dir", default=".")
+    parser.add_argument("--step", action="store_true", help="wait for Enter between steps")
+    parser.add_argument("--export", choices=("md", "html", "json"), help="write the log instead of replaying it")
+    parser.add_argument("-o", "--output", help="file to export to (default: print it)")
+    args = parser.parse_args(argv)
+    from . import events, sessions
+    root = Path(args.dir).expanduser().resolve()
+    if args.session == "last":
+        items = sessions.list_sessions(root, limit=1)
+        sid = items[0]["id"] if items else None
+    else:
+        sid = sessions.find(args.session, root) or sessions.find(args.session)
+    if not sid:
+        ui.error("no saved conversation found (see bowers sessions)")
+        return 1
+    if args.export:
+        text = events.export(sid, args.export)
+        if args.output:
+            Path(args.output).write_text(text)
+            print(ui.dim(f"wrote {args.output}"))
+        else:
+            sys.stdout.write(text)
+        return 0
+    log = events.load(sid)
+    if not log:
+        print(ui.dim("this conversation was saved before Bowers kept step-by-step logs"))
+        return 0
+    s_ = events.summary(log)
+    print(ui.bold(sid) + ui.dim(f"  {events.counts(s_)}"))
+    events.replay(log, step=args.step)
     return 0
 
 
@@ -991,6 +1047,8 @@ def main(argv=None) -> int:
         return plugin_main(argv[1:])
     if argv[:1] == ["sessions"]:
         return sessions_main(argv[1:])
+    if argv[:1] == ["replay"]:
+        return replay_main(argv[1:])
     if argv[:1] in (["github"], ["gh"]):
         return github_main(argv[1:])
     if argv[:1] == ["context"]:
