@@ -68,7 +68,7 @@ class Checkpoints:
             self._git("commit", "-q", "--allow-empty", "-m", f"{time.strftime('%H:%M:%S')} {label[:80]}")
             return self._git("rev-parse", "HEAD")
         except (CheckpointError, OSError, subprocess.TimeoutExpired):
-            return None  # not fatal: Docks still works, just without undo here
+            return None  # not fatal: Bowers still works, just without undo here
 
     def restore(self, checkpoint: str) -> list[str]:
         """Put every file back as it was at the checkpoint. Returns the paths that changed."""

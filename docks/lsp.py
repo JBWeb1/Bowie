@@ -1,7 +1,7 @@
 """Code intelligence through language servers (the same ones editors use): go to definition, find references,
 type info, an outline of a file, and the errors in it.
 
-Docks starts a server the first time a file of its language is touched. Built in: Python (pyright, basedpyright
+Bowers starts a server the first time a file of its language is touched. Built in: Python (pyright, basedpyright
 or pylsp), TypeScript/JavaScript (typescript-language-server), Go (gopls), Rust (rust-analyzer), C/C++ (clangd).
 Add others in a plugin's .lsp.json or settings.json, in Claude Code's format:
 

@@ -1,5 +1,5 @@
 """Saved conversations: every session is written to ~/.docks/sessions/<id>.json after each turn,
-so it can be listed, renamed and resumed later (`docks --resume`, `/resume`, the browser's History)."""
+so it can be listed, renamed and resumed later (`bowers --resume`, `/resume`, the browser's History)."""
 
 import json
 import os

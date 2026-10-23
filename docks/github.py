@@ -1,6 +1,6 @@
 """GitHub integration: read issues and pull requests, push branches, open PRs, post reviews.
 
-Auth comes from GITHUB_TOKEN / GH_TOKEN, then the account you connected with `docks github login` (saved in
+Auth comes from GITHUB_TOKEN / GH_TOKEN, then the account you connected with `bowers github login` (saved in
 ~/.docks/github.json, readable only by you), then the GitHub CLI (`gh auth token`) if it's logged in.
 The token is only ever sent to the GitHub API and to git over HTTPS; it's never put on a command line.
 """
@@ -105,7 +105,7 @@ def repo_of(root: Path) -> str:
 def request(method: str, path: str, body: dict | None = None, accept: str = "application/vnd.github+json"):
     tok = token()
     if not tok:
-        raise GitHubError("not connected to GitHub: run `docks github login` (or set GITHUB_TOKEN)")
+        raise GitHubError("not connected to GitHub: run `bowers github login` (or set GITHUB_TOKEN)")
     req = urllib.request.Request(f"{API}{path}", method=method,
                                  data=json.dumps(body).encode() if body is not None else None,
                                  headers={"authorization": f"Bearer {tok}", "accept": accept,

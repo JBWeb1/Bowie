@@ -1,10 +1,10 @@
-"""Reference repositories: other GitHub repos Docks can read while it works on this project, like the files you
+"""Reference repositories: other GitHub repos Bowers can read while it works on this project, like the files you
 add to a Claude Project. A shared library, your API's server, a design system, the docs.
 
-    docks context add acme/design-system            # or: --branch v2
-    docks context list
-    docks context sync                              # pull the latest (also done on its own, hourly)
-    docks context remove acme/design-system
+    bowers context add acme/design-system            # or: --branch v2
+    bowers context list
+    bowers context sync                              # pull the latest (also done on its own, hourly)
+    bowers context remove acme/design-system
 
 Each one is a shallow clone in ~/.docks/context/, refreshed before work when it's over an hour old. Claude is
 told where they are and can read and search them; permission rules stop it from editing them. The list is
@@ -29,7 +29,7 @@ def store() -> Path:
 
 
 def list_path(root: Path) -> Path:
-    # Kept in your Docks folder, not the project, so a cloned repo can't plant its own list.
+    # Kept in your Bowers folder, not the project, so a cloned repo can't plant its own list.
     key = hashlib.sha1(str(root.resolve()).encode()).hexdigest()[:16]
     return Path(os.environ.get("DOCKS_HOME", Path.home() / ".docks")) / "projects" / key / "context.json"
 
@@ -141,5 +141,5 @@ def system_note(root: Path) -> str:
 
 
 def deny_rules(root: Path) -> list[str]:
-    """Permission rules that keep Docks from changing the reference copies."""
+    """Permission rules that keep Bowers from changing the reference copies."""
     return [f"Edit(/{i['path']}/**)" for i in items(root)]

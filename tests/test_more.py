@@ -372,7 +372,7 @@ def test_status_line_keys_and_notifications(tmp_path):
             return True
     out = TTY()
     terminal.notify("needs you; now", out=out)
-    assert out.getvalue().startswith("\x07\x1b]9;Docks: needs you, now\x07")
+    assert out.getvalue().startswith("\x07\x1b]9;Bowers: needs you, now\x07")
     quiet = io.StringIO()
     terminal.notify("x", out=quiet)
     assert quiet.getvalue() == ""  # not a terminal: nothing
@@ -656,3 +656,18 @@ def test_images_generate_edit_gallery_and_tool(tmp_path, monkeypatch):
     assert blocks[0]["text"].startswith("Saved logo.png") and blocks[1]["type"] == "image"
     assert [e[1][0] for e in display.events if e[0] == "confirm"] == ["generate_image"]  # costs money: it asks
     assert fake.requests[-1]["body"]["background"] == "transparent"
+
+
+def test_bowers_models_are_tuned_profiles(tmp_path):
+    from docks import models
+    agent = Agent(root=tmp_path, client=FakeClient([]), display=Display(), model="aether")
+    assert agent.profile == "aether" and agent.model == models.current("fable") and agent.effort == "xhigh"
+    assert agent.model_label == "Bowers Aether 1" and "You are Bowers Aether" in agent.system
+    agent.set_model("Bowers Solace 1")
+    assert agent.model == models.current("sonnet") and agent.effort == "medium" and "Bowers Solace" in agent.system
+    assert "Bowers Aether" not in agent.system
+    agent.set_model("haiku")  # an engine directly: no Bowers personality
+    assert agent.profile == "" and "You are Bowers Solace" not in agent.system
+    pinned = Agent(root=tmp_path, client=FakeClient([]), display=Display(), model="syntra", effort="low")
+    assert pinned.effort == "low" and pinned.model == models.current("opus")  # an explicit effort wins
+    assert [c["label"] for c in models.choices() if c["group"] == "Bowers"] == ["Bowers Syntra 1", "Bowers Aether 1", "Bowers Solace 1"]

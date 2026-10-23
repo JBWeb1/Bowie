@@ -1,16 +1,16 @@
-"""The models Docks can work with, how to reach each one, and keeping them up to date.
+"""The models Bowers can work with, how to reach each one, and keeping them up to date.
 
-Short names pick a model family; Docks keeps each one pointing at the newest model in it:
+Engines: short names pick a model family, and Bowers keeps each one pointing at the newest model in it:
 
     opus     Claude Opus (the default)          fable    Claude Fable: Anthropic's most capable
     sonnet   Claude Sonnet: quicker, cheaper    haiku    Claude Haiku: fastest, cheapest
     codex    OpenAI's Codex coding model        chatgpt  OpenAI's flagship GPT model
 
-Claude models go straight to the Anthropic API. OpenAI's go through Docks Router, which translates the requests:
-Docks uses the router at DOCKS_ROUTER_URL if you run one, or starts one inside its own process (needs
+Claude models go straight to the Anthropic API. OpenAI's go through Bowers Router, which translates the requests:
+Bowers uses the router at DOCKS_ROUTER_URL if you run one, or starts one inside its own process (needs
 OPENAI_API_KEY).
 
-Updates: once a day (in the background) or with `docks models update`, Docks asks Anthropic and OpenAI which
+Updates: once a day (in the background) or with `bowers models update`, Bowers asks Anthropic and OpenAI which
 models your keys can use and moves each short name to the newest one in its family. The choices are saved in
 ~/.docks/models.json. Pin one with an environment variable (DOCKS_FABLE_MODEL, DOCKS_CODEX_MODEL, ...), or turn
 updates off with {"autoUpdateModels": false} in settings.
@@ -32,8 +32,8 @@ INFO = {
     "fable": ("Claude Fable", "Anthropic's most capable model, for the hardest work; slower, about 2.5x the price of Opus"),
     "sonnet": ("Claude Sonnet", "quicker and cheaper"),
     "haiku": ("Claude Haiku", "fastest and cheapest, for simple tasks"),
-    "codex": ("Codex (OpenAI)", "OpenAI's coding model through Docks Router; needs OPENAI_API_KEY"),
-    "chatgpt": ("ChatGPT model (OpenAI)", "OpenAI's flagship GPT model through Docks Router; needs OPENAI_API_KEY"),
+    "codex": ("Codex (OpenAI)", "OpenAI's coding model through Bowers Router; needs OPENAI_API_KEY"),
+    "chatgpt": ("ChatGPT model (OpenAI)", "OpenAI's flagship GPT model through Bowers Router; needs OPENAI_API_KEY"),
 }
 EXTRA_ALIASES = {"gpt": "chatgpt", "gpt-codex": "codex", "openai": "chatgpt"}
 UPDATE_EVERY = 24 * 3600
@@ -45,6 +45,41 @@ NEW_WEB_TOOL_MODELS = ("claude-opus-5-5", "claude-opus-5", "claude-opus-4-8", "c
 
 class ModelError(Exception):
     pass
+
+
+# Bowers' own models: each one is a tuned profile (an engine, how hard it thinks, and its own way of working)
+# on top of the newest model in a family, so they improve as the engines do.
+PROFILES = {
+    "syntra": {
+        "name": "Bowers Syntra 1", "engine": "opus", "effort": "high",
+        "tagline": "Modern and technical: software, automation and complex workflows",
+        "prompt": ("You are Bowers Syntra, Bowers' model for building software. Be precise and pragmatic: understand "
+                   "the codebase before changing it, prefer small verified steps, run the tests and the app, and "
+                   "automate what repeats. Report like a senior engineer: what changed, how you checked it, what's left."),
+    },
+    "aether": {
+        "name": "Bowers Aether 1", "engine": "fable", "effort": "xhigh",
+        "tagline": "The flagship: deep reasoning, research and creativity",
+        "prompt": ("You are Bowers Aether, Bowers' flagship model for the hardest problems. Think broadly before "
+                   "settling on an approach: weigh alternatives, research what you don't know, and bring original, "
+                   "creative ideas, then carry the work through to a polished result."),
+    },
+    "solace": {
+        "name": "Bowers Solace 1", "engine": "sonnet", "effort": "medium",
+        "tagline": "Calm and clear: understands what you need and explains as it goes",
+        "prompt": ("You are Bowers Solace, Bowers' calm and thoughtful model. Take time to understand what the person "
+                   "really wants; ask a short question when it's unclear. Explain in plain, warm language without "
+                   "jargon, keep the person in the loop, and make complex things feel simple."),
+    },
+}
+DEFAULT_PROFILE = "syntra"
+
+
+def profile_of(name: str) -> str | None:
+    """'aether', 'Bowers Aether 1' or 'bowers-aether-1' -> 'aether'."""
+    key = re.sub(r"[\s_]+", "-", (name or "").strip().lower()).removeprefix("bowers-")
+    key = re.sub(r"-\d+$", "", key)
+    return key if key in PROFILES else None
 
 
 # ---------------------------------------------------------------- saved choices
@@ -74,12 +109,14 @@ def codex_model() -> str:
 
 
 def choices() -> list[dict]:
-    out = []
+    out = [{"id": key, "alias": key, "label": p["name"], "note": p["tagline"], "group": "Bowers",
+            "engine": current(p["engine"])} for key, p in PROFILES.items()]
     for family in DEFAULTS:
         name, note = INFO[family]
         model = current(family)
         out.append({"id": family if family in OPENAI_FAMILIES else model, "alias": family,
-                    "label": f"{name} ({model})" if family in OPENAI_FAMILIES else _pretty(model), "note": note})
+                    "label": f"{name} ({model})" if family in OPENAI_FAMILIES else _pretty(model), "note": note,
+                    "group": "Engines"})
     return out
 
 
@@ -102,7 +139,7 @@ def resolve(name: str) -> str:
 
 
 def uses_router(model: str) -> bool:
-    """Non-Claude models are reached through Docks Router."""
+    """Non-Claude models are reached through Bowers Router."""
     return not model.startswith("claude-")
 
 
@@ -238,7 +275,7 @@ _router_lock = threading.Lock()
 
 
 def _start_router() -> str:
-    """Run Docks Router inside this process on a free local port. Returns its URL."""
+    """Run Bowers Router inside this process on a free local port. Returns its URL."""
     from http.server import ThreadingHTTPServer
 
     from .router import config
@@ -260,7 +297,7 @@ def check_openai(model: str = "codex") -> str | None:
     if not os.environ.get("OPENAI_API_KEY"):
         name = INFO.get(model, (model, ""))[0]
         return (f"{name} needs an OpenAI API key: set OPENAI_API_KEY "
-                "(or run Docks Router yourself and set DOCKS_ROUTER_URL)")
+                "(or run Bowers Router yourself and set DOCKS_ROUTER_URL)")
     return None
 
 
@@ -268,7 +305,7 @@ check_codex = check_openai
 
 
 def router_client(model: str):
-    """An Anthropic-format client that reaches `model` through Docks Router."""
+    """An Anthropic-format client that reaches `model` through Bowers Router."""
     import anthropic
     if model in OPENAI_FAMILIES or not model.startswith("claude-"):
         problem = check_openai(model)
@@ -281,4 +318,4 @@ def router_client(model: str):
                 _router["url"] = _start_router()
             url = _router["url"]
     key = os.environ.get("DOCKS_ROUTER_KEY") or "docks-local"
-    return anthropic.Anthropic(base_url=url, api_key=key, max_retries=0)  # Docks retries itself
+    return anthropic.Anthropic(base_url=url, api_key=key, max_retries=0)  # Bowers retries itself

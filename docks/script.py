@@ -1,9 +1,9 @@
-"""Script mode (`docks -p`): run one task without a person at the keyboard, for CI, git hooks, cron jobs or
+"""Script mode (`bowers -p`): run one task without a person at the keyboard, for CI, git hooks, cron jobs or
 other programs.
 
-    docks -p "fix the failing test" --allow "Bash(npm test:*)" --allow Edit
-    cat error.log | docks -p "why does this fail?"
-    docks -p "list the TODOs" --output-format json | jq -r .result
+    bowers -p "fix the failing test" --allow "Bash(npm test:*)" --allow Edit
+    cat error.log | bowers -p "why does this fail?"
+    bowers -p "list the TODOs" --output-format json | jq -r .result
 
 Output formats:
 - text (default): only the final answer on stdout.

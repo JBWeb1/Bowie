@@ -455,7 +455,7 @@ def _matches(matcher: str, tool: str) -> bool:
 
 
 def hook_tool_input(tool: str, args: dict) -> dict:
-    """Docks' tool arguments in the shape Claude Code hooks expect."""
+    """Bowers' tool arguments in the shape Claude Code hooks expect."""
     out = dict(args)
     if "path" in out and tool in ("write_file", "edit_file", "read_file"):
         out["file_path"] = out.pop("path")

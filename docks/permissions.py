@@ -8,7 +8,7 @@ Written in Claude Code's settings.json format, so the same rules work in both:
         "deny":  ["Read(./.env)", "Read(**/*.pem)", "Bash(curl:*)", "mcp__github__delete_repo"],
         "defaultMode": "acceptEdits"}}
 
-A rule is a tool name (Claude Code's or Docks'), optionally with a specifier in parentheses:
+A rule is a tool name (Claude Code's or Bowers'), optionally with a specifier in parentheses:
 - Bash(cmd)        exactly that command; Bash(prefix:*) anything starting with it; * is a wildcard.
                    Commands joined with && ; || or | must have every part allowed, and any denied part
                    denies the whole command.
@@ -27,7 +27,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlparse
 
-# Docks tool -> the Claude Code rule names that cover it
+# Bowers tool -> the Claude Code rule names that cover it
 RULE_NAMES = {
     "bash": ("Bash",), "start_process": ("Bash",),
     "read_file": ("Read",), "glob": ("Read", "Glob"), "grep": ("Read", "Grep"),

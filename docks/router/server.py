@@ -44,7 +44,7 @@ def tap_usage(payloads, usage: dict):
 
 def make_handler(engine: Engine, client_key: str | None):
     class Handler(BaseHTTPRequestHandler):
-        server_version = "DocksRouter/0.1"
+        server_version = "BowersRouter/0.1"
 
         def log_message(self, fmt, *args):  # quiet; the dashboard has the log
             pass
@@ -210,7 +210,7 @@ def serve(cfg: dict) -> None:
         raise SystemExit(f"refusing to listen on {host} without a client key; set {cfg.get('client_key_env')}")
     server = ThreadingHTTPServer((host, port), make_handler(engine, client_key))
     available = [n for n, p in engine.providers.items() if p.available and not p.local]
-    print(f"Docks router listening on http://{host}:{port}")
+    print(f"Bowers router listening on http://{host}:{port}")
     print(f"  providers with keys: {', '.join(available) or 'none'}  (+ local: ollama, lmstudio)")
     print(f"  routes: {', '.join(engine.routes)}   dashboard: http://{host}:{port}/")
     print(f"  client auth: {'on' if client_key else 'off (localhost only)'}")
@@ -224,7 +224,7 @@ def serve(cfg: dict) -> None:
 
 DASHBOARD = """<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Docks Router</title>
+<title>Bowers Router</title>
 <style>
 :root{--bg:#fafaf9;--fg:#1c1917;--muted:#78716c;--line:#e7e5e4;--ok:#15803d;--bad:#b91c1c;--card:#fff}
 @media (prefers-color-scheme:dark){:root{--bg:#0c0a09;--fg:#f5f5f4;--muted:#a8a29e;--line:#292524;--ok:#4ade80;--bad:#f87171;--card:#1c1917}}
@@ -234,7 +234,7 @@ h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:28px 0 8px}.muted{colo
 table{border-collapse:collapse;width:100%}td,th{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
 th{font-weight:600;color:var(--muted)}.ok{color:var(--ok)}.bad{color:var(--bad)}input{padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg)}
 </style></head><body>
-<h1>Docks Router</h1><div class="muted" id="sub">loading…</div>
+<h1>Bowers Router</h1><div class="muted" id="sub">loading…</div>
 <p><input id="key" type="password" placeholder="router key (if set)" size="30"></p>
 <h2>Providers</h2><div class="wrap"><table id="prov"></table></div>
 <h2>Usage by target</h2><div class="wrap"><table id="tot"></table></div>

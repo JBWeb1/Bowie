@@ -40,9 +40,9 @@ MAX_HELPERS = 4
 MAX_RETRIES = 6
 MAX_STOP_HOOK_ROUNDS = 3
 MODES = ("ask", "auto", "plan", "yolo")
-NO_KEY = ("No API key was found, so Docks can't reach Claude. Get a key at https://console.anthropic.com, "
-          "then set it before starting Docks: export ANTHROPIC_API_KEY=sk-ant-...  (or point ANTHROPIC_BASE_URL "
-          "at Docks Router).")
+NO_KEY = ("No API key was found, so Bowers can't reach Claude. Get a key at https://console.anthropic.com, "
+          "then set it before starting Bowers: export ANTHROPIC_API_KEY=sk-ant-...  (or point ANTHROPIC_BASE_URL "
+          "at Bowers Router).")
 MAX_JSON_RETRIES = 2
 MAX_MENTION_BYTES = 100_000
 
@@ -152,7 +152,7 @@ class TurnAborted(Exception):
     pass
 
 
-SYSTEM_PROMPT = """You are Docks, an autonomous coding agent working in the user's terminal.
+SYSTEM_PROMPT = """You are Bowers, an autonomous coding agent working in the user's terminal.
 You can build anything the user asks for: apps, websites, scripts, APIs, games, tools.
 
 How to work:
@@ -237,7 +237,7 @@ def _block(b, name, default=None):
 class Agent:
     root: Path
     model: str = DEFAULT_MODEL
-    effort: str = "high"
+    effort: str | None = None   # low..max; None: the Bowers model's own setting (or high)
     auto_approve: bool = False   # same as mode "yolo"; kept for convenience
     mode: str = "ask"            # ask | auto | plan | yolo
     web: bool = True
@@ -272,7 +272,9 @@ class Agent:
             except anthropic.AnthropicError as e:  # bad credentials setup: report it when a task runs
                 self.client_error = e
         self.claude_client = self.client  # for Claude models; Codex and others go through the router
-        self.model = models.resolve(self.model)
+        self.profile = ""  # a Bowers model (syntra, aether, solace), or "" for an engine chosen directly
+        self._apply_profile(self.model, keep_effort=self.effort is not None)
+        self.effort = self.effort or "high"
         self._use_client_for_model()
         if self.ext is None:
             self.ext = Extensions.load(self.root)
@@ -316,6 +318,8 @@ class Agent:
         """Rebuild the system prompt (after instruction files or the output style change)."""
         style = self.ext.output_styles.get(self.output_style.lower()) if self.output_style != "default" else None
         self.system = build_system_prompt(self.root, self.ext, style)
+        if self.profile and not self.helper:
+            self.system += f"\n{models.PROFILES[self.profile]['prompt']}\n"
         if self.helper:
             self.system += HELPER_NOTE
         if self.agent_type is not None:
@@ -333,17 +337,42 @@ class Agent:
         except models.ModelError as e:  # reported when a task runs
             self.model_error = str(e)
 
+    def _apply_profile(self, name: str, keep_effort: bool = False) -> None:
+        """Use a Bowers model (its engine, effort and instructions), or an engine by name."""
+        profile = models.profile_of(name)
+        if profile:
+            spec = models.PROFILES[profile]
+            self.profile, self.model = profile, models.resolve(spec["engine"])
+            if not keep_effort:
+                self.effort = spec["effort"]
+        else:
+            self.profile, self.model = "", models.resolve(name)
+
+    @property
+    def model_label(self) -> str:
+        return models.PROFILES[self.profile]["name"] if self.profile else models.label(self.model)
+
     def set_model(self, name: str) -> str:
-        """Switch models (aliases work: opus, fable, sonnet, haiku, codex). Returns the model ID."""
+        """Switch to a Bowers model (syntra, aether, solace) or an engine (opus, fable, sonnet, haiku, codex,
+        chatgpt, or a model ID). Returns the engine's model ID."""
+        profile = models.profile_of(name)
+        if profile:
+            self._apply_profile(profile)
+            self._use_client_for_model()
+            if hasattr(self, "tools"):
+                self.refresh_tools()
+                self.reload_instructions()
+            return self.model
         model = models.resolve(name)
         if not model:
             raise ValueError("give a model name")
         if model in models.OPENAI_FAMILIES and models.check_openai(model):
             raise ValueError(models.check_openai(model))
-        self.model = model
+        self.model, self.profile = model, ""
         self._use_client_for_model()
         if hasattr(self, "tools"):
             self.refresh_tools()
+            self.reload_instructions()
         return model
 
     def set_output_style(self, name: str) -> None:
@@ -374,7 +403,7 @@ class Agent:
         tools = [t for t in tool_definitions() + process_defs + agent_defs + mcp_defs + (models.web_tools(self.model) if self.web else [])
                  if t["name"] not in self.exclude_tools]
         allowed = self.agent_type.tools if self.agent_type is not None else None
-        if allowed:  # a specialized helper limited to some tools (Claude Code or Docks names both work)
+        if allowed:  # a specialized helper limited to some tools (Claude Code or Bowers names both work)
             tools = [t for t in tools if t["name"] in allowed or TOOL_ALIASES.get(t["name"]) in allowed
                      or t["name"] in QUIET_TOOLS]
         self.tools = tools
@@ -488,7 +517,7 @@ class Agent:
             ask = getattr(self.display, "ask", None)
             if ask is None:
                 return "No one can answer questions right now. Choose sensible defaults and say what you chose.", False
-            self.notify_user("Docks has a question for you")
+            self.notify_user("Bowers has a question for you")
             with self._confirm_lock:
                 answers = ask(args["questions"])
             if answers is None:
@@ -499,7 +528,7 @@ class Agent:
                 return "Plan mode isn't on; go ahead with the work.", False
             review = getattr(self.display, "review_plan", None)
             if review:
-                self.notify_user("Docks has a plan ready for you to review")
+                self.notify_user("Bowers has a plan ready for you to review")
             decision, feedback = review(args["plan"]) if review else ("approve", "")
             if decision == "approve_auto":
                 self.set_mode("auto")
@@ -574,12 +603,12 @@ class Agent:
         return report, False
 
     def _locked_confirm(self, name: str, args: dict) -> str:
-        self.notify_user(f"Docks needs your permission to use {TOOL_ALIASES.get(name, name)}")
+        self.notify_user(f"Bowers needs your permission to use {TOOL_ALIASES.get(name, name)}")
         with self._confirm_lock:  # helpers run in parallel; ask the user one question at a time
             return (self.confirm or self.display.confirm)(name, args)
 
     def notify_user(self, message: str) -> None:
-        """Docks is waiting for the person: run Notification hooks and let the display alert them."""
+        """Bowers is waiting for the person: run Notification hooks and let the display alert them."""
         if self.ext.hooks:
             self.ext.run_hooks("Notification", {"message": message, "session_id": self.session_id})
         alert = getattr(self.display, "alert", None)
@@ -644,7 +673,7 @@ class Agent:
             return len(json.dumps(value, default=str)) // 4
 
         system_parts = {"Instructions files and memory": tokens(instructions.system_section(self.root)) + tokens(memory.load(self.root))}
-        system_parts["Docks' own instructions"] = max(tokens(self.system) - sum(system_parts.values()), 0)
+        system_parts["Bowers' own instructions"] = max(tokens(self.system) - sum(system_parts.values()), 0)
         mcp_names = {t["name"] for t in self.tools if t["name"].startswith("mcp__")}
         parts = {**system_parts,
                  "Tools": tokens([t for t in self.tools if t["name"] not in mcp_names]),
@@ -887,7 +916,7 @@ class Agent:
                                                           "session_id": self.session_id})
                     if verdict.block and verdict.reason:
                         stop_rounds += 1
-                        self.display.notice(f"A hook asked Docks to keep going: {verdict.reason}")
+                        self.display.notice(f"A hook asked Bowers to keep going: {verdict.reason}")
                         self.messages.append({"role": "user", "content": f"<system-reminder>Before finishing: "
                                               f"{verdict.reason}</system-reminder>"})
                         continue

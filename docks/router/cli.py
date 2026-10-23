@@ -1,4 +1,4 @@
-"""`docks router ...` subcommands."""
+"""`bowers router ...` subcommands."""
 
 import argparse
 import json
@@ -13,10 +13,10 @@ export ANTHROPIC_BASE_URL={url}
 export ANTHROPIC_AUTH_TOKEN={key}
 export ANTHROPIC_MODEL=code-best          # optional: use a router route
 export ANTHROPIC_SMALL_FAST_MODEL=code-fast""",
-    "docks": """# Docks
+    "docks": """# Bowers
 export ANTHROPIC_BASE_URL={url}
 export ANTHROPIC_API_KEY={key}
-docks -m code-best""",
+bowers -m code-best""",
     "aider": """aider --openai-api-base {url}/v1 --openai-api-key {key} --model openai/code-best""",
     "cline": """# Cline / Roo Code / Kilo Code
 API Provider: OpenAI Compatible
@@ -25,13 +25,13 @@ API Key:      {key}
 Model ID:     code-best""",
     "continue": """# ~/.continue/config.yaml
 models:
-  - name: Docks Router
+  - name: Bowers Router
     provider: openai
     model: code-best
     apiBase: {url}/v1
     apiKey: {key}""",
     "opencode": json.dumps({"provider": {"docks": {
-        "npm": "@ai-sdk/openai-compatible", "name": "Docks Router",
+        "npm": "@ai-sdk/openai-compatible", "name": "Bowers Router",
         "options": {"baseURL": "{url}/v1", "apiKey": "{key}"},
         "models": {"code-best": {}, "code-fast": {}, "code-local": {}}}}}, indent=2),
     "cursor": """# Cursor: Settings > Models
@@ -44,7 +44,7 @@ Add model:                code-best
 
 
 def main(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(prog="docks router", description="Route coding tools across AI providers.")
+    parser = argparse.ArgumentParser(prog="bowers router", description="Route coding tools across AI providers.")
     parser.add_argument("--config", type=Path, help=f"config file (default {config.config_path()})")
     sub = parser.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("serve", help="start the router")

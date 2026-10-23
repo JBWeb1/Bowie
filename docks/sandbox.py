@@ -1,7 +1,7 @@
 """Sandboxed shell commands: everything can be read, but only the project folder (and a private /tmp) can be
 written, credential folders are hidden, and the network can be switched off.
 
-Linux uses bubblewrap (`bwrap`); macOS uses the built-in `sandbox-exec`. Turn it on with `docks --sandbox`,
+Linux uses bubblewrap (`bwrap`); macOS uses the built-in `sandbox-exec`. Turn it on with `bowers --sandbox`,
 `/sandbox`, or in settings.json:
 
     {"sandbox": {"enabled": true, "network": true, "allowWrite": ["~/.npm", "~/.cache"],

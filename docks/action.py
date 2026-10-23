@@ -1,6 +1,6 @@
-"""`docks action`: the @docks bot, run inside GitHub Actions.
+"""`bowers action`: the @docks bot, run inside GitHub Actions.
 
-Mention @docks in an issue or pull request (or label an issue `docks`) and this:
+Mention @docks in an issue or pull request (or label an issue `bowers`) and this:
   - on an issue: makes the change on a new branch, commits, pushes and opens a pull request;
   - on a pull request: makes the requested change and pushes it to the PR branch,
     or answers / reviews when no code change is needed;
@@ -22,9 +22,9 @@ BOT_NAME = "github-actions[bot]"
 BOT_EMAIL = "41898282+github-actions[bot]@users.noreply.github.com"
 
 WORKFLOW = """\
-name: Docks
+name: Bowers
 
-# Mention @docks in an issue or pull request, or label an issue "docks".
+# Mention @bowers in an issue or pull request, or label an issue "bowers".
 on:
   issue_comment:
     types: [created]
@@ -43,9 +43,9 @@ permissions:
 jobs:
   docks:
     if: >-
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@docks')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@docks')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@docks') || github.event.label.name == 'docks')) ||
+      (github.event_name == 'issue_comment' && (contains(github.event.comment.body, '@bowers') || contains(github.event.comment.body, '@docks'))) ||
+      (github.event_name == 'pull_request_review_comment' && (contains(github.event.comment.body, '@bowers') || contains(github.event.comment.body, '@docks'))) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@bowers') || contains(github.event.issue.body, '@docks') || github.event.label.name == 'bowers' || github.event.label.name == 'docks')) ||
       (github.event_name == 'pull_request' && vars.DOCKS_AUTO_REVIEW == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -59,14 +59,14 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install "__SOURCE__"
-      - run: docks action
+      - run: bowers action
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCKS_MODEL: ${{ vars.DOCKS_MODEL }}
 """
 
-DEFAULT_SOURCE = "git+https://github.com/JBWeb1/Docks"
+DEFAULT_SOURCE = "git+https://github.com/JBWeb1/Bowers"
 
 
 def install(root: Path, source: str = DEFAULT_SOURCE) -> Path:
@@ -86,7 +86,9 @@ def _push_env() -> dict:
 
 
 def _short(text: str, trigger: str) -> str:
-    lines = text.replace(trigger, "").strip().splitlines()
+    for name in {trigger, *NAMES}:
+        text = text.replace(name, "")
+    lines = text.strip().splitlines()
     return (lines[0][:60] if lines else "") or "requested changes"
 
 
@@ -98,11 +100,18 @@ def _commit_all(root: Path, message: str) -> bool:
     return True
 
 
+NAMES = ("@bowers", "@docks")  # the bot answers to its old name too
+
+
+def _mentioned(text: str, trigger: str) -> bool:
+    return any(t in text for t in ({trigger, *NAMES} if trigger in NAMES else {trigger}))
+
+
 def parse_event(name: str, event: dict, trigger: str) -> dict | None:
     """Work out what was asked, by whom, on which issue or PR. None means: not for us."""
     if name in ("issue_comment", "pull_request_review_comment"):
         comment = event["comment"]
-        if trigger not in comment.get("body", ""):
+        if not _mentioned(comment.get("body", ""), trigger):
             return None
         if name == "issue_comment":
             item, is_pr = event["issue"], "pull_request" in event["issue"]
@@ -115,8 +124,8 @@ def parse_event(name: str, event: dict, trigger: str) -> dict | None:
                 "association": comment.get("author_association", ""), "mode": "request"}
     if name == "issues":
         issue = event["issue"]
-        labeled = event.get("action") == "labeled" and (event.get("label") or {}).get("name") == "docks"
-        if not labeled and trigger not in (issue.get("body") or ""):
+        labeled = event.get("action") == "labeled" and (event.get("label") or {}).get("name") in ("bowers", "docks")
+        if not labeled and not _mentioned(issue.get("body") or "", trigger):
             return None
         # For a label, the person who added it is the one asking.
         user = event["sender"]["login"] if labeled else issue["user"]["login"]
@@ -133,7 +142,7 @@ def parse_event(name: str, event: dict, trigger: str) -> dict | None:
 
 
 def run(root: Path, event_name: str, event: dict, repo: str, run_url: str, model: str,
-        trigger: str = "@docks", client=None) -> str:
+        trigger: str = "@bowers", client=None) -> str:
     """Handle one event. Returns a short status string (also what tests check)."""
     task = parse_event(event_name, event, trigger)
     if not task:
@@ -153,7 +162,7 @@ def run(root: Path, event_name: str, event: dict, repo: str, run_url: str, model
 
     footer = f"\n\n<sub>[View run]({run_url})</sub>"
     progress = github.request("POST", f"/repos/{repo}/issues/{n}/comments",
-                              {"body": f"Docks is working on this… {footer}"})
+                              {"body": f"Bowers is working on this… {footer}"})
 
     def reply(body: str) -> None:
         github.update_comment(repo, progress["id"], body + footer)
@@ -166,7 +175,7 @@ def run(root: Path, event_name: str, event: dict, repo: str, run_url: str, model
         reply(result)
         return "done"
     except Exception as e:
-        reply(f"Docks ran into a problem: `{e}`")
+        reply(f"Bowers ran into a problem: `{e}`")
         raise
 
 
@@ -189,7 +198,7 @@ def _handle_issue(root: Path, repo: str, n: int, task: dict, agent_kw: dict) -> 
         f"You're working on GitHub issue #{n} in {repo}, on branch {branch}. Read it with github_issue.\n\n"
         f"{_request_block(task)}\n\n"
         "If this needs code changes, make them, add or update tests, and run the tests until they pass. "
-        "Don't commit, push or open a pull request; Docks does that after you finish. If it's a question, "
+        "Don't commit, push or open a pull request; Bowers does that after you finish. If it's a question, "
         "just answer it. End with a short summary for the issue thread: what you changed and why.")
     summary = agent.last_text() or "Done."
     title = github.request("GET", f"/repos/{repo}/issues/{n}")["title"]
@@ -202,7 +211,7 @@ def _handle_issue(root: Path, repo: str, n: int, task: dict, agent_kw: dict) -> 
         return f"{summary}\n\nUpdated {open_prs[0]['html_url']}"
     pr = github.request("POST", f"/repos/{repo}/pulls", {
         "title": f"Fix #{n}: {title}", "head": branch, "base": default,
-        "body": f"{summary}\n\nFixes #{n}\n\n_Opened by Docks at @{task['user']}'s request._"})
+        "body": f"{summary}\n\nFixes #{n}\n\n_Opened by Bowers at @{task['user']}'s request._"})
     return f"{summary}\n\nOpened {pr['html_url']}"
 
 
@@ -216,7 +225,7 @@ def _handle_pr(root: Path, repo: str, n: int, task: dict, agent_kw: dict) -> str
     else:
         github.git(root, "fetch", "-q", "origin", f"pull/{n}/head", env=_push_env())
         _git(root, "checkout", "-q", "FETCH_HEAD")
-    can_push = "Make the requested changes and run the tests; don't commit or push, Docks pushes them to this " \
+    can_push = "Make the requested changes and run the tests; don't commit or push, Bowers pushes them to this " \
                "branch after you finish." if same_repo else \
                "This pull request comes from a fork, so changes can't be pushed: answer or review only."
     agent = Agent(**agent_kw)
@@ -226,7 +235,7 @@ def _handle_pr(root: Path, repo: str, n: int, task: dict, agent_kw: dict) -> str
         f"If the request needs code changes: {can_push} If it's a question, answer it. If it asks for a review, "
         "post one with review_pull_request. End with a short summary for the PR thread.")
     summary = agent.last_text() or "Done."
-    if same_repo and _commit_all(root, f"Docks: {_short(task['text'], task['trigger'])}"):
+    if same_repo and _commit_all(root, f"Bowers: {_short(task['text'], task['trigger'])}"):
         github.git(root, "push", "-q", "origin", f"HEAD:{branch}", env=_push_env())
         sha = github.git(root, "rev-parse", "--short", "HEAD")
         return f"{summary}\n\nPushed {sha} to `{branch}`."
@@ -234,16 +243,16 @@ def _handle_pr(root: Path, repo: str, n: int, task: dict, agent_kw: dict) -> str
 
 
 def github_trigger() -> str:
-    return os.environ.get("DOCKS_TRIGGER", "@docks")
+    return os.environ.get("DOCKS_TRIGGER", "@bowers")
 
 
 def main(argv=None) -> int:
     if argv and argv[0] in ("-h", "--help"):
-        print(__doc__.strip() + "\n\nSet it up in a repo with: docks install-github")
+        print(__doc__.strip() + "\n\nSet it up in a repo with: bowers install-github")
         return 0
     event_path = os.environ.get("GITHUB_EVENT_PATH")
     if not event_path:
-        print("docks action runs inside GitHub Actions. To set it up in a repo, run: docks install-github")
+        print("bowers action runs inside GitHub Actions. To set it up in a repo, run: bowers install-github")
         return 1
     root = Path(os.environ.get("GITHUB_WORKSPACE", ".")).resolve()
     repo = os.environ["GITHUB_REPOSITORY"]

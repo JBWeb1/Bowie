@@ -239,7 +239,7 @@ class Engine:
         targets = self.resolve(body.get("model", ""))
         if not targets:
             raise Exhausted(f"no available provider for model {body.get('model')!r}; "
-                            "set an API key or add a local model (see `docks router init`)")
+                            "set an API key or add a local model (see `bowers router init`)")
         deadline = time.monotonic() + self.cfg.get("max_wait_seconds", 300)
         errors = []
         while True:

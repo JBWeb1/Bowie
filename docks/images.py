@@ -1,8 +1,8 @@
-"""Image generation with OpenAI's GPT Image models: pictures for the apps and sites Docks builds (heroes,
+"""Image generation with OpenAI's GPT Image models: pictures for the apps and sites Bowers builds (heroes,
 illustrations, icons, product shots, backgrounds), or edits of existing images.
 
-    docks image "a cozy coffee shop at dawn, watercolor" -o public/hero.png --size wide
-    docks image "make the sky purple" --edit public/hero.png
+    bowers image "a cozy coffee shop at dawn, watercolor" -o public/hero.png --size wide
+    bowers image "make the sky purple" --edit public/hero.png
 
 Needs OPENAI_API_KEY. Models: gpt-image-2.5-flare (fast, the default) and gpt-image-2.5-sunburst (more detail,
 slower); pick with --detailed, DOCKS_IMAGE_MODEL, or the Images tab. Images are saved in the project

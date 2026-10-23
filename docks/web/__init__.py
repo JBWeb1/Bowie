@@ -1,1 +1,1 @@
-"""Browser front end for Docks."""
+"""Browser front end for Bowers."""

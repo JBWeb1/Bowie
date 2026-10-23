@@ -91,7 +91,7 @@ def load(path: Path | None = None) -> dict:
                 cfg[key].update(value)
             else:
                 cfg[key] = value
-    # Model routes Docks offers by name; a route of the same name in your router.json wins.
+    # Model routes Bowers offers by name; a route of the same name in your router.json wins.
     from .. import models
     opus = models.current("opus")
     for name in ("codex", "chatgpt"):

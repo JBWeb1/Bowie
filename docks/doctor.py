@@ -1,4 +1,4 @@
-"""`docks doctor` / `/doctor`: check the setup and say how to fix what's wrong."""
+"""`bowers doctor` / `/doctor`: check the setup and say how to fix what's wrong."""
 
 import importlib.metadata
 import json
@@ -26,7 +26,7 @@ def check(root: Path, ext=None, mcp=None, agent=None, online: bool = True) -> li
 
     py = sys.version_info
     out.append((OK if py >= (3, 10) else FAIL, "Python", f"{py.major}.{py.minor}.{py.micro}"
-                + ("" if py >= (3, 10) else " (Docks needs 3.10 or newer)")))
+                + ("" if py >= (3, 10) else " (Bowers needs 3.10 or newer)")))
     sdk = _version("anthropic")
     out.append((OK if sdk else FAIL, "Anthropic SDK", sdk or "not installed: pip install anthropic"))
 
@@ -56,7 +56,7 @@ def check(root: Path, ext=None, mcp=None, agent=None, online: bool = True) -> li
     from . import models
     problem = models.check_openai("codex")
     out.append((WARN if problem else OK, "Codex / ChatGPT", problem or
-                f"ready ({models.current('codex')} and {models.current('chatgpt')} through Docks Router)"))
+                f"ready ({models.current('codex')} and {models.current('chatgpt')} through Bowers Router)"))
 
     for tool, why in (("git", "undo, worktrees, GitHub features"), ("node", "JavaScript projects"),
                       ("rg", "faster search (optional)")):
@@ -90,7 +90,7 @@ def check(root: Path, ext=None, mcp=None, agent=None, online: bool = True) -> li
             except json.JSONDecodeError as e:
                 out.append((FAIL, "Settings", f"{path} isn't valid JSON: {e}"))
     for pending in ext.pending_hooks:
-        out.append((WARN, "Needs approval", f"{pending['file']} (start Docks in a terminal, or approve it in the browser)"))
+        out.append((WARN, "Needs approval", f"{pending['file']} (start Bowers in a terminal, or approve it in the browser)"))
     if ext.plugins:
         out.append((OK, "Plugins", ", ".join(ext.plugins)))
 
@@ -106,9 +106,9 @@ def check(root: Path, ext=None, mcp=None, agent=None, online: bool = True) -> li
         probe = home / ".doctor"
         probe.write_text("ok")
         probe.unlink()
-        out.append((OK, "Docks home", str(home)))
+        out.append((OK, "Bowers home", str(home)))
     except OSError as e:
-        out.append((FAIL, "Docks home", f"can't write to {home}: {e}"))
+        out.append((FAIL, "Bowers home", f"can't write to {home}: {e}"))
     return out
 
 
@@ -121,5 +121,5 @@ def report(results: list[tuple[str, str, str]]) -> str:
     lines.append("")
     lines.append(ui.green("Everything needed is working.") if not fails else ui.red(f"{fails} problem(s) to fix."))
     if warns:
-        lines.append(ui.dim(f"{warns} optional thing(s) are off; they make Docks better but aren't required."))
+        lines.append(ui.dim(f"{warns} optional thing(s) are off; they make Bowers better but aren't required."))
     return "\n".join(lines)

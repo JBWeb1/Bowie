@@ -129,7 +129,7 @@ def test_second_request_updates_existing_pr(env):
 def test_pr_comment_pushes_to_pr_branch(env):
     assert run(env, comment_event("@docks fix the typo", pr=True, number=9)) == "done"
     assert git(env.bare, "show", "feat:hello.py") == "print('hello')"
-    assert git(env.bare, "log", "-1", "--format=%s", "feat") == "Docks: fix the typo"
+    assert git(env.bare, "log", "-1", "--format=%s", "feat") == "Bowers: fix the typo"
     assert "Pushed" in env.fake.last_reply()
 
 
@@ -158,5 +158,5 @@ def test_install_writes_workflow(tmp_path):
     path = action.install(tmp_path, "docks==0.1.0")
     text = path.read_text()
     assert path == tmp_path / ".github/workflows/docks.yml"
-    assert 'pip install "docks==0.1.0"' in text and "run: docks action" in text
+    assert 'pip install "docks==0.1.0"' in text and "run: bowers action" in text
     assert "secrets.ANTHROPIC_API_KEY" in text

@@ -1,4 +1,4 @@
-"""`docks web`: run the agent from a browser.
+"""`bowers web`: run the agent from a browser.
 
 Two servers: the app (UI + API) and a static preview of the project on the
 next port. They are different origins, so a page being previewed can never
@@ -130,7 +130,7 @@ class Session:
             self.publish({"type": "idle"})
 
     def _background_done(self) -> None:
-        # A background helper finished while Docks was idle: continue the task with its report.
+        # A background helper finished while Bowers was idle: continue the task with its report.
         if self.agent.has_background_reports():
             self.start_turn("A background helper finished; its report is attached. Continue the task with it.", auto=True)
 
@@ -175,14 +175,14 @@ class Session:
 
     def state(self) -> dict:
         a = self.agent
-        return {"root": str(a.root), "model": a.model, "effort": a.effort, "auto_approve": a.auto_approve,
+        return {"root": str(a.root), "model": a.profile or a.model, "model_label": a.model_label, "effort": a.effort, "auto_approve": a.auto_approve,
                 "mode": a.active_mode, "busy": self.busy, "usage": a.usage, "processes": a.procs.list(),
                 "plan": a.plan, "turns": [bool(t["checkpoint"]) for t in a.turns],
                 "mcp": a.mcp.summary() if a.mcp else [], "extensions": a.ext.summary(),
                 "session": {"id": a.session_id, "name": a.session_name}, "bookmarks": a.bookmarks,
-                "models": [{"id": c["id"], "label": c["label"], "note": c["note"]} for c in models.choices()],
+                "models": [{"id": c["id"], "label": c["label"], "note": c["note"], "group": c["group"]} for c in models.choices()],
                 "output_style": a.output_style,
-                "output_styles": [{"name": "default", "description": "Docks as usual"}] +
+                "output_styles": [{"name": "default", "description": "Bowers as usual"}] +
                                  [{"name": k, "description": v.description} for k, v in a.ext.output_styles.items()],
                 "sandbox": {"on": a.sandbox is not None, "available": sandbox_engine() is not None,
                             "reason": "" if sandbox_engine() else sandbox_reason()},
@@ -345,7 +345,7 @@ def make_handler(session: Session, token: str, preview: dict):
     root = session.agent.root
 
     class Handler(BaseHTTPRequestHandler):
-        server_version = "Docks"
+        server_version = "Bowers"
 
         def log_message(self, *args):
             pass
@@ -491,7 +491,7 @@ def make_handler(session: Session, token: str, preview: dict):
                     return self._json(400, {"error": f"up to {MAX_IMAGES} PNG, JPEG, GIF or WebP images, 5 MB each"})
                 images = [{"media_type": i["media_type"], "data": i["data"]} for i in images]
                 if not session.start_turn(text or "Build what's shown in the image.", images):
-                    return self._json(409, {"error": "Docks is still working; stop it or wait"})
+                    return self._json(409, {"error": "Bowers is still working; stop it or wait"})
                 return self._json(202, {"ok": True})
             if path == "/api/github":
                 action, number = body.get("action"), body.get("number")
@@ -503,7 +503,7 @@ def make_handler(session: Session, token: str, preview: dict):
                 if action not in prompts:
                     return self._json(400, {"error": "unknown action"})
                 if not session.start_turn(prompts[action]()):
-                    return self._json(409, {"error": "Docks is still working; stop it or wait"})
+                    return self._json(409, {"error": "Bowers is still working; stop it or wait"})
                 return self._json(202, {"ok": True})
             if path == "/api/rewind":
                 if session.busy:
@@ -537,7 +537,7 @@ def make_handler(session: Session, token: str, preview: dict):
                 if session.busy:
                     return self._json(409, {"error": "stop the current task first"})
                 if any(p for p in root.iterdir() if p.name != ".docks"):
-                    return self._json(409, {"error": "this project folder isn't empty; run `docks clone` instead"})
+                    return self._json(409, {"error": "this project folder isn't empty; run `bowers clone` instead"})
                 try:
                     github.clone(str(body.get("repo", "")), root)
                 except github.GitHubError as e:
@@ -608,7 +608,7 @@ def make_handler(session: Session, token: str, preview: dict):
                         return self._json(200, {"account": github.whoami()})
                     if path == "/api/github/switch":
                         if session.busy:
-                            return self._json(409, {"error": "Docks is working; wait for it to finish first"})
+                            return self._json(409, {"error": "Bowers is working; wait for it to finish first"})
                         name = github.switch_branch(root, str(body.get("branch", "")))
                         session.publish({"type": "notice", "text": f"Switched to branch {name}"})
                         return self._json(200, {"branch": name})
@@ -642,7 +642,7 @@ def make_handler(session: Session, token: str, preview: dict):
                 return self._json(200, {"path": str(saved), "name": saved.name})
             if path == "/api/compact":
                 if session.busy:
-                    return self._json(409, {"error": "Docks is working; wait for it to finish first"})
+                    return self._json(409, {"error": "Bowers is working; wait for it to finish first"})
                 try:
                     session.agent.compact(str(body.get("focus", "")))
                 except ValueError as e:
@@ -721,7 +721,7 @@ def serve(agent: Agent, host: str = "127.0.0.1", port: int = 8788, open_browser:
         server.daemon_threads = True
         threading.Thread(target=server.serve_forever, daemon=True).start()
     url = f"http://{shown_host}:{port}/#token={token}"
-    print(f"Docks is running in your browser: {url}")
+    print(f"Bowers is running in your browser: {url}")
     print(f"  project: {agent.root}")
     if host not in ("127.0.0.1", "localhost", "::1"):
         print("  warning: reachable from your network. Anyone with the link can run commands on this machine.")

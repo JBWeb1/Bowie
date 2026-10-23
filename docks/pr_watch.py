@@ -1,4 +1,4 @@
-"""Watch pull requests: Docks checks them every couple of minutes and tells you when checks pass or fail, a
+"""Watch pull requests: Bowers checks them every couple of minutes and tells you when checks pass or fail, a
 review comes in, new comments arrive, or the PR is merged or closed. The list is saved in ~/.docks/watched-prs.json.
 """
 

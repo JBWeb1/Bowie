@@ -1,10 +1,10 @@
 """Parallel work in git worktrees: each task gets its own copy of the repo on its own branch, so several
-Docks sessions can work at once without stepping on each other. Merge the ones you like.
+Bowers sessions can work at once without stepping on each other. Merge the ones you like.
 
-    docks -w login-page "add a login page"     # works in .docks/worktrees/login-page on branch docks/login-page
-    docks worktree list
-    docks worktree merge login-page            # into the branch you have checked out
-    docks worktree remove login-page
+    bowers -w login-page "add a login page"     # works in .docks/worktrees/login-page on branch docks/login-page
+    bowers worktree list
+    bowers worktree merge login-page            # into the branch you have checked out
+    bowers worktree remove login-page
 """
 
 import re
@@ -103,23 +103,23 @@ def merge(path: Path, name: str) -> str:
     repo = repo_root(path)
     target = path_of(repo, name)
     if not target.exists():
-        raise WorktreeError(f"no worktree named {name!r} (see `docks worktree list`)")
+        raise WorktreeError(f"no worktree named {name!r} (see `bowers worktree list`)")
     branch = f"docks/{_clean_name(name)}"
     notes = []
     if _git(target, "status", "--porcelain"):
         _git(target, "add", "-A")
-        _git(target, "commit", "-m", f"Work from Docks worktree {name}")
+        _git(target, "commit", "-m", f"Work from Bowers worktree {name}")
         notes.append("committed its unsaved changes")
     if _git(repo, "status", "--porcelain", "--untracked-files=no"):
         raise WorktreeError("your main checkout has uncommitted changes; commit or stash them, then merge")
     base = _git(repo, "rev-parse", "--abbrev-ref", "HEAD")
-    proc = subprocess.run(["git", "merge", "--no-ff", "--no-edit", "-m", f"Merge Docks worktree {name}", branch],
+    proc = subprocess.run(["git", "merge", "--no-ff", "--no-edit", "-m", f"Merge Bowers worktree {name}", branch],
                           cwd=repo, capture_output=True, text=True)
     if proc.returncode != 0:
         conflicts = _git(repo, "diff", "--name-only", "--diff-filter=U", check=False)
         if conflicts:
             raise WorktreeError(f"merging {branch} into {base} has conflicts in: {', '.join(conflicts.split())}. "
-                                "Resolve them (or ask Docks to) and commit, or run `git merge --abort`.")
+                                "Resolve them (or ask Bowers to) and commit, or run `git merge --abort`.")
         raise WorktreeError((proc.stderr or proc.stdout).strip())
     if "Already up to date" in proc.stdout:
         return f"{branch} had nothing new for {base}"

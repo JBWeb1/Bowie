@@ -11,7 +11,7 @@ from .agent import DEFAULT_MODEL, Agent, mode_from_settings
 HELP = """Commands:
   /help              show this help
   /clear             start a new conversation
-  /mode [ask|auto|plan|yolo]  how Docks asks before changes (no argument: show the current mode)
+  /mode [ask|auto|plan|yolo]  how Bowers asks before changes (no argument: show the current mode)
   /plan              plan mode: research and propose a plan before changing anything
   /undo              undo the last task: put files back and forget it (repeat to go further back)
   /resume [name|id]  continue a saved conversation (no argument: list them)
@@ -20,7 +20,7 @@ HELP = """Commands:
   /bookmark          save Claude's last reply;  /bookmarks  list saved replies
   /copy              copy Claude's last reply to the clipboard
   /commands /agents /skills /hooks   show what's installed
-  /model [NAME]      opus, fable, sonnet, haiku, codex or chatgpt
+  /model [NAME]      syntra, aether, solace (Bowers models) or an engine
   /compact [focus]   summarize the conversation to free up room
   /context           what's filling the context window
   /memory            instruction files in use;  # <note> adds a line to one
@@ -75,9 +75,9 @@ def image_block(path: str) -> dict:
 
 def mcp_main(argv) -> int:
     from . import mcp
-    parser = argparse.ArgumentParser(prog="docks mcp", description="Connect Docks to MCP servers.")
+    parser = argparse.ArgumentParser(prog="bowers mcp", description="Connect Bowers to MCP servers.")
     sub = parser.add_subparsers(dest="cmd", required=True)
-    add = sub.add_parser("add", help="add a server: docks mcp add NAME -- COMMAND [ARGS...]  or  --url URL")
+    add = sub.add_parser("add", help="add a server: bowers mcp add NAME -- COMMAND [ARGS...]  or  --url URL")
     add.add_argument("name")
     add.add_argument("--url", help="URL of a remote (streamable HTTP) MCP server")
     add.add_argument("--header", action="append", default=[], help="HTTP header, e.g. 'Authorization: Bearer ${TOKEN}'")
@@ -116,7 +116,7 @@ def mcp_main(argv) -> int:
         return 0
     mgr = start_mcp(root, interactive=sys.stdin.isatty())
     if not mgr or not mgr.servers:
-        print("No MCP servers yet. Add one, e.g.:\n  docks mcp add files -- npx -y @modelcontextprotocol/server-filesystem .")
+        print("No MCP servers yet. Add one, e.g.:\n  bowers mcp add files -- npx -y @modelcontextprotocol/server-filesystem .")
         return 0
     for s in mgr.summary():
         mark = {"running": ui.green("●"), "error": ui.red("●")}.get(s["status"], ui.yellow("●"))
@@ -274,19 +274,24 @@ def slash(agent: Agent, text: str) -> bool:
     elif cmd == "/model":
         from . import models
         if not arg:
+            group = None
             for c in models.choices():
-                mark = ui.green("●") if c["id"] == agent.model else " "
-                print(f"  {mark} {c['alias']:<8} {models.label(c['id']):<34} {ui.dim(c['note'])}")
-            if agent.model not in [c["id"] for c in models.choices()]:
+                if c["group"] != group:
+                    group = c["group"]
+                    print(ui.bold(f"  {group}" if group == "Bowers" else "  Engines (advanced)"))
+                chosen = c["id"] == (agent.profile or agent.model)
+                mark = ui.green("●") if chosen else " "
+                print(f"  {mark} {c['alias']:<8} {c['label']:<34} {ui.dim(c['note'])}")
+            if not agent.profile and agent.model not in [c["id"] for c in models.choices()]:
                 print(f"  {ui.green('●')} {agent.model}")
-            print(ui.dim("switch with /model NAME (or a full model ID); docks models update finds newer ones"))
+            print(ui.dim("switch with /model NAME (or a full model ID); bowers models update finds newer ones"))
             return True
         try:
             model = agent.set_model(arg)
         except ValueError as e:
             ui.error(str(e))
             return True
-        print(ui.dim(f"model: {models.label(model)}"))
+        print(ui.dim(f"model: {agent.model_label}"))
     elif cmd == "/compact":
         print(ui.dim("summarizing the conversation…"))
         try:
@@ -323,7 +328,7 @@ def slash(agent: Agent, text: str) -> bool:
             for name in ["default", *agent.ext.output_styles]:
                 style = agent.ext.output_styles.get(name)
                 mark = ui.green("●") if name == agent.output_style else " "
-                print(f"  {mark} {name:<14} {ui.dim(style.description if style else 'Docks as usual')}")
+                print(f"  {mark} {name:<14} {ui.dim(style.description if style else 'Bowers as usual')}")
             print(ui.dim("choose one with /output-style NAME"))
             return True
         try:
@@ -383,7 +388,7 @@ def slash(agent: Agent, text: str) -> bool:
 def approve_project_hooks(agent: Agent) -> None:
     import json as _json
     for pending in list(agent.ext.pending_hooks):
-        what = ("settings that let Docks act without asking" if pending["name"].startswith("settings:")
+        what = ("settings that let Bowers act without asking" if pending["name"].startswith("settings:")
                 else "hooks that run commands automatically")
         print(ui.yellow(f"This project has {what} in {pending['file']}:"))
         print(ui.dim(_json.dumps(pending["spec"], indent=2)[:1200]))
@@ -408,7 +413,7 @@ def repl(agent: Agent) -> None:
             terminal.notify(text)
     Watcher(pr_update).start()
     approve_project_hooks(agent)
-    print(ui.bold(f"Docks {__version__}") + ui.dim(f"  {agent.model} · {agent.root} · mode: {agent.active_mode}"))
+    print(ui.bold(f"Bowers {__version__}") + ui.dim(f"  {agent.model_label} · {agent.root} · mode: {agent.active_mode}"))
     print(ui.dim("Tell me what to build. /help for commands.\n"))
     try:
         while True:
@@ -477,7 +482,7 @@ def print_context(agent: Agent) -> None:
 
 def plugin_main(argv) -> int:
     from . import plugins
-    parser = argparse.ArgumentParser(prog="docks plugin", description="Install and manage plugins "
+    parser = argparse.ArgumentParser(prog="bowers plugin", description="Install and manage plugins "
                                      "(Claude Code plugin format: commands, agents, skills, hooks, MCP servers).")
     sub = parser.add_subparsers(dest="cmd", required=True)
     inst = sub.add_parser("install", help="install from owner/repo, a git URL or a local folder")
@@ -500,7 +505,7 @@ def plugin_main(argv) -> int:
     if args.cmd == "list":
         items = plugins.installed_plugins()
         if not items:
-            print(ui.dim("no plugins yet; try: docks plugin install anthropics/claude-code --plugin commit-commands"))
+            print(ui.dim("no plugins yet; try: bowers plugin install anthropics/claude-code --plugin commit-commands"))
         for p_ in items:
             state = ui.green("enabled") if p_["enabled"] else ui.yellow("disabled")
             print(f"{ui.bold(p_['name'])} {ui.dim(p_['version'])} [{state}]  {ui.dim(p_['description'][:90])}")
@@ -515,7 +520,7 @@ def plugin_main(argv) -> int:
 
 
 def sessions_main(argv) -> int:
-    parser = argparse.ArgumentParser(prog="docks sessions", description="List saved conversations.")
+    parser = argparse.ArgumentParser(prog="bowers sessions", description="List saved conversations.")
     parser.add_argument("-C", "--dir", default=".")
     parser.add_argument("--all", action="store_true", help="every project, not just this one")
     args = parser.parse_args(argv)
@@ -562,7 +567,7 @@ def use_worktree(root: Path, name: str | None) -> Path:
     except WorktreeError as e:
         ui.error(str(e))
         raise SystemExit(1)
-    print(ui.dim(f"worktree: {path}  (branch docks/{path.name}; merge it later with: docks worktree merge {path.name})"))
+    print(ui.dim(f"worktree: {path}  (branch docks/{path.name}; merge it later with: bowers worktree merge {path.name})"))
     return path
 
 
@@ -583,7 +588,7 @@ def github_main(argv) -> int:
     import getpass
     import time
     from . import github
-    parser = argparse.ArgumentParser(prog="docks github", description="Your GitHub connection.")
+    parser = argparse.ArgumentParser(prog="bowers github", description="Your GitHub connection.")
     parser.add_argument("-C", "--dir", default=".")
     sub = parser.add_subparsers(dest="cmd", required=True)
     login = sub.add_parser("login", help="connect your GitHub account")
@@ -609,7 +614,7 @@ def github_main(argv) -> int:
                 import shutil
                 import subprocess
                 if not shutil.which("gh"):
-                    ui.error("the GitHub CLI (gh) isn't installed; use docks github login (or --token)")
+                    ui.error("the GitHub CLI (gh) isn't installed; use bowers github login (or --token)")
                     return 1
                 return subprocess.call(["gh", "auth", "login", "--scopes", "repo,read:org,workflow"])
             if args.token or not github.device_client_id():
@@ -627,17 +632,17 @@ def github_main(argv) -> int:
                     time.sleep(flow["interval"])
                     info = github.poll_device_login(flow)
                 if info is None:
-                    ui.error("the code expired; run docks github login again")
+                    ui.error("the code expired; run bowers github login again")
                     return 1
             print(ui.green(f"connected as {info['login']}") + ui.dim(f"  (saved in {github.account_path()}, only you can read it)"))
         elif args.cmd == "logout":
-            print("signed out" if github.logout() else ui.dim("no account was saved by Docks"))
+            print("signed out" if github.logout() else ui.dim("no account was saved by Bowers"))
             if github.token_source() in ("environment", "gh"):
                 print(ui.dim(f"(a token from {github.token_source()} is still in use)"))
         elif args.cmd == "status":
             me = github.whoami()
             print(ui.green(f"connected as {me['login']}") + ui.dim(f"  via {me['source']}; scopes: {me['scopes'] or 'fine-grained'}")
-                  if me else ui.yellow("not connected: run docks github login"))
+                  if me else ui.yellow("not connected: run bowers github login"))
         elif args.cmd == "repos":
             for r in github.my_repos(args.query):
                 print(f"  {ui.bold(r['repo']):<46} {ui.dim(('private · ' if r['private'] else '') + (r['language'] or ''))}  {r['description'][:70]}")
@@ -653,7 +658,7 @@ def github_main(argv) -> int:
                     last = i.get("last") or {}
                     print(f"  {i['repo']}#{i['number']}  {last.get('title', '')[:60]}  {ui.dim(last.get('checks', ''))}")
                 print(ui.dim("not watching any pull requests" if not items else
-                             "Docks reports changes while a session is open (terminal or browser)"))
+                             "Bowers reports changes while a session is open (terminal or browser)"))
                 return 0
             repo, _, number = args.pr.rpartition("#")
             repo = repo or github.repo_of(root)
@@ -683,7 +688,7 @@ def github_main(argv) -> int:
 
 def context_main(argv) -> int:
     from . import context_repos, github
-    parser = argparse.ArgumentParser(prog="docks context", description="Other repositories Docks can read while it works here.")
+    parser = argparse.ArgumentParser(prog="bowers context", description="Other repositories Bowers can read while it works here.")
     parser.add_argument("-C", "--dir", default=".")
     sub = parser.add_subparsers(dest="cmd", required=True)
     a = sub.add_parser("add", help="add a GitHub repository (owner/repo)")
@@ -707,7 +712,7 @@ def context_main(argv) -> int:
         else:
             found = context_repos.items(root)
             if not found:
-                print(ui.dim("no reference repositories yet: docks context add owner/repo"))
+                print(ui.dim("no reference repositories yet: bowers context add owner/repo"))
             for i in found:
                 print(f"  {ui.bold(i['repo'])}{' @' + i['branch'] if i['branch'] else ''}  {ui.dim(i['path'])}")
     except github.GitHubError as e:
@@ -718,7 +723,7 @@ def context_main(argv) -> int:
 
 def image_main(argv) -> int:
     from . import images
-    parser = argparse.ArgumentParser(prog="docks image", description="Make an image with OpenAI's image model.")
+    parser = argparse.ArgumentParser(prog="bowers image", description="Make an image with OpenAI's image model.")
     parser.add_argument("prompt", nargs="+")
     parser.add_argument("-C", "--dir", default=".")
     parser.add_argument("-o", "--out", default="", help="where to save it (default assets/generated/…)")
@@ -744,7 +749,7 @@ def image_main(argv) -> int:
 
 def models_main(argv) -> int:
     from . import models
-    parser = argparse.ArgumentParser(prog="docks models", description="The models Docks uses for each short name.")
+    parser = argparse.ArgumentParser(prog="bowers models", description="The models Bowers uses for each short name.")
     parser.add_argument("cmd", nargs="?", choices=["list", "update"], default="list",
                         help="list (default), or update: switch each name to the newest model you have access to")
     args = parser.parse_args(argv)
@@ -774,7 +779,7 @@ def start_model_updates(agent, notify) -> None:
 
 def worktree_main(argv) -> int:
     from .worktrees import WorktreeError, create, list_worktrees, merge, remove
-    parser = argparse.ArgumentParser(prog="docks worktree", description="Parallel tasks in separate git worktrees.")
+    parser = argparse.ArgumentParser(prog="bowers worktree", description="Parallel tasks in separate git worktrees.")
     parser.add_argument("-C", "--dir", default=".")
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("list", help="worktrees and what's in them")
@@ -790,7 +795,7 @@ def worktree_main(argv) -> int:
         if args.cmd == "list":
             trees = list_worktrees(root)
             if not trees:
-                print(ui.dim("no worktrees yet; start one with: docks -w NAME"))
+                print(ui.dim("no worktrees yet; start one with: bowers -w NAME"))
             for t in trees:
                 print(f"{ui.bold(t['name']):<28} {ui.dim(t['branch'])}  "
                       f"{t['commits_ahead']} commit(s) ahead · {t['changed_files']} uncommitted file(s)")
@@ -810,11 +815,12 @@ def worktree_main(argv) -> int:
 
 
 def web_main(argv) -> int:
-    parser = argparse.ArgumentParser(prog="docks web", description="Use Docks from your browser.")
+    parser = argparse.ArgumentParser(prog="bowers web", description="Use Bowers from your browser.")
     parser.add_argument("-C", "--dir", default=".", help="project directory to work in")
-    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", "opus"),
-                        help="opus (default), fable, sonnet, haiku, codex, chatgpt, or a model ID")
-    parser.add_argument("-e", "--effort", default="high", choices=["low", "medium", "high", "xhigh", "max"])
+    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", "syntra"),
+                        help="syntra (default), aether, solace; or an engine: opus, fable, sonnet, haiku, codex, chatgpt, a model ID")
+    parser.add_argument("-e", "--effort", default=None, choices=["low", "medium", "high", "xhigh", "max"],
+                        help="how hard to think (default: the model's own setting)")
     parser.add_argument("-y", "--yolo", action="store_true", help="run tools without asking for approval")
     parser.add_argument("--host", default="127.0.0.1", help="interface to listen on (default: this machine only)")
     parser.add_argument("--port", type=int, default=8788, help="app port; the preview uses the next one")
@@ -840,10 +846,10 @@ def web_main(argv) -> int:
 
 def install_github_main(argv) -> int:
     from .action import DEFAULT_SOURCE, install
-    parser = argparse.ArgumentParser(prog="docks install-github",
+    parser = argparse.ArgumentParser(prog="bowers install-github",
                                      description="Add the @docks bot to a GitHub repo (as a GitHub Actions workflow).")
     parser.add_argument("-C", "--dir", default=".", help="the repo to set up")
-    parser.add_argument("--source", default=DEFAULT_SOURCE, help="where the workflow installs Docks from")
+    parser.add_argument("--source", default=DEFAULT_SOURCE, help="where the workflow installs Bowers from")
     args = parser.parse_args(argv)
     path = install(Path(args.dir).expanduser().resolve(), args.source)
     print(ui.green(f"Wrote {path}"))
@@ -855,7 +861,7 @@ Next steps:
        Settings > Actions > General > Workflow permissions >
        check "Allow GitHub Actions to create and approve pull requests"
   3. Commit and push .github/workflows/docks.yml
-  4. Mention @docks in an issue or pull request, or label an issue "docks".
+  4. Mention @bowers in an issue or pull request, or label an issue "bowers".
 
 Optional: set the repo variable DOCKS_AUTO_REVIEW=true to review every new pull request,
 and DOCKS_MODEL to pick the model.""")
@@ -864,7 +870,7 @@ and DOCKS_MODEL to pick the model.""")
 
 def clone_main(argv) -> int:
     from . import github
-    parser = argparse.ArgumentParser(prog="docks clone", description="Clone a GitHub repo and start Docks in it.")
+    parser = argparse.ArgumentParser(prog="bowers clone", description="Clone a GitHub repo and start Bowers in it.")
     parser.add_argument("repo", help="owner/repo or a GitHub URL")
     parser.add_argument("dir", nargs="?", help="where to clone (default: the repo name)")
     parser.add_argument("--web", action="store_true", help="open it in the browser UI")
@@ -888,9 +894,10 @@ def github_task_main(argv) -> int:
     if argv[0] != "pr":
         parser.add_argument("number", type=int, help="issue number" if argv[0] == "fix" else "pull request number")
     parser.add_argument("-C", "--dir", default=".")
-    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", "opus"),
-                        help="opus (default), fable, sonnet, haiku, codex, chatgpt, or a model ID")
-    parser.add_argument("-e", "--effort", default="high", choices=["low", "medium", "high", "xhigh", "max"])
+    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", "syntra"),
+                        help="syntra (default), aether, solace; or an engine: opus, fable, sonnet, haiku, codex, chatgpt, a model ID")
+    parser.add_argument("-e", "--effort", default=None, choices=["low", "medium", "high", "xhigh", "max"],
+                        help="how hard to think (default: the model's own setting)")
     parser.add_argument("-y", "--yolo", action="store_true", help="run tools without asking for approval")
     args = parser.parse_args(argv[1:])
     root = Path(args.dir).expanduser().resolve()
@@ -944,12 +951,13 @@ def main(argv=None) -> int:
         return clone_main(argv[1:])
     if argv[:1] in (["fix"], ["review"], ["pr"]):
         return github_task_main(argv)
-    parser = argparse.ArgumentParser(prog="docks", description="An AI coding agent that builds anything.")
+    parser = argparse.ArgumentParser(prog="bowers", description="Bowers, an AI agent that builds anything.")
     parser.add_argument("prompt", nargs="*", help="run this task once and exit (omit for interactive mode)")
     parser.add_argument("-C", "--dir", default=".", help="project directory to work in")
-    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", "opus"),
-                        help="opus (default), fable, sonnet, haiku, codex, chatgpt, or a model ID")
-    parser.add_argument("-e", "--effort", default="high", choices=["low", "medium", "high", "xhigh", "max"])
+    parser.add_argument("-m", "--model", default=os.environ.get("DOCKS_MODEL", "syntra"),
+                        help="syntra (default), aether, solace; or an engine: opus, fable, sonnet, haiku, codex, chatgpt, a model ID")
+    parser.add_argument("-e", "--effort", default=None, choices=["low", "medium", "high", "xhigh", "max"],
+                        help="how hard to think (default: the model's own setting)")
     parser.add_argument("-y", "--yolo", action="store_true", help="run tools without asking for approval")
     parser.add_argument("-i", "--image", action="append", default=[],
                         help="attach an image (screenshot, mockup, design) to the task; repeatable")
@@ -1002,7 +1010,7 @@ def main(argv=None) -> int:
             return 1
     if args.resume == "" and not args.cont:
         _print_sessions(agent)
-        print(ui.dim("resume one with: docks --resume <name or id>"))
+        print(ui.dim("resume one with: bowers --resume <name or id>"))
         return 0
     if args.resume or args.cont:
         recent = sessions.list_sessions(root, limit=1)
@@ -1020,7 +1028,7 @@ def main(argv=None) -> int:
         if piped:
             text = f"{text}\n\n<stdin>\n{piped}\n</stdin>" if text else piped
         if not text:
-            ui.error("give a task: docks -p \"...\" (or pipe one in)")
+            ui.error("give a task: bowers -p \"...\" (or pipe one in)")
             return 2
         prompt = [*map(image_block, args.image), {"type": "text", "text": text}] if args.image else text
         return script.run(agent, prompt, args.output_format, out=script_out)

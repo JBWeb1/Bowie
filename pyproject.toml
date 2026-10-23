@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "docks"
 version = "0.1.0"
-description = "An AI coding agent for your terminal, powered by Claude."
+description = "Bowers: an AI agent that thinks, creates and builds with you."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = ["anthropic>=1.15"]
@@ -14,11 +14,12 @@ dependencies = ["anthropic>=1.15"]
 browser = ["playwright>=1.40"]  # the browser tool (then: playwright install chromium)
 
 [project.scripts]
-docks = "docks.cli:main"
+bowers = "docks.cli:main"
+docks = "docks.cli:main"  # the earlier name keeps working
 
 [tool.setuptools.packages.find]
 include = ["docks*"]
 
 [tool.setuptools.package-data]
-"docks.web" = ["*.html"]
+"docks.web" = ["*.html", "assets/*"]
 "docks" = ["builtin/commands/*.md", "builtin/output-styles/*.md"]

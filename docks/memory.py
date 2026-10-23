@@ -1,4 +1,4 @@
-"""Lessons Docks saves for itself, loaded into every future session."""
+"""Lessons Bowers saves for itself, loaded into every future session."""
 
 import os
 from datetime import date

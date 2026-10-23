@@ -6,7 +6,7 @@ and its first line of output is shown:
 
     {"statusLine": {"type": "command", "command": "~/.docks/statusline.sh"}}     ("type": "none" hides it)
 
-Notifications: when Docks needs you (a permission, a question, a plan) or finishes a task that took a while,
+Notifications: when Bowers needs you (a permission, a question, a plan) or finishes a task that took a while,
 the terminal rings its bell and sends a desktop notification (iTerm2, kitty, WezTerm, Ghostty, Windows Terminal
 and others show it). Turn off with {"notifications": false}.
 
@@ -61,7 +61,7 @@ def status_line(agent) -> str:
             return (proc.stdout.strip().splitlines() or [""])[0]
         except (OSError, subprocess.SubprocessError):
             return ui.dim("(status line command failed)")
-    parts = [agent.model.removeprefix("claude-")]
+    parts = [agent.model_label]
     branch = _branch(agent.root)
     if branch:
         parts.append(f"⎇ {branch}")
@@ -80,7 +80,7 @@ def status_line(agent) -> str:
 
 # ---------------------------------------------------------------- notifications
 
-def notify(message: str, title: str = "Docks", out=None) -> None:
+def notify(message: str, title: str = "Bowers", out=None) -> None:
     out = out or sys.stdout
     if not out.isatty():
         return

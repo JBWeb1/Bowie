@@ -42,7 +42,7 @@ def test_requires_token(tmp_path):
         raise AssertionError("expected 401")
     except urllib.error.HTTPError as e:
         assert e.code == 401
-    assert b"Docks" in urllib.request.urlopen(url + "/").read()  # the page itself holds no secrets
+    assert b"Bowers" in urllib.request.urlopen(url + "/").read()  # the page itself holds no secrets
 
 
 def test_chat_with_approval_over_http(tmp_path):

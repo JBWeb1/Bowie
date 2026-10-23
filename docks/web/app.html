@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Docks</title>
+<title>Bowers</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%235b5bd6'/%3E%3Cpath d='m12 11-5 5 5 5M20 11l5 5-5 5M17.5 8.5l-3 15' stroke='white' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
 :root {
@@ -483,10 +483,10 @@ svg { flex: none; }
 </style>
 </head>
 <body>
-<div id="gate" class="hidden"><div><div class="logo-mark" style="margin:0 auto 14px;width:44px;height:44px"></div><h2 style="margin:0 0 6px">Open Docks from your terminal</h2><p style="color:var(--muted);margin:0">Use the link printed when you ran <code>docks web</code>. It contains a private key for this session.</p></div></div>
+<div id="gate" class="hidden"><div><div class="logo-mark" style="margin:0 auto 14px;width:44px;height:44px"></div><h2 style="margin:0 0 6px">Open Bowers from your terminal</h2><p style="color:var(--muted);margin:0">Use the link printed when you ran <code>bowers web</code>. It contains a private key for this session.</p></div></div>
 
 <header class="top">
-  <div class="logo"><div class="logo-mark" data-icon="logo"></div><span class="hide-mobile">Docks</span></div>
+  <div class="logo"><div class="logo-mark" data-icon="logo"></div><span class="hide-mobile">Bowers</span></div>
   <span class="crumb hide-mobile">/</span>
   <div class="project"><span id="project-name"></span></div>
   <span class="branch" id="branch-chip"></span>
@@ -510,7 +510,7 @@ svg { flex: none; }
     <select class="input" id="style-select"></select>
   </label>
   <label class="switch-row" id="sandbox-row">Sandbox commands (writes only inside the project)<span class="switch"><input type="checkbox" id="sandbox"><i></i></span></label>
-  <label class="switch-row">Notify me when Docks needs me<span class="switch"><input type="checkbox" id="notify"><i></i></span></label>
+  <label class="switch-row">Notify me when Bowers needs me<span class="switch"><input type="checkbox" id="notify"><i></i></span></label>
   <div><div style="font-size:12.5px;font-weight:500;color:var(--muted);margin-bottom:6px">Permission rules</div><div class="ext-info" id="perm-info"></div></div>
   <label class="switch-row">Animated background<span class="switch"><input type="checkbox" id="anim"><i></i></span></label>
   <div><div style="font-size:12.5px;font-weight:500;color:var(--muted);margin-bottom:6px">MCP servers</div><div class="mcp-list" id="mcp-list"></div></div>
@@ -541,7 +541,7 @@ svg { flex: none; }
           <button class="chip" id="attach" title="Attach a screenshot, mockup or design"><span data-icon="image"></span><span class="hide-mobile">Image</span></button>
           <input type="file" id="file-input" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
           <button class="chip" id="gh-chip" title="GitHub actions"><span data-icon="github"></span>GitHub</button>
-          <span class="mode-wrap"><button class="chip" id="mode-chip" title="How Docks asks before changes"><span id="mode-icon"></span><span id="mode-text">Ask first</span></button><div class="mode-menu hidden" id="mode-menu" role="menu"></div></span>
+          <span class="mode-wrap"><button class="chip" id="mode-chip" title="How Bowers asks before changes"><span id="mode-icon"></span><span id="mode-text">Ask first</span></button><div class="mode-menu hidden" id="mode-menu" role="menu"></div></span>
           <span class="spacer"></span>
           <button class="send" id="send" aria-label="Send"><span data-icon="arrow-up"></span></button>
         </div>
@@ -569,7 +569,7 @@ svg { flex: none; }
       <div class="apps" id="apps"></div>
       <div class="stage" id="stage">
         <iframe id="preview" title="Preview" class="hidden"></iframe>
-        <div class="empty-state" id="preview-empty"><div class="ic" data-icon="eye"></div><b>Nothing to preview yet</b>When Docks builds a web page, it shows up here and refreshes as it changes.</div>
+        <div class="empty-state" id="preview-empty"><div class="ic" data-icon="eye"></div><b>Nothing to preview yet</b>When Bowers builds a web page, it shows up here and refreshes as it changes.</div>
       </div>
     </div>
 
@@ -825,7 +825,7 @@ const QUICK = [
 ];
 function welcome() {
   thread.innerHTML = '';
-  const w = h('div', 'welcome', `<div class="hero"><div class="mark">${icon('logo', 26)}</div><h1>What do you want to <span class="grad">build</span>?</h1><p>Describe it, paste a screenshot, or start from a template. Docks writes the code, runs it, and fixes what breaks.</p></div><div class="section-label">Start from a template</div><div class="ideas"></div><div class="section-label">Or work on this project</div><div class="quick"></div>`);
+  const w = h('div', 'welcome', `<div class="hero"><div class="mark">${icon('logo', 26)}</div><h1>What do you want to <span class="grad">build</span>?</h1><p>Describe it, paste a screenshot, or start from a template. Bowers writes the code, runs it, and fixes what breaks.</p></div><div class="section-label">Start from a template</div><div class="ideas"></div><div class="section-label">Or work on this project</div><div class="quick"></div>`);
   for (const [ic, title, stack, prompt] of TEMPLATES) {
     const b = h('button', 'idea', `<span class="ic">${icon(ic, 18)}</span><span><b>${esc(title)}</b><span class="stack">${esc(stack)}</span></span>`);
     b.onclick = () => { $('input').value = prompt; autosize(); $('input').focus(); };
@@ -950,11 +950,11 @@ function renderModeMenu() {
 function renderExt(x) {
   const box = $('ext-info'); box.innerHTML = '';
   box.appendChild(h('div', null, `${x.commands.length} commands · ${x.agents.length} helper types · ${x.skills.length} skills · ${x.hooks} hooks` +
-    (x.plugins.length ? `<br>Plugins: ${esc(x.plugins.join(', '))}` : '<br>Add plugins with <code>docks plugin install owner/repo</code>')));
+    (x.plugins.length ? `<br>Plugins: ${esc(x.plugins.join(', '))}` : '<br>Add plugins with <code>bowers plugin install owner/repo</code>')));
   for (const file of x.pending_hooks || []) {
     const row = h('div', 'mcp-row', `<span class="d needs-approval"></span><small>Project hooks or settings in ${esc(file.split('/').slice(-2).join('/'))} need approval</small>`);
     const b = h('button', 'btn', 'Approve');
-    b.onclick = async e => { e.stopPropagation(); if (!confirm('This project wants to run hooks or let Docks act without asking (allow rules, a status line). Approve?\n\n' + file)) return; const r = await api('/api/hooks/approve', { file }); if (r.ok) renderExt(await r.json()); };
+    b.onclick = async e => { e.stopPropagation(); if (!confirm('This project wants to run hooks or let Bowers act without asking (allow rules, a status line). Approve?\n\n' + file)) return; const r = await api('/api/hooks/approve', { file }); if (r.ok) renderExt(await r.json()); };
     row.appendChild(b); box.appendChild(row);
   }
   commands = x.commands;
@@ -1063,11 +1063,11 @@ function handle(ev) {
       break;
     }
     case 'approval': {
-      pending++; updateStatus(); alertUser('Docks needs your OK to continue');
+      pending++; updateStatus(); alertUser('Bowers needs your OK to continue');
       const a = ev.args || {}; const ask = ASK[ev.name];
       const mm = String(ev.name).match(/^mcp__(.+?)__(.+)$/);
       const what = typeof ask === 'function' ? ask(a) : (ask || (mm ? `use ${mm[2]} from the ${mm[1]} MCP server` : `use ${ev.name}`));
-      const box = h('div', 'approval', `<div class="ap-head">${icon('shield')}<span>Docks wants to ${esc(what)}</span></div><div class="ap-body"></div><div class="ap-actions">
+      const box = h('div', 'approval', `<div class="ap-head">${icon('shield')}<span>Bowers wants to ${esc(what)}</span></div><div class="ap-body"></div><div class="ap-actions">
         <button class="btn primary" data-a="yes">Allow</button><button class="btn" data-a="always">Always allow this</button><button class="btn danger" data-a="no">Deny</button></div>`);
       const body = box.querySelector('.ap-body');
       if (ev.name === 'edit_file') body.appendChild(diffView(a.old_string, a.new_string));
@@ -1092,9 +1092,9 @@ function handle(ev) {
       break;
     }
     case 'question': {
-      alertUser('Docks has a question for you');
+      alertUser('Bowers has a question for you');
       pending++; updateStatus();
-      const card = h('div', 'qcard', `<div class="q-head">${icon('question')}<span>Docks has ${ev.questions.length > 1 ? 'some questions' : 'a question'}</span></div>`);
+      const card = h('div', 'qcard', `<div class="q-head">${icon('question')}<span>Bowers has ${ev.questions.length > 1 ? 'some questions' : 'a question'}</span></div>`);
       card.id = 'q-' + ev.id;
       const picks = ev.questions.map(() => new Set()), others = [];
       ev.questions.forEach((q, i) => {
@@ -1130,9 +1130,9 @@ function handle(ev) {
       card.replaceWith(done); break;
     }
     case 'plan_review': {
-      alertUser('Docks has a plan for you to review');
+      alertUser('Bowers has a plan for you to review');
       pending++; updateStatus();
-      const card = h('div', 'plancard', `<div class="q-head">${icon('book')}<span>Docks has a plan. Review it before anything changes</span></div><div class="prose"></div><textarea placeholder="What should change? (only needed for Request changes)"></textarea><div class="q-actions"><button class="btn primary" data-d="approve">Approve</button><button class="btn" data-d="approve_auto">Approve and auto mode</button><button class="btn" data-d="reject">Request changes</button></div>`);
+      const card = h('div', 'plancard', `<div class="q-head">${icon('book')}<span>Bowers has a plan. Review it before anything changes</span></div><div class="prose"></div><textarea placeholder="What should change? (only needed for Request changes)"></textarea><div class="q-actions"><button class="btn primary" data-d="approve">Approve</button><button class="btn" data-d="approve_auto">Approve and auto mode</button><button class="btn" data-d="reject">Request changes</button></div>`);
       card.id = 'pr-' + ev.id; card.querySelector('.prose').innerHTML = md(ev.plan); scheduleMath(card.querySelector('.prose'));
       card.querySelectorAll('[data-d]').forEach(b => b.onclick = () => {
         const feedback = card.querySelector('textarea').value.trim();
@@ -1161,7 +1161,7 @@ function handle(ev) {
     case 'notice': add(h('div', 'notice', icon('sparkle') + esc(ev.text))); refreshAll(); break;
     case 'usage': showUsage(ev.usage); break;
     case 'process': onProcess(ev); break;
-    case 'idle': if (state.busy) alertUser('Docks finished'); endGroup(); pending = 0; setBusy(false); refreshAll(); break;
+    case 'idle': if (state.busy) alertUser('Bowers finished'); endGroup(); pending = 0; setBusy(false); refreshAll(); break;
   }
 }
 
@@ -1244,7 +1244,7 @@ comp.addEventListener('drop', e => addFiles(e.dataTransfer.files));
 
 async function deploy() {
   const r = await api('/api/github', { action: 'deploy' });
-  if (r.ok) { mobile('chat'); toast('Docks is deploying your project'); } else toast((await r.json()).error);
+  if (r.ok) { mobile('chat'); toast('Bowers is deploying your project'); } else toast((await r.json()).error);
 }
 $('deploy').onclick = deploy;
 $('send').onclick = () => send();
@@ -1263,7 +1263,7 @@ let commands = [], palItems = [], palIndex = 0, palMatch = null;
 const UI_COMMANDS = [
   { name: 'clear', description: 'Start a new conversation', ui: () => newChat() },
   { name: 'plan', description: 'Switch to plan mode', ui: () => setMode('plan') },
-  { name: 'mode', description: 'Choose how Docks asks before changes', ui: () => { renderModeMenu(); $('mode-menu').classList.remove('hidden'); fitModeMenu(); } },
+  { name: 'mode', description: 'Choose how Bowers asks before changes', ui: () => { renderModeMenu(); $('mode-menu').classList.remove('hidden'); fitModeMenu(); } },
   { name: 'resume', description: 'Open saved conversations', ui: () => openDrawer('sessions') },
   { name: 'bookmarks', description: 'Show bookmarked replies', ui: () => openDrawer('bookmarks') },
   { name: 'context', description: "What's filling the context window", ui: () => showContext() },
@@ -1399,7 +1399,7 @@ $('notify').onchange = async () => {
 };
 function alertUser(text) {  // only when the tab is in the background
   if (!document.hidden || store.get('docks-notify', '') !== '1' || !('Notification' in window) || Notification.permission !== 'granted') return;
-  try { const n = new Notification('Docks', { body: text, tag: 'docks' }); n.onclick = () => { window.focus(); n.close(); }; } catch (e) {}
+  try { const n = new Notification('Bowers', { body: text, tag: 'docks' }); n.onclick = () => { window.focus(); n.close(); }; } catch (e) {}
 }
 function fitModeMenu() {  // keep the menu on screen when the chip sits far right (phones)
   const menu = $('mode-menu'); menu.style.left = '0px';
@@ -1456,7 +1456,7 @@ document.querySelectorAll('[data-dtab]').forEach(t => t.onclick = () => openDraw
 document.addEventListener('keydown', e => { if (e.key === 'Escape') $('drawer').classList.add('hidden'); });
 function renderMcp(list) {
   const box = $('mcp-list'); box.innerHTML = '';
-  if (!list.length) { box.innerHTML = '<div class="mcp-row"><small>None yet. Add one with <code>docks mcp add</code>.</small></div>'; return; }
+  if (!list.length) { box.innerHTML = '<div class="mcp-row"><small>None yet. Add one with <code>bowers mcp add</code>.</small></div>'; return; }
   for (const m of list) {
     const label = { running: `${m.tools.length} tools`, error: 'failed', 'needs-approval': 'needs approval', stopped: 'stopped' }[m.status];
     const row = h('div', 'mcp-row', `<span class="d ${m.status}"></span><span></span><small>${esc(label)}</small>`);
@@ -1530,7 +1530,7 @@ async function openFile(path, silent) {
   if (!silent) { showTab('code'); mobile('code'); }
 }
 
-// Preview shows either a project file (static) or a running app (dev server started by Docks).
+// Preview shows either a project file (static) or a running app (dev server started by Bowers).
 let processes = {}, appUrl = null;
 function previewUrl() {
   if (appUrl) return appUrl.replace('localhost', location.hostname);
@@ -1613,8 +1613,8 @@ function renderGallery(pending = 0) {
   for (let i = 0; i < pending; i++) grid.appendChild(h('div', 'img-card shimmer', `<div class="img-wait"><span data-icon="sparkle"></span>Creating…</div>`));
   if (!pending && !IMG.images.length) {
     grid.appendChild(h('div', 'img-empty', IMG.available === false
-      ? `<b>Connect OpenAI to make images</b><p>Add <code>OPENAI_API_KEY</code> to your environment, then restart Docks.</p>`
-      : `<b>Your images show up here</b><p>Describe one above, or ask Docks in the chat: “make a hero image for the landing page”.</p>`));
+      ? `<b>Connect OpenAI to make images</b><p>Add <code>OPENAI_API_KEY</code> to your environment, then restart Bowers.</p>`
+      : `<b>Your images show up here</b><p>Describe one above, or ask Bowers in the chat: “make a hero image for the landing page”.</p>`));
   }
   for (const im of IMG.images) {
     const card = h('figure', 'img-card', `<img loading="lazy" alt=""><figcaption></figcaption><div class="img-tools"></div>`);
@@ -1672,7 +1672,7 @@ async function accountCard(g) {
     if (a.account.source !== 'docks') c.querySelector('button').remove();
     return c;
   }
-  c.innerHTML = `<h3>${icon('github')} Connect GitHub</h3><p>Give Docks access to your repositories: browse branches, track pull requests, fix issues and review code.</p>
+  c.innerHTML = `<h3>${icon('github')} Connect GitHub</h3><p>Give Bowers access to your repositories: browse branches, track pull requests, fix issues and review code.</p>
     <div class="row gh-device"><button class="btn primary">Sign in with GitHub</button></div>
     <p class="muted" style="margin:10px 0 6px">Or paste a personal access token (<a target="_blank" rel="noopener" href="${esc((a.web || 'https://github.com') + '/settings/tokens')}">create one</a>: scopes repo, read:org, workflow). It stays on this computer.</p>
     <div class="row"><input class="input" type="password" autocomplete="off" placeholder="ghp_… or github_pat_…"><button class="btn">Connect</button></div>`;
@@ -1726,7 +1726,7 @@ function prsCard(g) {
       w.title = 'Get told when checks finish, reviews come in, or it is merged';
       w.onclick = async () => { const on = !watched.has(key); const rr = await api('/api/github/watch', { repo: p.repo, number: p.number, on }); if (rr.ok) { on ? watched.add(key) : watched.delete(key); w.textContent = on ? 'Watching' : 'Watch'; toast(on ? `Watching ${key}` : `Stopped watching ${key}`); } };
       el.appendChild(w);
-      if (p.repo === g.repo) { const rv = h('button', 'btn ghost', 'Review'); rv.onclick = async () => { const rr = await api('/api/github', { action: 'review', number: p.number }); if (rr.ok) { mobile('chat'); toast('Docks is reviewing it'); } }; el.appendChild(rv); }
+      if (p.repo === g.repo) { const rv = h('button', 'btn ghost', 'Review'); rv.onclick = async () => { const rr = await api('/api/github', { action: 'review', number: p.number }); if (rr.ok) { mobile('chat'); toast('Bowers is reviewing it'); } }; el.appendChild(rv); }
       return el;
     };
     const section = (title, items, showRepo) => { c.appendChild(h('div', 'gh-sub', esc(title))); if (!items.length) c.appendChild(h('div', 'muted', 'None')); items.forEach(p => c.appendChild(row(p, showRepo))); };
@@ -1746,10 +1746,10 @@ function reposCard() {
     for (const repo of d.repos.slice(0, 40)) {
       const el = h('div', 'gh-row', `<a target="_blank" rel="noopener"></a>${repo.private ? '<span class="pill">private</span>' : ''}<small></small><span class="spacer"></span>`);
       el.querySelector('a').href = repo.url; el.querySelector('a').textContent = repo.repo; el.querySelector('small').textContent = repo.description.slice(0, 80);
-      const add = h('button', 'btn ghost', 'Use as context'); add.title = 'Let Docks read this repository while it works here';
+      const add = h('button', 'btn ghost', 'Use as context'); add.title = 'Let Bowers read this repository while it works here';
       add.onclick = async () => { add.disabled = true; add.textContent = 'Adding…'; const rr = await api('/api/context-repos', { action: 'add', repo: repo.repo }); if (rr.ok) { toast('Added ' + repo.repo); loadGit(); } else { toast((await rr.json()).error); add.disabled = false; add.textContent = 'Use as context'; } };
-      const copy = h('button', 'btn ghost', 'Clone'); copy.title = 'Copy the command that clones it and opens Docks there';
-      copy.onclick = () => navigator.clipboard?.writeText(`docks clone ${repo.repo}`).then(() => toast('Copied: docks clone ' + repo.repo));
+      const copy = h('button', 'btn ghost', 'Clone'); copy.title = 'Copy the command that clones it and opens Bowers there';
+      copy.onclick = () => navigator.clipboard?.writeText(`bowers clone ${repo.repo}`).then(() => toast('Copied: bowers clone ' + repo.repo));
       el.append(add, copy); list.appendChild(el);
     }
   };
@@ -1758,7 +1758,7 @@ function reposCard() {
   return c;
 }
 function contextCard() {
-  const c = h('div', 'card', `<h3>${icon('book')} Context repositories</h3><p>Other repositories Docks can read while it works here, like files in a Claude Project. They stay in sync and Docks never edits them.</p><div class="gh-list"></div><div class="row"><input class="input" placeholder="owner/repo"><button class="btn">Add</button><button class="btn ghost">Sync now</button></div>`);
+  const c = h('div', 'card', `<h3>${icon('book')} Context repositories</h3><p>Other repositories Bowers can read while it works here, like files in a Claude Project. They stay in sync and Bowers never edits them.</p><div class="gh-list"></div><div class="row"><input class="input" placeholder="owner/repo"><button class="btn">Add</button><button class="btn ghost">Sync now</button></div>`);
   const list = c.querySelector('.gh-list');
   const render = repos => {
     list.innerHTML = '';
@@ -1813,17 +1813,17 @@ async function loadGit() {
       const n = placeholder ? parseInt(c.querySelector('input').value, 10) : undefined;
       if (placeholder && !(n > 0)) { toast('Enter a number first'); return; }
       const r = await api('/api/github', { action: act, number: n });
-      if (r.ok) { mobile('chat'); toast('Docks is on it'); } else toast((await r.json()).error);
+      if (r.ok) { mobile('chat'); toast('Bowers is on it'); } else toast((await r.json()).error);
     };
     c.querySelector('input')?.addEventListener('keydown', e => { if (e.key === 'Enter') c.querySelector('button').click(); });
     if (!g.repo || !g.connected) c.querySelectorAll('button,input').forEach(x => x.disabled = true);
     return c;
   };
-  gh.appendChild(action('issue', 'Fix an issue', 'Docks reads the issue, makes the fix on a new branch, runs the tests and opens a pull request.', 'Issue #', 'fix'));
-  gh.appendChild(action('review', 'Review a pull request', 'Docks reads the changes and posts a review with comments on the exact lines.', 'Pull request #', 'review'));
-  gh.appendChild(action('pr', 'Open a pull request', 'Docks commits the current changes on a branch and opens a pull request that explains them.', null, 'pr'));
+  gh.appendChild(action('issue', 'Fix an issue', 'Bowers reads the issue, makes the fix on a new branch, runs the tests and opens a pull request.', 'Issue #', 'fix'));
+  gh.appendChild(action('review', 'Review a pull request', 'Bowers reads the changes and posts a review with comments on the exact lines.', 'Pull request #', 'review'));
+  gh.appendChild(action('pr', 'Open a pull request', 'Bowers commits the current changes on a branch and opens a pull request that explains them.', null, 'pr'));
 
-  const bot = h('div', 'card', `<h3>${icon('sparkle')} @docks on GitHub</h3><p>Let anyone with write access mention <b>@docks</b> in an issue or pull request, like with Claude Code and Codex. Docks runs in GitHub Actions and replies in the thread.</p>${files.includes('.github/workflows/docks.yml') ? `<span class="pill ok">Installed</span><p style="margin:10px 0 0">Add your <code>ANTHROPIC_API_KEY</code> as a repo secret, allow Actions to create pull requests (Settings → Actions → General), then commit and push the workflow.</p>` : '<button class="btn primary">Add to this repo</button>'}`);
+  const bot = h('div', 'card', `<h3>${icon('sparkle')} @docks on GitHub</h3><p>Let anyone with write access mention <b>@docks</b> in an issue or pull request, like with Claude Code and Codex. Bowers runs in GitHub Actions and replies in the thread.</p>${files.includes('.github/workflows/docks.yml') ? `<span class="pill ok">Installed</span><p style="margin:10px 0 0">Add your <code>ANTHROPIC_API_KEY</code> as a repo secret, allow Actions to create pull requests (Settings → Actions → General), then commit and push the workflow.</p>` : '<button class="btn primary">Add to this repo</button>'}`);
   bot.querySelector('button')?.addEventListener('click', async () => { const r = await api('/api/install-github', {}); if (r.ok) { toast('Workflow added'); refreshAll(); } else toast('Could not add the workflow'); });
   gh.appendChild(bot);
 
@@ -1851,7 +1851,7 @@ const Background = (() => {
     "<div className=\"grid gap-4 md:grid-cols-3\">", "fetch('/api/chat', { method: 'POST' })", "for (const f of files) render(f)",
     "class Agent:", "    def run(self, task):", "        while not done: step()", "// TODO: make it beautiful",
     "body { display: grid; place-items: center; }", "if (score > best) save(score)", "await page.goto(previewUrl)",
-    "pip install docks", "docks fix 42", "export const config = { runtime: 'edge' }", "router.post('/login', auth)",
+    "pip install docks", "bowers fix 42", "export const config = { runtime: 'edge' }", "router.post('/login', auth)",
     "const ws = new WebSocket(url)", "useEffect(() => subscribe(), [])", "tests: 128 passed in 2.4s",
   ];
   const KW = /^(const|let|var|function|return|export|default|import|from|async|await|def|class|if|else|for|while|of|in|new|SELECT|FROM|WHERE|not)$/;

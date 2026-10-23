@@ -1,5 +1,5 @@
 ---
-description: Write a DOCKS.md that teaches Docks how this project works
+description: Write a DOCKS.md that teaches Bowers how this project works
 ---
 Create (or improve, if it exists) a DOCKS.md file at the project root for future sessions. Explore the
 project first: README, package manifests, build and test configuration, folder layout, and a few core

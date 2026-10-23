@@ -1,9 +1,9 @@
-"""Instruction files ("memory"): what Docks should always know.
+"""Instruction files ("memory"): what Bowers should always know.
 
 - Personal, for every project: ~/.docks/DOCKS.md and ~/.claude/CLAUDE.md
 - The project's: DOCKS.md (or AGENTS.md / CLAUDE.md) in its root, shared with the team
 - Yours, for this project only: DOCKS.local.md or CLAUDE.local.md (kept out of git)
-- Folder-specific: a DOCKS.md / AGENTS.md / CLAUDE.md in a subfolder is read the first time Docks works there
+- Folder-specific: a DOCKS.md / AGENTS.md / CLAUDE.md in a subfolder is read the first time Bowers works there
 
 Inside any of them, `@path/to/file` pulls in another file (relative to the one that mentions it; ~/ works).
 Start a message with `#` to add a line to one of them.
