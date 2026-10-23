@@ -1,6 +1,20 @@
+<p align="center"><img src="docks/web/assets/bowie.webp" width="150" alt="Bowie, the Bowers mascot"></p>
+
 # Bowers
 
-Bowers is a coding agent for your terminal, powered by Claude. Tell it what to build, such as an app, a website, a script, an API or a game. It looks around your project, writes and edits files, runs commands and tests, and fixes what breaks until the job is done.
+**Think. Create. Build. Together.** Bowers is an AI agent for building things, in your terminal or your browser. Tell it what to make, such as an app, a website, a script, an API, a game, a design or a document. It looks around your project, writes and edits files, runs commands and tests, checks its work in a real browser, and fixes what breaks until the job is done. Bowie, the mascot, keeps you company while it works.
+
+(Bowers was called Docks. The `docks` command, `DOCKS_*` settings and the `~/.docks` folder still work.)
+
+## Bowers models
+
+| Model | Best for | Runs on |
+|---|---|---|
+| **Bowers Syntra 1** (default) | Software, automation and complex workflows | Claude Opus, high effort |
+| **Bowers Aether 1** | The flagship: hard reasoning, research and creative work | Claude Fable, extra-high effort |
+| **Bowers Solace 1** | Calm, clear help that explains as it goes | Claude Sonnet, medium effort |
+
+Each Bowers model is a tuned profile on top of the newest Claude model in its family: its own instructions, its own way of working, and how hard it thinks. As Anthropic releases newer models, `bowers models update` (and a daily check in the background) moves them up. Pick one with `bowers -m aether`, `/model solace`, or the model button in the browser. You can also choose an engine directly: `opus`, `fable`, `sonnet`, `haiku`, or OpenAI's `codex` and `chatgpt` (through Bowers Router, with `OPENAI_API_KEY`).
 
 ## Install
 
@@ -173,21 +187,25 @@ bowers web                 # opens http://127.0.0.1:8788 with a one-time link
 bowers web -C ~/my-site    # work on a specific project
 ```
 
-You get a chat where Bowers' work streams in as plain-language steps ("Wrote index.html", "Ran a command"). Each change it wants to make shows an approval card, with a colored diff for edits. Beside the chat are three tabs:
+The first time, Bowie welcomes you: tell it your name, check your connections (Claude, OpenAI, GitHub) and choose a Bowers model. Then the sidebar has:
 
-- **Preview** shows the site Bowers is building, refreshing after every change, in desktop or phone width.
-- **Code** is a file tree and viewer.
-- **GitHub** has the repo, your changes and one-click GitHub tasks.
+- **Home:** a greeting, the message box, quick starts (build a website, create an image, write code, analyze data, plan a project), and your recent chats. Bowers' work streams in as plain-language steps, each change it wants to make shows an approval card (with a colored diff for edits), and a card appears when your app is live. Beside the chat are **Preview** (your site, refreshed after every change, desktop or phone width), **Code** (files), **GitHub** and **Images**.
+- **Projects:** every folder you've worked in. Open one (Bowers switches without restarting) or start a new one in `~/Bowers Projects`.
+- **Tasks:** each conversation's plan with its progress, what's done, and anything waiting for your approval.
+- **Library:** everything you've made in this project (designs, images, websites, documents, bookmarked code), with filters and search.
+- **Creation Studio:** image generator, video creator, code editor, design studio, document writer, 3D creator, music studio and presentation builder. Images use OpenAI's image model. Bowers builds the rest with code: an animated HTML video, a three.js scene, a Tone.js song, a .pptx or Word file.
+- **Explore:** the Bowers models, project templates, and your commands and skills.
+- **Settings:** your name, model, effort and mode, output style, GitHub account and a setup check, sandbox and permission rules, MCP servers and plugins, theme and the animated background.
 
-It has an animated code background (turn it off under the gear menu; it stays still if your system asks for reduced motion), light and dark themes, and works on phones. Settings (model, effort, auto-approve, theme, MCP servers) are under the gear menu. Reloading the page restores the conversation.
+Bowie's face follows what Bowers is doing: thinking, focused while it works, curious when it needs you, and excited when it's done. There are light and dark themes. On phones the bottom bar has Home, Projects, Library, Studio and More. Reloading the page restores the conversation.
 
 The browser link contains a one-time token. The API only accepts requests that carry it, so other websites can't reach Bowers. The preview is served from a separate port under a secret path, and it never serves dotfiles like `.env` or `.git`. Bowers listens only on this machine unless you pass `--host`. Anyone with the link can run commands on your machine, so don't share it.
 
 | Flag | Meaning |
 |---|---|
 | `-C DIR` | project directory (default: current) |
-| `-m MODEL` | Claude model (default `claude-opus-5-5`, or `$DOCKS_MODEL`) |
-| `-e LEVEL` | effort: `low` `medium` `high` `xhigh` `max` (default `high`) |
+| `-m MODEL` | `syntra` (default), `aether`, `solace`, or an engine (or `$DOCKS_MODEL`) |
+| `-e LEVEL` | effort: `low` `medium` `high` `xhigh` `max` (default: the model's own) |
 | `-y` | auto-approve file writes and shell commands |
 
 In interactive mode: `/clear` starts over, `/usage` shows tokens, `/yolo` toggles auto-approve, `/exit` quits. Ctrl-C cancels the current turn.
@@ -196,7 +214,19 @@ By default Bowers asks before it writes a file or runs a shell command. Answer `
 
 ## GitHub
 
-Bowers works with GitHub the way Claude Code and Codex do. Connect by setting `GITHUB_TOKEN` (or logging in with `gh auth login`), then:
+Bowers works with GitHub the way Claude Code and Codex do. Connect your account:
+
+```bash
+bowers github login            # sign in on GitHub (needs DOCKS_GITHUB_CLIENT_ID), or paste a token; --gh uses the GitHub CLI
+bowers github status           # which account is connected
+bowers github repos [search]   # your repositories
+bowers github branches         # this project's branches
+bowers github prs [--mine]     # open pull requests with their checks; --mine: yours and ones waiting for your review
+bowers github watch owner/repo#12   # get told when its checks finish, a review comes in, or it's merged
+bowers context add owner/repo  # another repo Bowers can read while it works here, kept in sync (read-only)
+```
+
+The token is saved in `~/.docks/github.json`, readable only by you (`GITHUB_TOKEN` and `gh auth login` also work). Signing in through GitHub's page needs a GitHub OAuth app of your own (Settings → Developer settings → OAuth Apps, with "Enable Device Flow" ticked); put its client ID in `DOCKS_GITHUB_CLIENT_ID`. Then:
 
 ```bash
 bowers clone owner/repo        # clone and start working (add --web for the browser)
@@ -207,11 +237,11 @@ bowers pr                      # commit current changes on a branch and open a P
 
 The agent has GitHub tools too, so you can just say "fix issue 42" or "review PR 17" in a chat. It can read issues and PRs (including diffs), open pull requests, comment, and post reviews with inline comments. Pushing, opening PRs and posting comments always ask first unless auto-approve is on. Bowers never commits to the default branch or force-pushes. Your token is sent only to GitHub. It goes to git as an environment setting, never on the command line or into `.git/config`.
 
-In the browser, the **GitHub** tab shows the repo, branch and uncommitted changes (with a diff), and has one-click Fix an issue, Review a pull request and Open a pull request. In an empty folder it can clone a repo for you.
+In the browser, the **GitHub** tab connects your account (sign in, or paste a token), lists your repositories (use any as context with one click), shows branches (switch with a click), and tracks pull requests with their checks: this repo's, yours, and ones waiting for your review. Watch any of them to get notified. It also shows uncommitted changes (with a diff) and has one-click Fix an issue, Review a pull request and Open a pull request. In an empty folder it can clone a repo for you.
 
-### @docks in issues and pull requests
+### @bowers in issues and pull requests
 
-Like `@claude` and `@codex`, you can mention **@docks** right on GitHub and it does the work there:
+Like `@claude` and `@codex`, you can mention **@bowers** (or the old `@docks`) right on GitHub and it does the work there:
 
 ```bash
 bowers install-github     # writes .github/workflows/docks.yml (or use the button in the browser's GitHub tab)
@@ -221,10 +251,22 @@ gh secret set ANTHROPIC_API_KEY
 Then, in Settings → Actions → General, allow GitHub Actions to create pull requests, and push the workflow. After that:
 
 - **On an issue**, comment `@bowers fix this` (or label it `bowers`). Bowers makes the change on `docks/issue-N`, runs the tests, and opens a pull request that says `Fixes #N`. Asking again continues the same branch and updates the same PR.
-- **On a pull request**, comment `@docks rename this function` or `@docks why does this fail?`. Bowers pushes the changes to the PR branch, or answers or reviews if no code change is needed. On a pull request from a fork it can only answer and review.
+- **On a pull request**, comment `@bowers rename this function` or `@bowers why does this fail?`. Bowers pushes the changes to the PR branch, or answers or reviews if no code change is needed. On a pull request from a fork it can only answer and review.
 - **Auto review:** set the repo variable `DOCKS_AUTO_REVIEW=true` to have Bowers review every new pull request.
 
 Bowers replies in the thread with a summary and a link to the run. Only owners, members and collaborators can trigger it, because each run spends your API credits and can push code. One limitation comes from GitHub: pull requests opened with the built-in Actions token don't trigger other workflows (like CI) until someone pushes to them.
+
+## Images
+
+With `OPENAI_API_KEY` set, Bowers makes images with OpenAI's GPT Image models: GPT Image 2.5 Flare (fast, the default) or Sunburst (more detail, slower).
+
+```bash
+bowers image "a cozy coffee shop at dawn, watercolor" -o public/hero.png --size wide
+bowers image "make the sky purple" --edit public/hero.png
+bowers image "logo for a bakery" --transparent -n 3
+```
+
+Claude can make them too (`generate_image`), for example a hero image for the site it's building, and it sees the result. In the browser, the **Images** tab has style presets, sizes, quality, transparency, a gallery, editing and a full-size viewer. Images are saved in the project (`assets/generated/` unless you choose a path). Each one costs money on your OpenAI account, so Bowers asks before making one unless you've allowed it.
 
 ## Building websites and apps
 
