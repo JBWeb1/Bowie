@@ -29,10 +29,11 @@ def _resolve(root: Path, path: str) -> Path:
 
 
 def bash(root: Path, command: str, timeout: int = 120, sandbox=None) -> str:
-    argv = sandbox.argv(command) if sandbox else None  # a sandbox.Sandbox, when commands are sandboxed
+    from .care import shell_argv
+    argv = sandbox.argv(command) if sandbox else shell_argv(command)  # sandboxed, or PowerShell on Windows
     try:
         proc = subprocess.run(
-            argv or command, shell=argv is None, cwd=root, capture_output=True, text=True,
+            argv or command, shell=argv is None, cwd=root, capture_output=True, text=True, errors="replace",
             timeout=min(max(timeout, 1), 600),
         )
     except subprocess.TimeoutExpired:

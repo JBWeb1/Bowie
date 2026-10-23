@@ -25,7 +25,8 @@ class Proc:
         self.lines = deque(maxlen=2000)
         self.url = None
         self.on_change = on_change
-        argv = sandbox.argv(command, server=True) if sandbox else None
+        from .care import shell_argv
+        argv = sandbox.argv(command, server=True) if sandbox else shell_argv(command)
         self.popen = subprocess.Popen(argv or command, shell=argv is None, cwd=root, stdout=subprocess.PIPE,
                                       stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, text=True,
                                       errors="replace", start_new_session=True,

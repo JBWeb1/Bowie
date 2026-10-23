@@ -24,7 +24,7 @@ from .plugins import TOOL_ALIASES, Extensions, hook_tool_input
 from .procs import ProcessManager
 import importlib.util
 
-from . import context_repos, images, instructions, models, tools
+from . import care, context_repos, images, instructions, models, motion, tools
 from .browser import SCHEMA as BROWSER_SCHEMA, Browser, BrowserError
 from .lsp import SCHEMA as LSP_SCHEMA, LSPError, LSPManager
 from .sandbox import Sandbox, SandboxUnavailable
@@ -182,6 +182,7 @@ How to work:
 Environment:
 - Working directory: {cwd}
 - Platform: {platform}
+- Shell for bash and start_process: {shell}
 - Date: {date}
 """
 
@@ -194,7 +195,8 @@ and check a mobile viewport too. Don't tell the user a page works until you've s
 
 
 def build_system_prompt(root: Path, ext: Extensions | None = None, style=None) -> str:
-    prompt = SYSTEM_PROMPT.format(cwd=root, platform=platform.platform(), date=date.today())
+    prompt = SYSTEM_PROMPT.format(cwd=root, platform=platform.platform(), shell=care.shell_name(), date=date.today())
+    prompt += care.CARE_NOTE
     if HAS_PLAYWRIGHT:
         prompt += BROWSER_NOTE
     written = instructions.system_section(root)
@@ -398,6 +400,9 @@ class Agent:
             process_defs.append(define("browser", BROWSER_SCHEMA))
         if images.available():
             process_defs.append(define("generate_image", images.SCHEMA))
+        if motion.available():
+            process_defs.append(define("generate_video", motion.SCHEMA))
+        process_defs.append(define("system_check", care.SCHEMA))
         if self.lsp.available() and self.ext.settings.get("codeIntelligence", True) is not False:
             process_defs.append(define("code_intel", LSP_SCHEMA))
         agent_defs = [define(n, s) for n, s in AGENT_TOOLS.items()
@@ -427,8 +432,10 @@ class Agent:
             return False  # a helper's own tool calls ask for approval as usual
         if name in PROCESS_TOOLS:
             return name == "start_process"
-        if name == "generate_image":
+        if name in ("generate_image", "generate_video"):
             return True  # writes files and costs money
+        if name == "system_check":
+            return False
         if self.mcp and self.mcp.handles(name):
             return self.mcp.is_mutating(name)
         return is_mutating(name)
@@ -482,6 +489,28 @@ class Agent:
                 if preview:
                     blocks.append(preview)
             return blocks, False
+        if name == "generate_video":
+            if not isinstance(args, dict):
+                raise ToolError("tool input must be a JSON object")
+            _check(args, {"type": "object", **motion.SCHEMA}, "input")
+            seen = set()
+
+            def status(text):
+                if text not in seen:
+                    seen.add(text)
+                    self.display.notice(f"Bowers Motion: {text}…")
+            try:
+                made = motion.generate(self.root, on_status=status, should_stop=self.cancelled.is_set, **args)
+            except motion.MotionError as e:
+                raise ToolError(str(e))
+            return (f"Saved {made['path']} ({made['label']}, {made['resolution']} {made['aspect']}, "
+                    f"{made['seconds'] or 'auto'}s, made in {made['seconds_taken']}s). You can't watch it; "
+                    "describe it from the prompt and tell the person where it is."), False
+        if name == "system_check":
+            sections = args.get("sections") if isinstance(args, dict) else None
+            if sections is not None and (not isinstance(sections, list) or any(x not in care.SECTIONS for x in sections)):
+                raise ToolError(f"sections must be a list of: {', '.join(care.SECTIONS)}")
+            return care.check(sections), False
         if name == "code_intel":
             if not isinstance(args, dict):
                 raise ToolError("tool input must be a JSON object")

@@ -14,6 +14,7 @@ import queue
 import re
 import secrets
 import threading
+import time
 import uuid
 from http.server import BaseHTTPRequestHandler, SimpleHTTPRequestHandler, ThreadingHTTPServer
 from importlib import resources
@@ -59,6 +60,7 @@ class Session:
         agent.on_background_done = self._background_done
         self.github_login = {}  # a sign-in through GitHub in progress
         self.mcp_logins = {}  # app sign-ins in progress, by server name
+        self.motion_jobs = {}  # Bowers Motion videos being made, by job id
         from ..pr_watch import Watcher
         self.pr_watcher = Watcher(lambda u: self.publish({"type": "pr_update", "text": "; ".join(u["changes"]),
                                                            "url": u["url"], "title": u["title"]}))
@@ -116,6 +118,48 @@ class Session:
             self.publish({"type": "github_login", **self.github_login})
         threading.Thread(target=wait, daemon=True).start()
         return self.github_login
+
+    def start_video(self, body: dict) -> dict:
+        """Make a video in the background; progress arrives as "motion" events."""
+        from .. import motion
+        root = self.agent.root
+        image = str(body.get("image") or "")
+        if image.startswith("data:"):  # an uploaded picture: keep it in the project so the video can be redone
+            import base64
+            head, _, data = image.partition(",")
+            ext = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp"}.get(head[5:].split(";")[0])
+            if not ext or len(data) > MAX_IMAGE_B64:
+                raise motion.MotionError("upload a PNG, JPEG or WebP image up to 5 MB")
+            target = root / "assets" / "uploads" / f"motion-{uuid.uuid4().hex[:8]}{ext}"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(base64.b64decode(data))
+            image = str(target.relative_to(root))
+        seconds = body.get("seconds")
+        options = dict(prompt=str(body.get("prompt", "")), image=image,
+                       seconds=None if seconds in (None, "", "auto") else int(seconds),
+                       aspect=str(body.get("aspect", "16:9")), resolution=str(body.get("resolution", "1080p")),
+                       pro=bool(body.get("pro")), sound=body.get("sound", True) is not False)
+        if not motion.available():
+            raise motion.MotionError("Bowers Motion needs an LTX API key: add LTX_API_KEY to your environment")
+        if not options["prompt"].strip():
+            raise motion.MotionError("describe the video you want")
+        motion.check_options(motion.PRO if options["pro"] else motion.FAST, options["seconds"],
+                             options["resolution"], options["aspect"])
+        job = {"id": uuid.uuid4().hex[:10], "status": "starting", "prompt": options["prompt"], "started": time.time()}
+        self.motion_jobs[job["id"]] = job
+
+        def work():
+            def status(text):
+                job["status"] = text
+                self.publish({"type": "motion", **job})
+            try:
+                job["video"] = motion.generate(root, on_status=status, **options)
+                job["status"] = "done"
+            except motion.MotionError as e:
+                job["status"], job["error"] = "error", str(e)
+            self.publish({"type": "motion", **job})
+        threading.Thread(target=work, daemon=True).start()
+        return job
 
     def _mcp_manager(self):
         from ..mcp import MCPManager
@@ -549,6 +593,14 @@ def make_handler(session: Session, token: str, preview: dict):
                 return self._json(200, {"available": images.available(), "images": images.gallery(root),
                                          "models": {"fast": images.FAST, "detailed": images.DETAILED},
                                          "sizes": list(images.SIZES), "qualities": list(images.QUALITIES)})
+            if path == "/api/motion":
+                from .. import motion
+                return self._json(200, {"available": motion.available(), "videos": motion.gallery(root),
+                                        "models": motion.MODELS, "limits": motion.LIMITS, "aspects": motion.ASPECTS,
+                                        "jobs": list(session.motion_jobs.values())})
+            if path == "/api/care":
+                from .. import care
+                return self._json(200, care.snapshot())
             if path == "/api/github/account":
                 return self._json(200, {"account": github.whoami(), "device_login": bool(github.device_client_id()),
                                          "login": session.github_login, "web": github.WEB})
@@ -759,6 +811,22 @@ def make_handler(session: Session, token: str, preview: dict):
                 except ValueError as e:
                     return self._json(400, {"error": str(e)})
                 return self._json(200, session.state())
+            if path == "/api/motion/generate":
+                from .. import motion
+                try:
+                    return self._json(202, session.start_video(body))
+                except motion.MotionError as e:
+                    return self._json(400, {"error": str(e)})
+                except (TypeError, ValueError):
+                    return self._json(400, {"error": "check the video options"})
+            if path == "/api/motion/delete":
+                from .. import motion
+                motion.forget(root, str(body.get("path", "")), bool(body.get("delete_file")))
+                return self._json(200, {"videos": motion.gallery(root)})
+            if path == "/api/care/check":
+                from .. import care
+                sections = [x for x in body.get("sections") or ["overview"] if x in care.SECTIONS]
+                return self._json(200, {"text": care.check(sections or ["overview"])})
             if path in ("/api/images/generate", "/api/images/delete"):
                 from .. import images
                 if path == "/api/images/delete":

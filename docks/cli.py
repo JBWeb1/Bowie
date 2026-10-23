@@ -872,6 +872,48 @@ def image_main(argv) -> int:
     return 0
 
 
+def video_main(argv) -> int:
+    from . import motion
+    parser = argparse.ArgumentParser(prog="bowers video", description="Make a video with sound (Bowers Motion, LTX-2.5).")
+    parser.add_argument("prompt", nargs="+")
+    parser.add_argument("-C", "--dir", default=".")
+    parser.add_argument("-o", "--out", default="", help="where to save it (default assets/videos/…)")
+    parser.add_argument("--image", default="", help="an image to animate (it becomes the first frame)")
+    parser.add_argument("--seconds", default="8", help="6, 8, 10 (fast: up to 20), or auto")
+    parser.add_argument("--aspect", choices=motion.ASPECTS, default="16:9")
+    parser.add_argument("--resolution", choices=list(motion.RESOLUTIONS), default="1080p")
+    parser.add_argument("--pro", action="store_true", help="the slower, highest-quality model")
+    parser.add_argument("--no-sound", action="store_true")
+    args = parser.parse_args(_hoist_dir(argv))
+    root = Path(args.dir).expanduser().resolve()
+    seconds = None if args.seconds == "auto" else int(args.seconds)
+    label = motion.MODELS[motion.PRO if args.pro else motion.FAST]
+    print(ui.dim(f"making a video with {label}; this takes a minute or more…"))
+    try:
+        made = motion.generate(root, " ".join(args.prompt), args.image, seconds, args.aspect, args.resolution,
+                               args.pro, args.out, not args.no_sound, on_status=lambda t: print(ui.dim(f"  {t}…")))
+    except motion.MotionError as e:
+        ui.error(str(e))
+        return 1
+    print(ui.green(f"saved {made['path']}") + ui.dim(f"  ({made['seconds_taken']}s)"))
+    return 0
+
+
+def care_main(argv) -> int:
+    from . import care
+    if argv and argv[0] not in ("-h", "--help") and not argv[0].startswith("-") and argv[0] not in care.SECTIONS:
+        problem = " ".join(a for a in argv if not a.startswith("-"))
+        return main([f"My computer has a problem: {problem}\nFind the cause with system_check, explain it, and fix it "
+                     "step by step (ask before each change).", *[a for a in argv if a.startswith("-")]])
+    parser = argparse.ArgumentParser(prog="bowers care", description="Check this computer's health (read-only), or "
+                                     "describe a problem to have Bowers fix it: bowers care \"wifi keeps dropping\"")
+    parser.add_argument("sections", nargs="*", choices=[[], *care.SECTIONS], default=["overview"],
+                        help=", ".join(care.SECTIONS))
+    args = parser.parse_args(argv)
+    print(care.check(args.sections or ["overview"]))
+    return 0
+
+
 def models_main(argv) -> int:
     from . import models
     parser = argparse.ArgumentParser(prog="bowers models", description="The models Bowers uses for each short name.")
@@ -1055,6 +1097,10 @@ def main(argv=None) -> int:
         return context_main(argv[1:])
     if argv[:1] in (["image"], ["images"]):
         return image_main(argv[1:])
+    if argv[:1] in (["video"], ["motion"]):
+        return video_main(argv[1:])
+    if argv[:1] in (["care"], ["system"]):
+        return care_main(argv[1:])
     if argv[:1] == ["models"]:
         return models_main(argv[1:])
     if argv[:1] == ["doctor"]:
