@@ -1,7 +1,7 @@
 # Install Bowers on Windows and add it to the Start menu and desktop.
-# Run in PowerShell:  irm https://raw.githubusercontent.com/JBWeb1/Docks/main/install.ps1 | iex
+# Run in PowerShell:  irm https://raw.githubusercontent.com/JBWeb1/Bowie/HEAD/install.ps1 | iex
 # (or, from a copy of this repo:  powershell -ExecutionPolicy Bypass -File install.ps1)
-param([string]$Source = "git+https://github.com/JBWeb1/Docks", [switch]$NoLaunch)
+param([string]$Source = "git+https://github.com/JBWeb1/Bowie", [switch]$NoLaunch)
 $ErrorActionPreference = "Stop"
 
 function Find-Python {

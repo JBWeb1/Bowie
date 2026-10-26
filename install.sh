@@ -1,8 +1,8 @@
 #!/bin/sh
 # Install Bowers on Linux or macOS and add it to your app launcher.
-#   curl -fsSL https://raw.githubusercontent.com/JBWeb1/Docks/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/JBWeb1/Bowie/HEAD/install.sh | sh
 set -e
-SOURCE="${BOWERS_SOURCE:-git+https://github.com/JBWeb1/Docks}"
+SOURCE="${BOWERS_SOURCE:-git+https://github.com/JBWeb1/Bowie}"
 PY=""
 for c in python3 python; do
   if command -v "$c" >/dev/null 2>&1 && "$c" -c 'import sys; sys.exit(sys.version_info < (3, 10))'; then PY="$c"; break; fi

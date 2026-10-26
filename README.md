@@ -21,10 +21,10 @@ Each Bowers model is a tuned profile on top of the newest Claude model in its fa
 **Windows (one step):** open PowerShell and run
 
 ```powershell
-irm https://raw.githubusercontent.com/JBWeb1/Bowie/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/JBWeb1/Bowie/HEAD/install.ps1 | iex
 ```
 
-This installs Python and Git if needed, then Bowers. It also adds **Bowers** to the Start menu and the desktop, and opens it in its own app window. The window can also be pinned with your browser's **Install app** button. **macOS / Linux:** `curl -fsSL https://raw.githubusercontent.com/JBWeb1/Bowie/main/install.sh | sh`. Already installed? `bowers app` opens the app window, and `bowers install-app` adds the shortcuts.
+This installs Python and Git if needed, then Bowers. It also adds **Bowers** to the Start menu and the desktop, and opens it in its own app window. The window can also be pinned with your browser's **Install app** button. **macOS / Linux:** `curl -fsSL https://raw.githubusercontent.com/JBWeb1/Bowie/HEAD/install.sh | sh`. Already installed? `bowers app` opens the app window, and `bowers install-app` adds the shortcuts.
 
 From source:
 
