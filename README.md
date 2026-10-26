@@ -363,6 +363,40 @@ The browser app has one section per job, each with its own page in the sidebar (
   - Free Resources
 
   Most also work as commands: `/trading-research`, `/site-audit`, `/local-ci`, `/crawl`, `/video-clips`, `/explain-codebase`, `/prompt-eval`, `/scene-3d`. Math and emotes need `pip install "docks[labs]"`.
+- **Agent Team** (in Labs, in Ctrl+K, or just ask): 28 built-in specialist helpers Bowie can hand work to with `delegate`. Each one is inspired by an open-source project:
+
+  | Agent | Inspired by |
+  |---|---|
+  | codebase-cartographer | Understand-Anything, Graphify |
+  | model-router | OmniRoute, LiteLLM |
+  | launch-film-director | onetake, ClaudeAnimationBase, lemo-opuscar |
+  | video-producer | OpenMontage, ArcReel, SkyReels-V2, MiniMax H3, AutoClip |
+  | emote-artist | emote-forge, emojimaker, emoteresizer |
+  | autonomous-engineer | OpenHands, Open Interpreter, BLADE, Hermes Agent |
+  | prompt-evaluator | promptfoo, LMArena |
+  | property-visualizer | OpenHouse 3D, RealEstateOS, the real-estate stager, interior restylers, Roomsmith |
+  | performance-auditor | Lighthouse, Clinic.js, claude-seo |
+  | mobile-app-builder | Vibra Code, NativeBot |
+  | project-ops | Huly, Doable |
+  | ui-designer | Hallmark, React Bits, Magic UI, UI/UX Pro Max |
+  | workflow-architect | LangGraph, Ruflo |
+  | rag-engineer | RAGFlow, Firecrawl |
+  | commerce-builder | Your Next Store, the Next.js SaaS Starter, Hyperswitch, Banking, Commerce Agents |
+  | scenario-simulator | MiroFish |
+  | trading-analyst | TradingAgents, QuantDinger (research only) |
+  | local-model-engineer | Edge0, Soup |
+  | geo-visualizer | God's Eye View |
+  | reverse-engineer | REA (only software you own or may test) |
+  | lean-coder | Ponytail |
+  | tdd-engineer | Superpowers |
+  | growth-marketer | The Agency, claude-seo |
+  | reality-checker | The Agency |
+  | math-tutor | SymPy, nerdamer, JSXGraph |
+  | game-3d-builder | three-editor, StemStudio, PlayCanvas, Blender |
+  | ci-runner | act |
+  | learning-guide | free-for-dev, awesome-selfhosted, free-programming-books |
+
+  These agents follow each project's approach; they don't include its code. Add your own as `agents/<name>.md` in `~/.docks` or your project.
 - **Bowers Aether** (choose the Aether model): a voice assistant. Talk to Bowie with the mic, or turn on hands-free and say "Hey Bowie…". It answers out loud, shows each step it takes, and gives briefings ("Brief me"). Aether learns as it works: preferences it notices are saved to your memory file, and it uses them from then on. It only shows the **Knowledge Graph**, a map of how your projects, files, memories, tools, goals, creations and history connect, plus a **code map** of which files import which.
 - **Bowie's voice**: Settings → Voice. The built-in voice is free; tune its pitch and speed. Or add `ELEVENLABS_API_KEY` and pick an ElevenLabs voice. You can design one in ElevenLabs Voice Design (for example "a small, cheerful, fluffy orange mascot with a warm, playful voice").
 

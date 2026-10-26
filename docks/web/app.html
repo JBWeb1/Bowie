@@ -1188,6 +1188,8 @@ canvas.plot { width: 100%; height: 320px; border-radius: 14px; border: 1px solid
   <div class="page-head"><img src="/assets/bowie/inspire.webp" alt="" style="width:46px;height:46px"><div><h2>Bowers Labs</h2><small class="muted">More tools: trading research, math, model arena, 3D, emotes, interiors, audits and more</small></div></div>
   <div class="labs-grid" id="labs-grid"></div>
   <div class="lab-pane panel-card hidden" id="lab-pane"></div>
+  <div class="sec-title"><h3>Agent Team</h3><span class="muted" style="font-size:12.5px">Specialist helpers Bowie can hand work to. Pick one and describe the job.</span></div>
+  <div class="labs-grid" id="agents-grid"></div>
 </section>
 <section class="page hidden" id="page-graph">
   <div class="page-head"><img src="/assets/art/aether-icon.webp" alt="" style="width:44px;height:44px;border-radius:10px"><div><h2>Knowledge Graph</h2><small class="muted">Your ideas. Connected. Powered by Bowie.</small></div><span class="spacer"></span>
@@ -3426,7 +3428,34 @@ const LABS = [
   ['skills', 'bowie/inspire', 'Skill Packs', 'Install skills, agents and plugins from GitHub into Bowers.', 'superpowers, awesome-claude-skills, agency-agents'],
   ['resources', 'bowie/reading', 'Free Resources', 'Free tools, self-hosted apps and programming books, curated by the community.', 'free-for-dev, awesome-selfhosted, free-programming-books'],
 ];
+const AGENT_ART = { 'codebase-cartographer': 'analyzing', 'model-router': 'share', 'launch-film-director': 'animating', 'video-producer': 'create-video', 'emote-artist': 'love',
+  'autonomous-engineer': 'flying', 'prompt-evaluator': 'celebrating', 'property-visualizer': 'designing', 'performance-auditor': 'searching', 'mobile-app-builder': 'build',
+  'project-ops': 'planning', 'ui-designer': 'editing', 'workflow-architect': 'collaborating', 'rag-engineer': 'research', 'commerce-builder': 'save', 'scenario-simulator': 'discovering',
+  'trading-analyst': 'analyzing', 'local-model-engineer': 'coding', 'geo-visualizer': 'exploring', 'reverse-engineer': 'debugging', 'lean-coder': 'fixing', 'tdd-engineer': 'solving',
+  'growth-marketer': 'inspire', 'reality-checker': 'curious', 'math-tutor': 'reading', 'game-3d-builder': 'jumping', 'ci-runner': 'running', 'learning-guide': 'reading' };
+const agentTitle = n => n.split('-').map(w => ['ci', 'ui', 'tdd', 'rag', '3d'].includes(w) ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1)).join(' ');
+function useAgent(a) {
+  const modal = h('div', 'modal', `<div class="modal-box" style="width:min(580px,100%)"><div class="page-head"><img src="${STICKER(AGENT_ART[a.name] || 'helping')}" alt="" style="width:44px;height:44px"><h2></h2><span class="spacer"></span><button class="btn ghost icon-only" aria-label="Close">✕</button></div><p class="muted" style="margin-top:-6px"></p><div class="studio-form"><textarea class="input" placeholder="What should this agent do?"></textarea><button class="btn primary">Start ${icon('arrow-right')}</button></div></div>`);
+  modal.querySelector('h2').textContent = agentTitle(a.name); modal.querySelector('p').textContent = a.description;
+  const ta = modal.querySelector('textarea');
+  modal.querySelector('.btn.primary').onclick = () => { const v = ta.value.trim(); if (!v) return ta.focus(); modal.remove(); showPage('home');
+    send(`Hand this to your "${a.name}" helper (use delegate with agent "${a.name}"), then check its work and report back:\n\n${v}`); };
+  modal.onclick = e => { if (e.target === modal || e.target.closest('.icon-only')) modal.remove(); };
+  document.body.appendChild(modal); ta.focus();
+}
+function renderAgents() {
+  const g = $('agents-grid'); g.innerHTML = '';
+  const list = (state.extensions?.agents || []).slice().sort((x, y) => x.name.localeCompare(y.name));
+  for (const a of list) {
+    const b = h('button', 'lab', `<div class="lab-top"><img src="${STICKER(AGENT_ART[a.name] || 'helping')}" alt=""><b></b></div><p></p>`);
+    b.querySelector('b').textContent = agentTitle(a.name); b.querySelector('p').textContent = a.description.replace(/\s*\(like [^)]*\)\s*$/, '');
+    const src = a.description.match(/\(like ([^)]*)\)/); if (src) b.appendChild(h('span', 'src', 'Inspired by ' + esc(src[1])));
+    b.onclick = () => useAgent(a); g.appendChild(b);
+  }
+  if (!list.length) g.appendChild(h('div', 'muted', 'No helper agents found.'));
+}
 function renderLabs() {
+  renderAgents();
   const g = $('labs-grid'); if (g.children.length) return;
   for (const [id, art, title, text, src] of LABS) {
     const b = h('button', 'lab', `<div class="lab-top"><img src="/assets/${art}.webp" alt=""><b>${esc(title)}</b></div><p>${esc(text)}</p><span class="src">Inspired by ${esc(src)}</span>`);
@@ -3639,6 +3668,7 @@ function cmdkActions() {
     ['helping', 'Settings', 'Settings', () => showPage('settings')],
   ];
   for (const [id, , title] of LABS) a.push(['inspire', title, 'Labs', () => openLab(id)]);
+  for (const ag of state.extensions?.agents || []) a.push([AGENT_ART[ag.name] || 'helping', agentTitle(ag.name) + ' agent', 'Agent', () => useAgent(ag)]);
   for (const p of cmdkProjects || []) a.push(['projects', 'Open project: ' + p.name, 'Projects', async () => { if (p.current) return; const r = await api('/api/projects/open', { root: p.root }); if (!r.ok) toast((await r.json()).error); }]);
   for (const f of (files || []).slice(0, 3000)) a.push(['searching', f, 'File', () => { showPage('forge'); setTimeout(() => ideOpen(f), 300); }]);
   return a;

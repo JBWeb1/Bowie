@@ -189,3 +189,23 @@ def test_voice_mode_note_and_aether_learning(tmp_path):
     notes = "".join(f.read_text() for f in instructions.user_files() if f.is_file())
     assert "Use TypeScript for new code." in notes and agent.observations == []
     assert "Use TypeScript for new code." in agent.system  # it knows from the next turn on
+
+
+def test_builtin_agent_team(tmp_path):
+    from docks.agent import Agent
+    from docks.plugins import Extensions
+    ext = Extensions.load(tmp_path)
+    for name in ("codebase-cartographer", "video-producer", "trading-analyst", "reverse-engineer", "ui-designer", "learning-guide"):
+        assert name in ext.agents and ext.agents[name].source == "builtin" and len(ext.agents[name].prompt) > 200
+    assert "never place trades" in ext.agents["trading-analyst"].prompt
+    assert "permission" in ext.agents["reverse-engineer"].prompt
+    client = FakeClient([
+        msg("tool_use", tool_use("d1", "delegate", description="Map the code", prompt="map it", agent="codebase-cartographer")),
+        msg("end_turn", text("The map.")),   # the helper
+        msg("end_turn", text("Here it is.")),
+    ])
+    agent = Agent(root=tmp_path, client=client, display=Display(confirm="yes"))
+    assert "codebase-cartographer" in agent.system
+    agent.run("explain this repo")
+    helper_system = client.requests[1]["system"]
+    assert "You map codebases" in (helper_system if isinstance(helper_system, str) else json.dumps(helper_system))
