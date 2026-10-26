@@ -92,6 +92,13 @@ class Session:
         self.agent = agent
         with self.lock:
             self.history.clear()
+        try:  # the app reopens here next time
+            import os
+            last = Path(os.environ.get("DOCKS_HOME", Path.home() / ".docks")) / "last-project"
+            last.parent.mkdir(parents=True, exist_ok=True)
+            last.write_text(str(root))
+        except OSError:
+            pass
         self.publish({"type": "project_changed", "root": str(root)})
 
     def start_github_login(self) -> dict:
@@ -501,6 +508,14 @@ def make_handler(session: Session, token: str, preview: dict):
             path, _, query = self.path.partition("?")
             if path.startswith("/assets/"):
                 return self._asset(path[len("/assets/"):])
+            if path in ("/manifest.webmanifest", "/sw.js"):  # installing Bowers as an app
+                body = (MANIFEST if path.endswith("manifest") else SERVICE_WORKER).encode()
+                self.send_response(200)
+                self.send_header("content-type", "application/manifest+json" if path.endswith("manifest") else "text/javascript")
+                self.send_header("content-length", str(len(body)))
+                self.send_header("cache-control", "no-store")
+                self.end_headers()
+                return self.wfile.write(body)
             if path == "/":
                 body = page.encode()
                 self.send_response(200)
@@ -593,6 +608,16 @@ def make_handler(session: Session, token: str, preview: dict):
                 return self._json(200, {"available": images.available(), "images": images.gallery(root),
                                          "models": {"fast": images.FAST, "detailed": images.DETAILED},
                                          "sizes": list(images.SIZES), "qualities": list(images.QUALITIES)})
+            if path == "/api/graph":
+                from .. import graph
+                from . import profile as prof
+                return self._json(200, graph.overview(root, session.agent, prof.load().get("name", "")))
+            if path == "/api/voice":
+                from .. import voice
+                try:
+                    return self._json(200, {"available": voice.available(), "voices": voice.voices() if voice.available() else []})
+                except voice.VoiceError as e:
+                    return self._json(200, {"available": True, "voices": [], "error": str(e)})
             if path == "/api/motion":
                 from .. import motion
                 return self._json(200, {"available": motion.available(), "videos": motion.gallery(root),
@@ -671,7 +696,7 @@ def make_handler(session: Session, token: str, preview: dict):
 
         def _asset(self, name: str):
             target = ASSETS / name
-            if not re.fullmatch(r"[\w.-]+", name) or not target.is_file():
+            if not re.fullmatch(r"(?:[\w-]+/)?[\w-]+\.[\w]+", name) or not target.is_file():
                 return self._json(404, {"error": "not found"})
             data = target.read_bytes()
             self.send_response(200)
@@ -811,6 +836,27 @@ def make_handler(session: Session, token: str, preview: dict):
                 except ValueError as e:
                     return self._json(400, {"error": str(e)})
                 return self._json(200, session.state())
+            if path == "/api/voice/speak":
+                from .. import voice
+                try:
+                    audio = voice.speak(str(body.get("text", "")), str(body.get("voice", "")))
+                except voice.VoiceError as e:
+                    return self._json(400, {"error": str(e)})
+                self.send_response(200)
+                self.send_header("content-type", "audio/mpeg")
+                self.send_header("content-length", str(len(audio)))
+                self.end_headers()
+                return self.wfile.write(audio)
+            if path == "/api/terminal":  # the Forge terminal: you typing a command yourself
+                from ..tools import ToolError, bash
+                command = str(body.get("command", "")).strip()
+                if not command:
+                    return self._json(400, {"error": "type a command"})
+                try:
+                    out = bash(root, command, int(body.get("timeout") or 120), session.agent.sandbox)
+                except ToolError as e:
+                    out = str(e)
+                return self._json(200, {"output": out})
             if path == "/api/motion/generate":
                 from .. import motion
                 try:
@@ -959,15 +1005,79 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         super().end_headers()
 
 
-def serve(agent: Agent, host: str = "127.0.0.1", port: int = 8788, open_browser: bool = True) -> None:
-    session = Session(agent)
+MANIFEST = json.dumps({
+    "name": "Bowers", "short_name": "Bowers", "description": "Bowers AI agent: Motion, Forge, Care and Aether",
+    "start_url": "/?app=1", "scope": "/", "display": "standalone", "background_color": "#0c0e12", "theme_color": "#0c0e12",
+    "icons": [{"src": "/assets/app-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+              {"src": "/assets/app-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}],
+    "shortcuts": [{"name": "Bowers Motion", "url": "/?app=1#motion"}, {"name": "Bowers Forge", "url": "/?app=1#forge"},
+                  {"name": "Bowers Care", "url": "/?app=1#care"}],
+})
+# Installable apps need a service worker. Bowers runs on your own computer, so it doesn't cache anything:
+# every request goes straight to the local server.
+SERVICE_WORKER = "self.addEventListener('install', () => self.skipWaiting());\n" \
+                 "self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));\n" \
+                 "self.addEventListener('fetch', () => {});\n"
+
+
+def app_token() -> str:
+    """A token that stays the same between runs, so the installed app and shortcuts reopen without a new link."""
+    import os
+    path = Path(os.environ.get("DOCKS_HOME", Path.home() / ".docks")) / "app-token"
+    try:
+        token = path.read_text().strip()
+        if re.fullmatch(r"[\w-]{20,}", token):
+            return token
+    except OSError:
+        pass
     token = secrets.token_urlsafe(24)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(token)
+    try:
+        path.chmod(0o600)
+    except OSError:
+        pass
+    return token
+
+
+def open_app_window(url: str) -> None:
+    """Open Bowers in its own window (Edge or Chrome app mode); fall back to a normal browser tab."""
+    import shutil
+    import subprocess
+    import sys
+    import webbrowser
+    candidates = ["msedge", "chrome", "google-chrome", "chromium", "chromium-browser", "brave"]
+    if sys.platform == "win32":
+        import os
+        for base in (os.environ.get("PROGRAMFILES(X86)", ""), os.environ.get("PROGRAMFILES", ""), os.environ.get("LOCALAPPDATA", "")):
+            for rel in (r"Microsoft\Edge\Application\msedge.exe", r"Google\Chrome\Application\chrome.exe"):
+                if base and Path(base, rel).is_file():
+                    candidates.insert(0, str(Path(base, rel)))
+    elif sys.platform == "darwin":
+        candidates[:0] = ["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+                          "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"]
+    for exe in candidates:
+        found = exe if Path(exe).is_file() else shutil.which(exe)
+        if found:
+            try:
+                subprocess.Popen([found, f"--app={url}", "--window-size=1400,900"], stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL)
+                return
+            except OSError:
+                continue
+    webbrowser.open(url)
+
+
+def serve(agent: Agent, host: str = "127.0.0.1", port: int = 8788, open_browser: bool = True,
+          app: bool = False) -> None:
+    session = Session(agent)
+    token = app_token() if app else secrets.token_urlsafe(24)
     shown_host = "127.0.0.1" if host in ("0.0.0.0", "::") else host
     preview_prefix = f"/{secrets.token_urlsafe(12)}/"
-    app = ThreadingHTTPServer((host, port), make_handler(session, token, {"port": port + 1, "prefix": preview_prefix}))
+    main_server = ThreadingHTTPServer((host, port), make_handler(session, token, {"port": port + 1, "prefix": preview_prefix}))
     handler = type("Preview", (PreviewHandler,), {"prefix": preview_prefix})
     preview = ThreadingHTTPServer((host, port + 1), lambda *a: handler(*a, directory=str(session.agent.root)))
-    for server in (app, preview):
+    for server in (main_server, preview):
         server.daemon_threads = True
         threading.Thread(target=server.serve_forever, daemon=True).start()
     url = f"http://{shown_host}:{port}/#token={token}"
@@ -975,7 +1085,9 @@ def serve(agent: Agent, host: str = "127.0.0.1", port: int = 8788, open_browser:
     print(f"  project: {agent.root}")
     if host not in ("127.0.0.1", "localhost", "::1"):
         print("  warning: reachable from your network. Anyone with the link can run commands on this machine.")
-    if open_browser:
+    if open_browser and app:
+        open_app_window(url)
+    elif open_browser:
         import webbrowser
         webbrowser.open(url)
     try:

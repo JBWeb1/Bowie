@@ -21,5 +21,5 @@ docks = "docks.cli:main"  # the earlier name keeps working
 include = ["docks*"]
 
 [tool.setuptools.package-data]
-"docks.web" = ["*.html", "assets/*"]
+"docks.web" = ["*.html", "assets/*", "assets/*/*"]
 "docks" = ["builtin/commands/*.md", "builtin/output-styles/*.md"]

@@ -993,7 +993,10 @@ def web_main(argv) -> int:
     parser.add_argument("--port", type=int, default=8788, help="app port; the preview uses the next one")
     parser.add_argument("--no-open", action="store_true", help="don't open a browser")
     parser.add_argument("-w", "--worktree", nargs="?", const="", metavar="NAME", help=WORKTREE_HELP)
+    parser.add_argument("--app", action="store_true", help="open in its own app window, with a link that stays the same")
     args = parser.parse_args(argv)
+    if args.app and args.dir == ".":
+        args.dir = str(last_project())
     root = Path(args.dir).expanduser().resolve()
     if not root.is_dir():
         parser.error(f"not a directory: {root}")
@@ -1007,7 +1010,96 @@ def web_main(argv) -> int:
     agent = Agent(root=root, model=args.model, effort=args.effort, auto_approve=args.yolo, mcp=mgr, ext=ext, save=True,
                   mode=mode_from_settings(ext))
     start_model_updates(agent, lambda text: print(ui.dim(text)))
-    serve(agent, host=args.host, port=args.port, open_browser=not args.no_open)
+    if args.app and _already_running(args.port):
+        from .web.server import app_token, open_app_window
+        open_app_window(f"http://127.0.0.1:{args.port}/#token={app_token()}")
+        print(ui.dim("Bowers was already running; opened a new window"))
+        return 0
+    serve(agent, host=args.host, port=args.port, open_browser=not args.no_open, app=args.app)
+    return 0
+
+
+def _already_running(port: int) -> bool:
+    import socket
+    try:
+        socket.create_connection(("127.0.0.1", port), timeout=0.5).close()
+        return True
+    except OSError:
+        return False
+
+
+def last_project() -> Path:
+    """The project the app opened last, or a starter folder in ~/Bowers Projects."""
+    from .web import library
+    saved = Path(os.environ.get("DOCKS_HOME", Path.home() / ".docks")) / "last-project"
+    try:
+        p = Path(saved.read_text().strip())
+        if p.is_dir():
+            return p
+    except OSError:
+        pass
+    start = library.projects_home() / "My First Project"
+    start.mkdir(parents=True, exist_ok=True)
+    return start
+
+
+def install_app_main(argv) -> int:
+    """Add Bowers to the desktop and the Start menu / app launcher, opening in its own window."""
+    import subprocess
+    parser = argparse.ArgumentParser(prog="bowers install-app", description="Install Bowers as a desktop app: a "
+                                     "shortcut on your desktop and in the Start menu (Windows), app launcher (Linux) "
+                                     "or Applications (macOS). It opens Bowers in its own window.")
+    parser.add_argument("--uninstall", action="store_true")
+    args = parser.parse_args(argv)
+    from importlib import resources
+    icon_dir = Path(str(resources.files("docks.web") / "assets"))
+    python = Path(sys.executable)
+    made = []
+    if sys.platform == "win32":
+        pythonw = python.with_name("pythonw.exe")
+        exe = pythonw if pythonw.is_file() else python
+        places = [Path(os.environ.get("APPDATA", "")) / "Microsoft/Windows/Start Menu/Programs/Bowers.lnk",
+                  Path(os.environ.get("USERPROFILE", str(Path.home()))) / "Desktop/Bowers.lnk"]
+        for lnk in places:
+            if args.uninstall:
+                lnk.unlink(missing_ok=True)
+                continue
+            lnk.parent.mkdir(parents=True, exist_ok=True)
+            ps = (f"$s=(New-Object -ComObject WScript.Shell).CreateShortcut('{lnk}');$s.TargetPath='{exe}';"
+                  f"$s.Arguments='-m docks app';$s.IconLocation='{icon_dir / 'app.ico'}';"
+                  f"$s.WorkingDirectory='{Path.home()}';$s.Description='Bowers AI agent';$s.Save()")
+            subprocess.run(["powershell", "-NoProfile", "-Command", ps], check=False)
+            made.append(lnk)
+    elif sys.platform == "darwin":
+        app = Path.home() / "Applications/Bowers.command"
+        if args.uninstall:
+            app.unlink(missing_ok=True)
+        else:
+            app.parent.mkdir(parents=True, exist_ok=True)
+            app.write_text(f"#!/bin/sh\nexec '{python}' -m docks app\n")
+            app.chmod(0o755)
+            made.append(app)
+    else:
+        entry = (f"[Desktop Entry]\nType=Application\nName=Bowers\nComment=Bowers AI agent\n"
+                 f"Exec='{python}' -m docks app\nIcon={icon_dir / 'app-512.png'}\nTerminal=false\n"
+                 "Categories=Development;Graphics;Utility;\nStartupWMClass=Bowers\n")
+        for place in (Path.home() / ".local/share/applications/bowers.desktop", Path.home() / "Desktop/bowers.desktop"):
+            if args.uninstall:
+                place.unlink(missing_ok=True)
+                continue
+            if place.parent.name == "Desktop" and not place.parent.is_dir():
+                continue
+            place.parent.mkdir(parents=True, exist_ok=True)
+            place.write_text(entry)
+            place.chmod(0o755)
+            made.append(place)
+    if args.uninstall:
+        print(ui.dim("removed the Bowers shortcuts"))
+        return 0
+    for m in made:
+        print(ui.green(f"added {m}"))
+    print(ui.dim("open Bowers from there; it starts in its own window. In the window, your browser's "
+                 "\"Install app\" button also pins it to the taskbar."))
     return 0
 
 
@@ -1097,6 +1189,10 @@ def main(argv=None) -> int:
         return context_main(argv[1:])
     if argv[:1] in (["image"], ["images"]):
         return image_main(argv[1:])
+    if argv[:1] == ["app"]:
+        return web_main([*argv[1:], "--app"])
+    if argv[:1] == ["install-app"]:
+        return install_app_main(argv[1:])
     if argv[:1] in (["video"], ["motion"]):
         return video_main(argv[1:])
     if argv[:1] in (["care"], ["system"]):
