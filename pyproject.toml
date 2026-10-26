@@ -12,6 +12,7 @@ dependencies = ["anthropic>=1.15"]
 
 [project.optional-dependencies]
 browser = ["playwright>=1.40"]  # the browser tool (then: playwright install chromium)
+labs = ["sympy>=1.12", "pillow>=10"]  # Math Lab and Emote Maker
 
 [project.scripts]
 bowers = "docks.cli:main"

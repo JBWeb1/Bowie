@@ -235,11 +235,12 @@ class Session:
             if q in self.subscribers:
                 self.subscribers.remove(q)
 
-    def start_turn(self, text: str, images: list | None = None, auto: bool = False) -> bool:
+    def start_turn(self, text: str, images: list | None = None, auto: bool = False, voice: bool = False) -> bool:
         with self.lock:
             if self.busy:
                 return False
             self.busy = True
+        self.agent.voice_turn = voice
         images = images or []
         self.publish({"type": "user", "text": text, "auto": auto,
                       "images": [f"data:{i['media_type']};base64,{i['data']}" for i in images]})
@@ -618,6 +619,9 @@ def make_handler(session: Session, token: str, preview: dict):
                     return self._json(200, {"available": voice.available(), "voices": voice.voices() if voice.available() else []})
                 except voice.VoiceError as e:
                     return self._json(200, {"available": True, "voices": [], "error": str(e)})
+            if path == "/api/arena":
+                from .. import labs
+                return self._json(200, {"board": labs.leaderboard()})
             if path == "/api/motion":
                 from .. import motion
                 return self._json(200, {"available": motion.available(), "videos": motion.gallery(root),
@@ -721,7 +725,7 @@ def make_handler(session: Session, token: str, preview: dict):
                         and isinstance(i.get("data"), str) and len(i["data"]) <= MAX_IMAGE_B64 for i in images):
                     return self._json(400, {"error": f"up to {MAX_IMAGES} PNG, JPEG, GIF or WebP images, 5 MB each"})
                 images = [{"media_type": i["media_type"], "data": i["data"]} for i in images]
-                if not session.start_turn(text or "Build what's shown in the image.", images):
+                if not session.start_turn(text or "Build what's shown in the image.", images, voice=bool(body.get("voice"))):
                     return self._json(409, {"error": "Bowers is still working; stop it or wait"})
                 return self._json(202, {"ok": True})
             if path == "/api/fix":
@@ -836,6 +840,35 @@ def make_handler(session: Session, token: str, preview: dict):
                 except ValueError as e:
                     return self._json(400, {"error": str(e)})
                 return self._json(200, session.state())
+            if path in ("/api/math", "/api/arena", "/api/arena/vote", "/api/emotes", "/api/upload", "/api/skills/install"):
+                from .. import labs
+                try:
+                    if path == "/api/math":
+                        return self._json(200, labs.solve_math(str(body.get("expr", "")), str(body.get("op", "solve"))))
+                    if path == "/api/arena":
+                        a = session.agent
+
+                        def client_for(engine):
+                            return a.claude_client if engine.startswith("claude-") and a.claude_client else models.router_client(engine)
+                        return self._json(200, labs.battle(client_for, str(body.get("a", "")), str(body.get("b", "")), str(body.get("prompt", ""))))
+                    if path == "/api/arena/vote":
+                        return self._json(200, labs.vote(str(body.get("id", "")), str(body.get("winner", ""))))
+                    if path == "/api/emotes":
+                        return self._json(200, labs.make_emotes(root, str(body.get("image", "")), str(body.get("name", "emote"))))
+                    if path == "/api/upload":
+                        return self._json(200, {"path": labs.save_upload(root, str(body.get("data", "")), str(body.get("folder", "uploads")))})
+                    from .. import plugins
+                    source = str(body.get("source", "")).strip()
+                    if not re.fullmatch(r"[\w.-]+/[\w.-]+|https://[\w./-]+(\.git)?", source):
+                        return self._json(400, {"error": "use owner/repo or an https git URL"})
+                    installed = plugins.install(source)
+                    session.agent.ext = plugins.Extensions.load(root)
+                    session.agent.refresh_tools()
+                    return self._json(200, {"installed": installed})
+                except labs.LabError as e:
+                    return self._json(400, {"error": str(e)})
+                except Exception as e:  # e.g. a plugin repo that won't clone
+                    return self._json(400, {"error": f"{type(e).__name__}: {e}"})
             if path == "/api/voice/speak":
                 from .. import voice
                 try:

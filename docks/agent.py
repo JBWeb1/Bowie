@@ -187,6 +187,11 @@ Environment:
 """
 
 
+VOICE_NOTE = """<voice-mode>The person is talking to you out loud through Bowers Aether. Start your final reply
+with one to three short, natural spoken sentences (no markdown, lists, code or links in them); they will be read aloud.
+Put any details after that. Still do the work with your tools as usual.</voice-mode>"""
+
+
 BROWSER_NOTE = """
 Checking your UI work: after you build or change a web page, open it with the browser tool (the dev server URL,
 or the HTML file) and look at the screenshot. Click through the main flow, fix any console errors it reports,
@@ -895,6 +900,9 @@ class Agent:
         """Extra blocks for this user turn: hook context, @mentions, mode reminders, background reports.
         None means a UserPromptSubmit hook blocked the prompt."""
         extra = []
+        if getattr(self, "voice_turn", False):  # spoken through Bowers Aether's voice mode
+            self.voice_turn = False
+            extra.append({"type": "text", "text": VOICE_NOTE})
         if self.ext.hooks:
             if not self._session_started:
                 start = self.ext.run_hooks("SessionStart", {"source": "startup", "session_id": self.session_id})
@@ -1095,6 +1103,16 @@ class Agent:
         if result is None:
             return
         self.observations = result["findings"]
+        if self.profile == "aether":  # Aether learns: it keeps the preferences it notices
+            for f in [f for f in result["findings"] if f["kind"] == "remember" and (f["action"] or f["text"])][:2]:
+                try:
+                    saved = instructions.add_note(self.root, f["action"] or f["text"], "user")
+                    self.display.notice(f"Aether will remember: {f['action'] or f['text']} (saved in {saved.name})")
+                except OSError:
+                    pass
+            self.observations = [f for f in self.observations if f["kind"] != "remember"]
+            result = {**result, "findings": self.observations}
+            self.reload_instructions()
         self._log("observer", **result)
         show = getattr(self.display, "observer", None)
         if show:

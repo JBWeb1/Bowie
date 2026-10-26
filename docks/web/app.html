@@ -11,7 +11,7 @@
 :root {
   --bg: #f6f1eb; --surface: #fffcf8; --surface-2: #f1e9e0; --line: #eadfd4; --line-strong: #d9cbbd;
   --fg: #1f1d1b; --fg-2: #4a433d; --muted: #8a7f75;
-  --accent: #d06b46; --accent-hover: #b95a37; --accent-fg: #ffffff; --accent-soft: #f8e5da; --accent-ink: #a64f2e;
+  --accent: #e85d22; --accent-hover: #cc4e17; --accent-fg: #ffffff; --accent-soft: #fde5d6; --accent-ink: #b5440f;
   --mint: #9cb4ac; --mint-soft: #e2ebe7; --cream: #ecddcd;
   --side: #1f1d1b; --side-2: #2b2825; --side-fg: #ece5dd; --side-muted: #958b81;
   --ok: #2f7a5b; --ok-soft: #e3efe9; --bad: #c4321c; --bad-soft: #fbeae6; --warn: #a35b06; --warn-soft: #fdf1e1;
@@ -24,11 +24,11 @@
   color-scheme: light;
 }
 :root[data-theme="dark"] {
-  --bg: #171513; --surface: #1f1c1a; --surface-2: #2a2623; --line: #34302c; --line-strong: #463f39;
-  --fg: #efe8e1; --fg-2: #cfc6bd; --muted: #a0958a;
-  --accent: #e07a55; --accent-hover: #ea8c69; --accent-fg: #1a0f0a; --accent-soft: #3b2418; --accent-ink: #f2a584;
-  --mint: #9cb4ac; --mint-soft: #1e2a26; --cream: #3a2f27;
-  --side: #121110; --side-2: #1f1d1b; --side-fg: #ece5dd; --side-muted: #8f857b;
+  --bg: #0b0d11; --surface: #13161c; --surface-2: #1a1e26; --line: #242a34; --line-strong: #323946;
+  --fg: #f2eee9; --fg-2: #c9c4bd; --muted: #8b919c;
+  --accent: #ff6b2c; --accent-hover: #ff8247; --accent-fg: #ffffff; --accent-soft: #2b1a11; --accent-ink: #ff9a62;
+  --mint: #9cb4ac; --mint-soft: #1e2a26; --cream: #2a2018;
+  --side: #0e1015; --side-2: #1a1d24; --side-fg: #ece5dd; --side-muted: #8b919c;
   --ok: #6fc59c; --ok-soft: #16291f; --bad: #ff8a73; --bad-soft: #351b16; --warn: #f0b45a; --warn-soft: #33260f;
   --add: #15281c; --add-ink: #7ad79f; --del: #33191a; --del-ink: #ff9c8a;
   --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 20px rgba(0, 0, 0, .25);
@@ -37,11 +37,11 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #171513; --surface: #1f1c1a; --surface-2: #2a2623; --line: #34302c; --line-strong: #463f39;
-    --fg: #efe8e1; --fg-2: #cfc6bd; --muted: #a0958a;
-    --accent: #e07a55; --accent-hover: #ea8c69; --accent-fg: #1a0f0a; --accent-soft: #3b2418; --accent-ink: #f2a584;
-    --mint: #9cb4ac; --mint-soft: #1e2a26; --cream: #3a2f27;
-    --side: #121110; --side-2: #1f1d1b; --side-fg: #ece5dd; --side-muted: #8f857b;
+    --bg: #0b0d11; --surface: #13161c; --surface-2: #1a1e26; --line: #242a34; --line-strong: #323946;
+    --fg: #f2eee9; --fg-2: #c9c4bd; --muted: #8b919c;
+    --accent: #ff6b2c; --accent-hover: #ff8247; --accent-fg: #ffffff; --accent-soft: #2b1a11; --accent-ink: #ff9a62;
+    --mint: #9cb4ac; --mint-soft: #1e2a26; --cream: #2a2018;
+    --side: #0e1015; --side-2: #1a1d24; --side-fg: #ece5dd; --side-muted: #8b919c;
     --ok: #6fc59c; --ok-soft: #16291f; --bad: #ff8a73; --bad-soft: #351b16; --warn: #f0b45a; --warn-soft: #33260f;
     --add: #15281c; --add-ink: #7ad79f; --del: #33191a; --del-ink: #ff9c8a;
     --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 20px rgba(0, 0, 0, .25);
@@ -769,25 +769,230 @@ a.btn { text-decoration: none; color: inherit; }
   .live-card > span:nth-child(2) { flex: 1 1 calc(100% - 30px); }
   .live-card .btn { flex: 1; justify-content: center; }
 }
+/* ================================================================ Bowers ecosystem: Motion, Forge, Care, Aether */
+.side-nav button img, .side-nav button .nav-ic { width: 26px; height: 26px; border-radius: 8px; flex: none; object-fit: cover; }
+.side-nav button { height: 42px; }
+.side-nav .aether-only { display: none; } body.is-aether .side-nav .aether-only { display: flex; }
+.side-logo .sub { color: var(--accent); }
+.side-aether { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 14px; border: 1px solid var(--side-2); background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, transparent), transparent); color: var(--side-fg); cursor: pointer; text-align: left; }
+.side-aether img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; background: #1b0f09; }
+.side-aether b { display: block; font-size: 13px; } .side-aether small { color: var(--side-muted); font-size: 11.5px; }
+.side-aether .dot { width: 7px; height: 7px; border-radius: 50%; background: #3ccf7a; display: inline-block; margin-right: 4px; }
+.top-search { display: flex; align-items: center; gap: 8px; height: 36px; min-width: 0; width: min(360px, 34vw); padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted); cursor: pointer; font-size: 13px; }
+.top-search span:nth-child(2) { flex: 1; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.top-search kbd, .cmdk kbd { font: 11px var(--mono); padding: 1px 6px; border-radius: 5px; border: 1px solid var(--line); color: var(--muted); }
+.theme-btn .icon { width: 17px; height: 17px; }
+/* hero banners */
+.hero { position: relative; display: flex; align-items: stretch; border-radius: 22px; overflow: hidden; min-height: 240px; margin-bottom: 22px; background: #120c09; color: #fff; isolation: isolate; }
+.hero .hero-art { position: absolute; inset: 0 0 0 auto; width: 62%; background-size: cover; background-position: center; z-index: -1; }
+.hero::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, #120c09 32%, rgba(18,12,9,.82) 48%, rgba(18,12,9,0) 78%); }
+.hero .hero-text { padding: 34px clamp(20px, 4vw, 40px); max-width: 520px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.hero h1 { margin: 0; font-size: clamp(32px, 4.4vw, 50px); line-height: 1; letter-spacing: -.03em; font-weight: 800; }
+.hero h1 em { display: block; font-style: normal; color: #ff6b2c; }
+.hero p { margin: 0; color: #e9ddd3; font-size: 15.5px; max-width: 420px; }
+.hero .btn.primary { align-self: flex-start; height: 44px; padding: 0 20px; border-radius: 999px; font-size: 14.5px; background: #ff6b2c; border-color: #ff6b2c; color: #fff; margin-top: 6px; box-shadow: 0 8px 24px rgba(255,107,44,.35); }
+.sec-title { display: flex; align-items: center; gap: 10px; margin: 26px 0 12px; } .sec-title h3 { margin: 0; font-size: 17px; letter-spacing: -.01em; }
+.sec-title .spacer { flex: 1; } .sec-title a, .sec-title button.link { color: var(--muted); font-size: 13px; background: none; border: 0; cursor: pointer; }
+.panel-card { border: 1px solid var(--line); background: var(--surface); border-radius: 18px; padding: 18px; }
+/* Motion composer */
+.mo-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.mo-mode { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface-2); cursor: pointer; text-align: left; color: var(--fg); }
+.mo-mode .mi { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--surface); color: var(--fg); flex: none; }
+.mo-mode.on { border-color: var(--accent); background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 22%, var(--surface-2)), var(--surface-2)); }
+.mo-mode.on .mi { background: var(--accent); color: #fff; }
+.mo-mode b { display: block; font-size: 15px; } .mo-mode small { color: var(--muted); font-size: 12.5px; }
+.mo-prompt { position: relative; }
+.mo-prompt textarea { width: 100%; min-height: 96px; resize: vertical; border-radius: 14px; padding: 14px 52px 14px 16px; font: inherit; font-size: 14.5px; }
+.mo-prompt .attach-btn { position: absolute; right: 10px; top: 10px; }
+.mo-ref { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: 13px; color: var(--muted); }
+.mo-ref img { width: 52px; height: 52px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
+.mo-opts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) auto; gap: 10px; margin-top: 12px; align-items: end; }
+.mo-opt { display: flex; flex-direction: column; gap: 4px; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); min-width: 0; }
+.mo-opt span { font-size: 11.5px; color: var(--muted); } .mo-opt select { border: 0; background: transparent; color: var(--fg); font: 600 13.5px var(--sans); padding: 0; outline: none; width: 100%; }
+.mo-opt select option { background: var(--surface); color: var(--fg); }
+.mo-go { height: 54px; padding: 0 22px; border-radius: 12px; font-size: 15px; }
+.mo-note { margin-top: 10px; font-size: 12.5px; color: var(--muted); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.mo-note.warn { color: var(--warn); }
+.qa-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-top: 16px; }
+.qa { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; text-align: left; color: var(--fg); transition: border-color .15s, transform .15s; }
+.qa:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); transform: translateY(-2px); }
+.qa img { width: 40px; height: 40px; object-fit: contain; flex: none; }
+.qa b { display: block; font-size: 13.5px; } .qa small { color: var(--muted); font-size: 12px; }
+.tpl-grid, .cre-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.tpl { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--surface); cursor: pointer; text-align: left; padding: 0; color: var(--fg); }
+.tpl .tpl-art { aspect-ratio: 16 / 10; background-size: cover; background-position: center; position: relative; display: grid; place-items: center; }
+.tpl .tpl-art img.st { width: 46%; filter: drop-shadow(0 6px 14px rgba(0,0,0,.4)); }
+.tpl .play { position: absolute; left: 10px; bottom: 10px; width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,.55); display: grid; place-items: center; color: #fff; }
+.tpl .tpl-body { padding: 10px 12px 12px; } .tpl b { display: block; font-size: 13.5px; } .tpl small { color: var(--muted); font-size: 12px; }
+.cre { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
+.cre video, .cre img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; display: block; background: #000; cursor: pointer; }
+.cre .cre-body { padding: 9px 12px; display: flex; gap: 8px; align-items: center; } .cre .cre-body div { flex: 1; min-width: 0; }
+.cre b { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .cre small { color: var(--muted); font-size: 11.5px; }
+.jobs { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; } .jobs:empty { display: none; }
+.job { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); font-size: 13px; }
+.job img { width: 36px; height: 36px; } .job b { display: block; } .job small { color: var(--muted); }
+.job .bar { flex: 1; height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; min-width: 60px; }
+.job .bar i { display: block; height: 100%; width: 35%; background: var(--accent); border-radius: 99px; animation: jobbar 1.6s ease-in-out infinite; }
+@keyframes jobbar { 0% { margin-left: -35%; } 100% { margin-left: 100%; } }
+.job.error { border-color: var(--bad); } .job.error small { color: var(--bad); }
+.photo-pane .img-studio { padding: 0; } .photo-pane .img-compose { border: 0; padding: 0; background: none; }
+/* Forge */
+.forge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.ide { display: grid; grid-template-columns: 210px minmax(0, 1fr) 320px; gap: 0; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: var(--surface); min-height: 330px; }
+.ide .ide-tree { border-right: 1px solid var(--line); padding: 10px; font-size: 12.5px; overflow: auto; max-height: 380px; }
+.ide .ide-tree button { display: block; width: 100%; text-align: left; border: 0; background: none; color: var(--fg-2); padding: 4px 6px; border-radius: 6px; cursor: pointer; font: 12.5px var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ide .ide-tree button:hover, .ide .ide-tree button.on { background: var(--surface-2); color: var(--fg); }
+.ide .ide-code { overflow: auto; max-height: 380px; font: 12.5px/1.6 var(--mono); padding: 10px 0; background: color-mix(in srgb, var(--bg) 60%, var(--surface)); }
+.ide .ide-code .ln { display: flex; } .ide .ide-code .ln i { width: 44px; flex: none; text-align: right; padding-right: 12px; color: var(--muted); font-style: normal; user-select: none; }
+.ide .ide-code .ln span { white-space: pre; }
+.ide .ide-side { border-left: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; }
+.ide .ide-tabs { display: flex; gap: 2px; padding: 8px; border-bottom: 1px solid var(--line); } .ide .ide-tabs button { border: 0; background: none; color: var(--muted); padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 12.5px; }
+.ide .ide-tabs button.on { background: var(--surface-2); color: var(--fg); font-weight: 600; }
+.ide .ide-pane { flex: 1; overflow: auto; padding: 10px; font: 12px/1.55 var(--mono); max-height: 300px; }
+.ide .ide-head { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+.ide .ide-head .spacer { flex: 1; } .ide .ide-head .btn { height: 28px; font-size: 12px; padding: 0 10px; }
+.term { display: flex; flex-direction: column; gap: 8px; height: 100%; }
+.term pre { flex: 1; margin: 0; overflow: auto; white-space: pre-wrap; word-break: break-word; font: 12px/1.5 var(--mono); background: #0a0c10; color: #d8e0ea; border-radius: 10px; padding: 10px; min-height: 160px; }
+.term form { display: flex; gap: 6px; } .term input { flex: 1; font: 12.5px var(--mono); }
+.term pre .cmd { color: #ff9a62; }
+.feat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 18px; }
+.banner-next { margin-top: 20px; border-radius: 18px; overflow: hidden; height: 110px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; color: #fff; }
+.banner-next b { font: italic 600 22px/1.1 var(--sans); } .banner-next span { font-weight: 800; font-size: 20px; }
+/* Care */
+.care-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.stat { padding: 14px 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); }
+.stat small { color: var(--muted); font-size: 12px; display: block; } .stat b { display: block; font-size: 17px; margin: 4px 0 8px; overflow-wrap: anywhere; }
+.meter { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; } .meter i { display: block; height: 100%; background: var(--ok); border-radius: 99px; }
+.meter.mid i { background: var(--warn); } .meter.high i { background: var(--bad); }
+.warn-list { margin: 14px 0 0; padding: 12px 16px; border-radius: 14px; background: var(--warn-soft); color: var(--warn); font-size: 13.5px; }
+.warn-list.ok { background: var(--ok-soft); color: var(--ok); }
+.problem-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.care-ask { display: flex; gap: 10px; margin-top: 12px; } .care-ask textarea { flex: 1; min-height: 64px; border-radius: 12px; padding: 12px; font: inherit; }
+.check-out { margin-top: 12px; white-space: pre-wrap; font: 12px/1.5 var(--mono); background: #0a0c10; color: #d8e0ea; border-radius: 12px; padding: 12px; max-height: 360px; overflow: auto; }
+.check-out:empty { display: none; }
+.chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Labs */
+.labs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+.lab { display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 18px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; text-align: left; color: var(--fg); transition: transform .15s, border-color .15s; }
+.lab:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.lab .lab-top { display: flex; align-items: center; gap: 10px; } .lab img { width: 46px; height: 46px; object-fit: contain; }
+.lab b { font-size: 15px; } .lab p { margin: 0; color: var(--muted); font-size: 13px; flex: 1; }
+.lab .src { font-size: 11px; color: var(--muted); }
+.lab-pane { margin-top: 18px; } .lab-pane:empty { display: none; }
+.lab-pane .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+.lab-pane textarea, .lab-pane input.input { font: inherit; }
+.lab-out { margin-top: 12px; } .lab-out pre { white-space: pre-wrap; font: 12.5px/1.55 var(--mono); background: var(--surface-2); border-radius: 12px; padding: 12px; margin: 0; overflow: auto; }
+canvas.plot { width: 100%; height: 320px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); display: block; margin-top: 12px; }
+.arena { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.arena .side-ans { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: var(--surface-2); min-height: 140px; }
+.arena .side-ans h4 { margin: 0 0 6px; font-size: 13px; color: var(--muted); }
+.emote-row { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; margin-top: 12px; }
+.emote-row figure { margin: 0; text-align: center; font-size: 11px; color: var(--muted); } .emote-row img { display: block; margin: 0 auto 4px; background: repeating-conic-gradient(var(--line) 0 25%, transparent 0 50%) 50% / 12px 12px; border-radius: 6px; }
+/* Knowledge graph */
+.kg-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; }
+.kg { position: relative; border-radius: 22px; border: 1px solid var(--line); background: radial-gradient(circle at 50% 50%, rgba(255,107,44,.16), transparent 55%), #0b0d11; min-height: 640px; overflow: hidden; color: #f2eee9; }
+.kg > svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.kg .kg-node { position: absolute; transform: translate(-50%, -50%); width: 200px; padding: 12px 14px; border-radius: 16px; border: 1px solid rgba(255,140,80,.35); background: rgba(20,14,11,.86); backdrop-filter: blur(6px); cursor: pointer; text-align: left; color: inherit; box-shadow: 0 0 24px rgba(255,107,44,.12); transition: transform .2s, box-shadow .2s; }
+.kg .kg-node:hover { transform: translate(-50%, -52%); box-shadow: 0 0 30px rgba(255,107,44,.35); }
+.kg .kg-node .kh { display: flex; gap: 10px; align-items: center; } .kg .kg-node .ki { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255,140,80,.5); display: grid; place-items: center; color: #ff8a4d; flex: none; }
+.kg .kg-node b { display: block; font-size: 14px; } .kg .kg-node small { color: #b8aca3; font-size: 11.5px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kg .kg-node ul { margin: 8px 0 0; padding: 0 0 0 14px; font-size: 11.5px; color: #d9cfc7; } .kg .kg-node li { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kg .kg-node .thumbs { display: flex; gap: 4px; margin-top: 8px; } .kg .kg-node .thumbs img, .kg .kg-node .thumbs video { width: 34px; height: 26px; object-fit: cover; border-radius: 5px; }
+.kg .kg-core { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 220px; height: 220px; border-radius: 50%; display: grid; place-items: center; }
+.kg .kg-core::before, .kg .kg-core::after { content: ""; position: absolute; inset: -16px; border-radius: 50%; border: 1px solid rgba(255,120,60,.45); animation: kgspin 14s linear infinite; }
+.kg .kg-core::after { inset: -40px; border-style: dashed; border-color: rgba(255,120,60,.25); animation-duration: 26s; animation-direction: reverse; }
+@keyframes kgspin { to { transform: rotate(360deg); } }
+.kg .kg-core img { width: 190px; height: 190px; object-fit: cover; border-radius: 50%; -webkit-mask-image: radial-gradient(circle, #000 58%, transparent 71%); mask-image: radial-gradient(circle, #000 58%, transparent 71%); filter: drop-shadow(0 0 40px rgba(255,107,44,.55)); }
+.kg .kg-core .lbl { position: absolute; bottom: -22px; padding: 6px 18px; border-radius: 999px; background: rgba(20,14,11,.92); border: 1px solid rgba(255,140,80,.5); text-align: center; }
+.kg .kg-core .lbl b { display: block; font-size: 17px; } .kg .kg-core .lbl small { font-size: 11px; color: #c9bdb4; }
+.kg-edge-label { font: 11px var(--sans); fill: #d6c6ba; }
+.kg-side .panel-card + .panel-card { margin-top: 12px; }
+.kg-side .who { display: flex; gap: 12px; align-items: center; } .kg-side .who img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: #1b0f09; }
+.kg-side .quote { font-style: italic; color: var(--fg-2); font-size: 13.5px; margin: 12px 0 0; }
+.kg-side .qa { margin-top: 8px; padding: 9px 12px; } .kg-side .stat-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; color: var(--fg-2); }
+.kg-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.kg-code { border-radius: 22px; border: 1px solid var(--line); background: #0b0d11; height: 640px; position: relative; overflow: hidden; }
+.kg-code canvas { width: 100%; height: 100%; display: block; cursor: grab; }
+.kg-code .tip { position: absolute; left: 14px; bottom: 12px; color: #b8aca3; font-size: 12px; }
+.kg-foot { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; margin-top: 14px; padding: 12px 16px; border-radius: 18px; border: 1px solid var(--line); background: var(--surface); }
+.kg-foot img { width: 46px; height: 46px; } .kg-foot b { display: block; } .kg-foot small { color: var(--muted); }
+/* command palette */
+.cmdk { position: fixed; inset: 0; z-index: 70; background: rgba(8,6,5,.55); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: flex-start; padding: 12vh 16px 16px; }
+.cmdk-box { width: min(620px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow-lg); overflow: hidden; }
+.cmdk-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.cmdk-head input { flex: 1; border: 0; background: none; outline: none; font: 15px var(--sans); color: var(--fg); }
+.cmdk-list { max-height: 52vh; overflow: auto; padding: 6px; }
+.cmdk-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 9px 10px; border: 0; border-radius: 10px; background: none; color: var(--fg); cursor: pointer; text-align: left; font-size: 14px; }
+.cmdk-item img { width: 28px; height: 28px; object-fit: contain; } .cmdk-item .tag { margin-left: auto; font-size: 11.5px; color: var(--muted); }
+.cmdk-item.on { background: var(--accent-soft); } .cmdk-foot { padding: 8px 14px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+/* Aether HUD (always dark) */
+.hud { position: fixed; inset: 0; z-index: 80; background: radial-gradient(circle at 50% 40%, rgba(255,107,44,.18), transparent 55%), #07080b; color: #f2eee9; display: flex; flex-direction: column; align-items: center; padding: 22px 16px; overflow-y: auto; }
+.hud-top { width: 100%; max-width: 980px; display: flex; align-items: center; gap: 12px; }
+.hud-top img { width: 34px; height: 34px; border-radius: 9px; } .hud-top b { font-size: 18px; } .hud-top small { color: #b8aca3; letter-spacing: .3em; font-size: 10px; display: block; }
+.hud-top .spacer { flex: 1; } .hud .btn { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.12); color: #f2eee9; }
+.hud-core { position: relative; width: 280px; height: 280px; margin: 26px 0 10px; display: grid; place-items: center; flex: none; }
+.hud-core .ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(255,120,60,.5); animation: kgspin 12s linear infinite; }
+.hud-core .ring:nth-child(2) { inset: -26px; border-style: dashed; border-color: rgba(255,120,60,.28); animation-duration: 30s; animation-direction: reverse; }
+.hud-core .ring:nth-child(3) { inset: 26px; border-color: rgba(255,170,120,.25); border-top-color: #ff6b2c; animation-duration: 3s; }
+.hud-core img { width: 230px; height: 230px; object-fit: cover; border-radius: 50%; -webkit-mask-image: radial-gradient(circle, #000 58%, transparent 71%); mask-image: radial-gradient(circle, #000 58%, transparent 71%); filter: drop-shadow(0 0 50px rgba(255,107,44,.5)); transition: transform .3s; }
+.hud.listening .hud-core img { transform: scale(1.06); } .hud.speaking .hud-core .ring:nth-child(3) { animation-duration: .9s; }
+.hud-status { font-size: 15px; color: #ffb38a; min-height: 22px; text-align: center; }
+.hud-wave { display: flex; gap: 4px; height: 26px; align-items: center; margin: 8px 0; } .hud-wave i { width: 4px; height: 6px; border-radius: 4px; background: #ff6b2c; opacity: .4; }
+.hud.listening .hud-wave i, .hud.speaking .hud-wave i { animation: wave 1s ease-in-out infinite; opacity: 1; }
+.hud-wave i:nth-child(2) { animation-delay: .1s; } .hud-wave i:nth-child(3) { animation-delay: .2s; } .hud-wave i:nth-child(4) { animation-delay: .3s; } .hud-wave i:nth-child(5) { animation-delay: .4s; }
+@keyframes wave { 50% { height: 24px; } }
+.hud-log { width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 10px; margin: 10px 0; }
+.hud-log .hl { padding: 10px 14px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); font-size: 14.5px; line-height: 1.5; white-space: pre-wrap; }
+.hud-log .hl.you { align-self: flex-end; background: rgba(255,107,44,.16); border-color: rgba(255,107,44,.35); max-width: 80%; }
+.hud-log .hl.step { font-size: 12.5px; color: #b8aca3; padding: 6px 12px; }
+.hud-ctrl { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 760px; position: sticky; bottom: 0; padding: 12px 0; background: linear-gradient(transparent, #07080b 30%); }
+.hud-mic { width: 64px; height: 64px; border-radius: 50%; border: 0; background: #ff6b2c; color: #fff; display: grid; place-items: center; cursor: pointer; box-shadow: 0 0 0 0 rgba(255,107,44,.6); }
+.hud.listening .hud-mic { animation: pulse 1.4s infinite; } @keyframes pulse { 70% { box-shadow: 0 0 0 18px rgba(255,107,44,0); } 100% { box-shadow: 0 0 0 0 rgba(255,107,44,0); } }
+.hud-mic .icon { width: 26px; height: 26px; }
+.hud-ctrl input { flex: 1; min-width: 200px; height: 44px; border-radius: 999px; padding: 0 18px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); color: #fff; font: 14px var(--sans); outline: none; }
+.hud-chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; } .hud-chips button { border: 1px solid rgba(255,140,80,.35); background: rgba(255,107,44,.08); color: #ffd2b8; border-radius: 999px; padding: 6px 12px; cursor: pointer; font-size: 12.5px; }
+.hud label.hands { display: flex; gap: 6px; align-items: center; font-size: 12.5px; color: #c9bdb4; }
+/* Voice studio */
+.voice-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+.voice-row input[type=range] { accent-color: var(--accent); }
+.voice-hero { display: flex; gap: 14px; align-items: center; } .voice-hero img { width: 64px; height: 64px; }
+@media (max-width: 1100px) { .mo-opts { grid-template-columns: repeat(3, minmax(0, 1fr)); } .mo-go { grid-column: span 3; } }
+@media (max-width: 920px) {
+  .kg-wrap { grid-template-columns: minmax(0, 1fr); } .ide { grid-template-columns: minmax(0, 1fr); } .ide .ide-tree, .ide .ide-side { border: 0; border-top: 1px solid var(--line); max-height: 220px; }
+  .top-search { width: 36px; flex: none; padding: 0; justify-content: center; } .top-search span:nth-child(2), .top-search kbd { display: none; }
+}
+@media (max-width: 640px) {
+  .hero { min-height: 300px; align-items: flex-end; } .hero .hero-art { width: 100%; opacity: .55; } .hero::before { background: linear-gradient(0deg, #120c09 30%, rgba(18,12,9,.3)); }
+  .mo-modes { grid-template-columns: 1fr; } .mo-opts { grid-template-columns: 1fr 1fr; } .mo-go { grid-column: 1 / -1; }
+  .arena { grid-template-columns: 1fr; } .kg { min-height: 0; } .kg .kg-node { position: static; transform: none; width: auto; margin: 8px; } .kg > svg { display: none; }
+  .kg .kg-core { position: relative; left: auto; top: auto; transform: none; margin: 40px auto 30px; width: 160px; height: 160px; } .kg .kg-core img { width: 140px; height: 140px; }
+  .hud-core { width: 200px; height: 200px; } .hud-core img { width: 170px; height: 170px; }
+}
 </style>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0b0d11"><link rel="icon" href="/assets/app-192.png"><link rel="apple-touch-icon" href="/assets/app-192.png">
 </head>
 <body>
 <div id="gate" class="hidden"><div><div class="logo-mark" style="margin:0 auto 14px;width:44px;height:44px"></div><h2 style="margin:0 0 6px">Open Bowers from your terminal</h2><p style="color:var(--muted);margin:0">Use the link printed when you ran <code>bowers web</code>. It contains a private key for this session.</p></div></div>
 
 <div class="shell">
 <nav class="side" id="side" aria-label="Bowers">
-  <div class="side-logo"><span class="bmark" data-mark></span><span><b>Bowers</b><small>AI AGENT</small></span></div>
+  <div class="side-logo"><span class="bmark" data-mark></span><span><b>Bowers<span class="sub" id="side-sub"></span></b><small>AI AGENT</small></span></div>
   <button class="side-new" id="side-new"><span data-icon="plus"></span>New chat</button>
   <div class="side-nav">
-    <button class="on" data-page="home"><span data-icon="home"></span>Home</button>
-    <button data-page="projects"><span data-icon="folder"></span>Projects</button>
-    <button data-page="tasks"><span data-icon="check"></span>Tasks</button>
-    <button data-page="library"><span data-icon="library"></span>Library</button>
-    <button data-page="studio"><span data-icon="sparkle"></span>Creation Studio</button>
-    <button data-page="explore"><span data-icon="compass"></span>Explore</button>
-    <button data-page="settings"><span data-icon="gear"></span>Settings</button>
+    <button class="on" data-page="home"><img src="/assets/nav/home.webp" alt="">Home</button>
+    <button data-page="motion"><img src="/assets/nav/creation.webp" alt="">Bowers Motion</button>
+    <button data-page="forge"><img src="/assets/nav/coding.webp" alt="">Bowers Forge</button>
+    <button data-page="care"><img src="/assets/nav/support.webp" alt="">Bowers Care</button>
+    <button data-page="graph" class="aether-only"><img src="/assets/aether/discovering.webp" alt="" style="background:#1b0f09">Knowledge Graph</button>
+    <button data-page="labs"><img src="/assets/nav/trading.webp" alt="">Labs</button>
+    <button data-page="projects"><img src="/assets/nav/projects.webp" alt="">Projects</button>
+    <button data-page="tasks"><img src="/assets/nav/premium.webp" alt="">Tasks</button>
+    <button data-page="library"><img src="/assets/nav/library.webp" alt="">Library</button>
+    <button data-page="explore"><img src="/assets/nav/help.webp" alt="">Explore</button>
+    <button data-page="settings"><img src="/assets/nav/settings.webp" alt="">Settings</button>
   </div>
   <div class="side-recent" id="side-recent"></div>
+  <button class="side-aether" id="side-aether" title="Talk to Bowers Aether"><img src="/assets/aether/idle.webp" alt=""><span><b>Bowie</b><small><span class="dot"></span>Your AI companion</small></span></button>
   <button class="side-me" id="side-me" title="Your settings"><img class="me-face" src="/assets/bowie-happy.webp" alt=""><span><b id="me-name">You</b><small id="me-model">Bowers</small></span><span data-icon="chevron"></span></button>
 </nav>
 <div class="main">
@@ -798,6 +1003,9 @@ a.btn { text-decoration: none; color: inherit; }
   <span class="status" id="status"><span class="dot"></span><span id="status-text">Ready</span></span>
   <span class="live-badge hidden" id="live-badge"><i></i>Live</span>
   <span class="spacer"></span>
+  <button class="top-search" id="top-search" title="Search (Ctrl+K)"><span data-icon="search"></span><span>Search tools, projects, files…</span><kbd class="hide-mobile">Ctrl K</kbd></button>
+  <button class="btn ghost icon-only" id="top-aether" title="Bowers Aether voice assistant" aria-label="Bowers Aether"><img src="/assets/art/aether-icon.webp" alt="" style="width:22px;height:22px;border-radius:6px"></button>
+  <button class="btn ghost icon-only theme-btn" id="theme-btn" aria-label="Switch dark or light mode"></button>
   <button class="btn primary hide-mobile deploy-btn" id="deploy-top" title="Put this project online"><span data-icon="rocket"></span>Deploy</button>
   <button class="btn ghost hide-mobile" id="new-chat"><span data-icon="plus"></span>New chat</button>
   <button class="btn ghost icon-only hide-mobile" id="toggle-panel" title="Show or hide the side panel" aria-label="Toggle side panel"><span data-icon="panel"></span></button>
@@ -841,7 +1049,7 @@ a.btn { text-decoration: none; color: inherit; }
       <button class="tab on" data-tab="preview"><span data-icon="eye"></span>Preview</button>
       <button class="tab" data-tab="code"><span data-icon="code"></span>Code</button>
       <button class="tab" data-tab="github"><span data-icon="github"></span>GitHub <span class="badge hidden" id="changes-badge"></span></button>
-      <button class="tab" data-tab="images"><span data-icon="image"></span>Images</button>
+      <button class="tab" data-tab="terminal"><span data-icon="terminal"></span>Terminal</button>
     </div>
 
     <div class="view" id="view-preview">
@@ -872,6 +1080,7 @@ a.btn { text-decoration: none; color: inherit; }
     <div class="view hidden" id="view-github">
       <div class="gh" id="gh"></div>
     </div>
+    <div class="view hidden" id="view-terminal"><div class="term" id="panel-term" style="padding:12px"></div></div>
     <div class="view hidden" id="view-images">
       <div class="img-studio">
         <div class="img-compose">
@@ -905,10 +1114,97 @@ a.btn { text-decoration: none; color: inherit; }
   <div class="filters" id="task-filters"></div>
   <div class="tasks-split"><div class="task-list" id="task-list"></div><aside class="task-detail" id="task-detail"></aside></div>
 </section>
-<section class="page hidden" id="page-studio">
-  <div class="studio-hero"><div><h2>Creation Studio</h2><p>Choose a tool and start creating. Bowers builds it with you.</p></div><img src="/assets/bowie-excited.webp" alt=""></div>
+<section class="page hidden" id="page-motion">
+  <div class="hero"><div class="hero-art" style="background-image:url(/assets/art/motion-hero.webp)"></div>
+    <div class="hero-text"><h1>Bowers<em>Motion</em></h1><p>Turn your ideas into stunning videos and photos with AI.</p>
+      <button class="btn primary" id="mo-create">Create Now <span data-icon="arrow-right"></span></button></div></div>
+  <div class="panel-card" id="mo-card">
+    <div class="mo-modes">
+      <button class="mo-mode on" data-mode="video"><span class="mi" data-icon="play"></span><span><b>Generate Video</b><small>Turn your ideas into motion, with sound.</small></span></button>
+      <button class="mo-mode" data-mode="photo"><span class="mi" data-icon="image"></span><span><b>Generate Photo</b><small>Create stunning images with AI.</small></span></button>
+    </div>
+    <div id="mo-video">
+      <div class="mo-prompt"><textarea class="input" id="mo-prompt" placeholder="Describe your scene, style, or idea… e.g. A red fox runs through fresh snow at sunrise, slow dolly shot, cinematic, birdsong"></textarea>
+        <button class="btn ghost icon-only attach-btn" id="mo-attach" title="Start from an image (image to video)" aria-label="Start from an image"><span data-icon="image"></span></button>
+        <input type="file" id="mo-file" accept="image/png,image/jpeg,image/webp" hidden></div>
+      <div class="mo-ref hidden" id="mo-ref"><img alt=""><span>Animating this image (it becomes the first frame)</span><button class="btn ghost" id="mo-ref-x">Remove</button></div>
+      <div class="mo-opts">
+        <label class="mo-opt"><span>Video model</span><select id="mo-model"><option value="fast">Bowers Motion Fast</option><option value="pro">Bowers Motion Pro</option></select></label>
+        <label class="mo-opt"><span>Aspect ratio</span><select id="mo-aspect"><option value="16:9">16:9 (Landscape)</option><option value="9:16">9:16 (Portrait)</option></select></label>
+        <label class="mo-opt"><span>Duration</span><select id="mo-seconds"></select></label>
+        <label class="mo-opt"><span>Resolution</span><select id="mo-res"></select></label>
+        <label class="mo-opt"><span>Sound</span><select id="mo-sound"><option value="1">On</option><option value="0">Off</option></select></label>
+        <button class="btn primary mo-go" id="mo-go"><span data-icon="sparkle"></span>Generate <span data-icon="arrow-right"></span></button>
+      </div>
+      <div class="mo-note" id="mo-note">Powered by LTX-2.5. Videos are saved in your project under assets/videos.</div>
+      <div class="jobs" id="mo-jobs"></div>
+    </div>
+    <div id="mo-photo" class="photo-pane hidden"></div>
+  </div>
+  <div class="qa-row" id="mo-quick"></div>
+  <div class="sec-title"><h3>Featured Templates</h3></div>
+  <div class="tpl-grid" id="mo-templates"></div>
+  <div class="sec-title"><h3>Recent Creations</h3><span class="spacer"></span><button class="link" id="mo-all">View all →</button></div>
+  <div class="cre-grid" id="mo-creations"></div>
+  <div class="sec-title"><h3>More creative tools</h3></div>
   <div class="studio-grid" id="studio-grid"></div>
 </section>
+<section class="page hidden" id="page-forge">
+  <div class="hero"><div class="hero-art" style="background-image:url(/assets/art/forge-hero.webp)"></div>
+    <div class="hero-text"><h1>Bowers<em>Forge</em></h1><p><b>Build smarter. Ship faster.</b><br>Your AI-powered coding workspace for modern development.</p>
+      <button class="btn primary" id="forge-new"><span data-icon="plus"></span>New Project <span data-icon="arrow-right"></span></button></div></div>
+  <div class="sec-title"><h3>Recent Projects</h3><span class="spacer"></span><button class="link" data-goto="projects">View all →</button></div>
+  <div class="forge-grid" id="forge-projects"></div>
+  <div class="sec-title"><h3>Workspace</h3><span class="spacer"></span><button class="link" id="forge-open">Open full workspace →</button></div>
+  <div class="ide" id="ide">
+    <div class="ide-head"><span data-icon="folder"></span><b id="ide-project"></b><span class="muted" id="ide-file"></span><span class="spacer"></span>
+      <button class="btn" id="ide-run" title="Ask Bowers to start the app"><span data-icon="play"></span>Run</button><button class="btn primary" id="ide-deploy"><span data-icon="rocket"></span>Deploy</button></div>
+    <div class="ide-tree" id="ide-tree"></div>
+    <div class="ide-code" id="ide-code"><div class="muted" style="padding:10px 14px">Pick a file to view it.</div></div>
+    <div class="ide-side"><div class="ide-tabs"><button class="on" data-it="term">Terminal</button><button data-it="ai">AI Assistant</button><button data-it="preview">Preview</button></div>
+      <div class="ide-pane" id="ide-pane"></div></div>
+  </div>
+  <div class="feat-row" id="forge-feats"></div>
+  <div class="sec-title"><h3>Start from a template</h3></div>
+  <div class="ideas" id="forge-starters"></div>
+  <div class="banner-next" style="background-image:linear-gradient(90deg,rgba(0,0,0,.55),rgba(0,0,0,.1)),url(/assets/art/eco-hero.webp)"><b>Build what's next.</b><span>Bowers <span style="color:#ff6b2c">Forge</span></span></div>
+</section>
+<section class="page hidden" id="page-care">
+  <div class="hero"><div class="hero-art" style="background:radial-gradient(circle at 70% 50%,rgba(255,107,44,.35),transparent 60%),#120c09"><img src="/assets/bowie/fixing.webp" alt="" style="position:absolute;right:8%;top:50%;transform:translateY(-50%);height:82%"></div>
+    <div class="hero-text"><h1>Bowers<em>Care</em></h1><p>Fix Windows, Linux and Mac problems, and code errors. Bowie checks your computer, explains what's wrong, and fixes it step by step with your OK.</p>
+      <button class="btn primary" id="care-scan"><span data-icon="shield"></span>Check my computer</button></div></div>
+  <div class="care-grid" id="care-stats"></div>
+  <div id="care-warn"></div>
+  <div class="sec-title"><h3>What's wrong?</h3></div>
+  <div class="problem-grid" id="care-problems"></div>
+  <div class="care-ask"><textarea class="input" id="care-text" placeholder="Describe the problem, or paste an error message… e.g. My Wi-Fi keeps dropping since the last update"></textarea><button class="btn primary" id="care-fix">Fix it</button></div>
+  <div class="sec-title"><h3>Fix a code error</h3></div>
+  <div class="care-ask"><textarea class="input" id="care-code" placeholder="Paste the error and stack trace from your app, terminal or browser console…"></textarea><button class="btn primary" id="care-code-go">Find and fix</button></div>
+  <div class="sec-title"><h3>Deeper checks</h3><span class="muted" style="font-size:12.5px">read-only: nothing is changed</span></div>
+  <div class="chip-row" id="care-checks"></div>
+  <pre class="check-out" id="care-out"></pre>
+</section>
+<section class="page hidden" id="page-labs">
+  <div class="page-head"><img src="/assets/bowie/inspire.webp" alt="" style="width:46px;height:46px"><div><h2>Bowers Labs</h2><small class="muted">More tools: trading research, math, model arena, 3D, emotes, interiors, audits and more</small></div></div>
+  <div class="labs-grid" id="labs-grid"></div>
+  <div class="lab-pane panel-card hidden" id="lab-pane"></div>
+</section>
+<section class="page hidden" id="page-graph">
+  <div class="page-head"><img src="/assets/art/aether-icon.webp" alt="" style="width:44px;height:44px;border-radius:10px"><div><h2>Knowledge Graph</h2><small class="muted">Your ideas. Connected. Powered by Bowie.</small></div><span class="spacer"></span>
+    <div class="kg-tabs tseg" id="kg-tabs"><button class="on" data-v="map">Overview</button><button data-v="code">Code map</button></div></div>
+  <div class="kg-wrap">
+    <div><div class="kg" id="kg"></div><div class="kg-code hidden" id="kg-code"><canvas id="kg-canvas"></canvas><div class="tip">Each dot is a code file; lines show which file imports which. Drag to move, scroll to zoom, click a file to open it.</div></div>
+      <div class="kg-foot"><img src="/assets/aether/thinking.webp" alt=""><div><b id="kg-thinking">Bowie is thinking…</b><small>Connecting your latest ideas with existing knowledge.</small></div></div></div>
+    <aside class="kg-side">
+      <div class="panel-card"><div class="who"><img src="/assets/aether/idle.webp" alt=""><div><b>Bowie</b><br><small class="muted">AI Knowledge Core</small><br><small><span class="dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#3ccf7a"></span> Online</small></div></div>
+        <p class="quote">"I connect your ideas, projects, and knowledge, so you can create more, faster."</p></div>
+      <div class="panel-card"><b>Quick Actions</b><div id="kg-actions"></div></div>
+      <div class="panel-card"><b>Recent Connections</b><div id="kg-recent"></div></div>
+      <div class="panel-card"><b>Knowledge Graph Stats</b><div id="kg-stats"></div></div>
+    </aside>
+  </div>
+</section>
+
 <section class="page hidden" id="page-library">
   <div class="page-head"><h2>Library</h2></div>
   <div class="filters" id="lib-filters"></div>
@@ -925,7 +1221,7 @@ a.btn { text-decoration: none; color: inherit; }
 <section class="page hidden" id="page-settings">
   <div class="page-head"><h2>Settings</h2></div>
 <div class="settings-page" id="settings">
-  <div class="set-tabs" role="tablist"><button class="on" data-st="general">General</button><button data-st="model">Model</button><button data-st="account">Account</button><button data-st="tools">Tools &amp; safety</button><button data-st="appearance">Appearance</button></div>
+  <div class="set-tabs" role="tablist"><button class="on" data-st="general">General</button><button data-st="model">Model</button><button data-st="account">Account</button><button data-st="tools">Tools &amp; safety</button><button data-st="appearance">Appearance</button><button data-st="voice">Voice</button></div>
   <div class="set-panel" data-sp="general">
     <div class="set-card"><div class="set-row"><span class="set-ic"><img class="me-face" src="/assets/bowie-happy.webp" alt=""></span><div><b>Your name</b><small>Bowie greets you with it</small></div><input class="input" id="profile-name" placeholder="Your name" autocomplete="name"></div>
       <label class="set-row switch-row"><span class="set-ic" data-icon="bell"></span><div><b>Notifications</b><small>When Bowers needs you or finishes, while this tab is in the background</small></div><span class="switch"><input type="checkbox" id="notify"><i></i></span></label>
@@ -958,6 +1254,7 @@ a.btn { text-decoration: none; color: inherit; }
     <div class="set-card"><div class="set-label">Connect apps</div><div class="apps" id="settings-apps"></div></div>
     <div class="set-card"><div class="set-label">Plugins and extensions</div><div class="ext-info" id="ext-info"></div></div>
   </div>
+  <div class="set-panel hidden" data-sp="voice"></div>
   <div class="set-panel hidden" data-sp="appearance">
     <div class="set-card">
       <label>Theme<select class="input" id="theme"><option value="system">Match system</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
@@ -971,9 +1268,9 @@ a.btn { text-decoration: none; color: inherit; }
 
 <nav class="mobile-nav">
   <button class="btn ghost" data-m="chat"><span data-icon="home"></span>Home</button>
-  <button class="btn ghost" data-m="projects"><span data-icon="folder"></span>Projects</button>
-  <button class="btn ghost" data-m="library"><span data-icon="library"></span>Library</button>
-  <button class="btn ghost" data-m="studio"><span data-icon="sparkle"></span>Studio</button>
+  <button class="btn ghost" data-m="motion"><span data-icon="play"></span>Motion</button>
+  <button class="btn ghost" data-m="forge"><span data-icon="code"></span>Forge</button>
+  <button class="btn ghost" data-m="care"><span data-icon="shield"></span>Care</button>
   <button class="btn ghost" data-m="more"><span data-icon="grid"></span>More</button>
 </nav>
 <div class="sheet hidden" id="more-sheet"><div class="sheet-inner">
@@ -982,7 +1279,10 @@ a.btn { text-decoration: none; color: inherit; }
     <button data-m="preview"><span data-icon="eye"></span>Preview</button>
     <button data-m="code"><span data-icon="code"></span>Code</button>
     <button data-m="github"><span data-icon="github"></span>GitHub</button>
-    <button data-m="images"><span data-icon="image"></span>Images</button>
+    <button data-m="terminal"><span data-icon="terminal"></span>Terminal</button>
+    <button data-m="projects"><span data-icon="folder"></span>Projects</button>
+    <button data-m="library"><span data-icon="library"></span>Library</button>
+    <button data-m="labs"><span data-icon="zap"></span>Labs</button>
     <button data-m="tasks"><span data-icon="check"></span>Tasks</button>
     <button data-m="explore"><span data-icon="compass"></span>Explore</button>
     <button data-m="history"><span data-icon="history"></span>History</button>
@@ -1002,11 +1302,30 @@ a.btn { text-decoration: none; color: inherit; }
 </div>
 <div class="lightbox hidden" id="lightbox"><div class="lb-inner"><img alt=""><div class="lb-side"><p class="lb-prompt"></p><code class="lb-path"></code><div class="lb-actions"></div></div><button class="btn ghost icon-only lb-close" aria-label="Close">✕</button></div></div>
 
+<div class="cmdk hidden" id="cmdk" role="dialog" aria-label="Command palette"><div class="cmdk-box">
+  <div class="cmdk-head"><span data-icon="search"></span><input id="cmdk-input" placeholder="Search tools, projects, files or actions…" autocomplete="off"><kbd>Esc</kbd></div>
+  <div class="cmdk-list" id="cmdk-list"></div>
+  <div class="cmdk-foot">Press <kbd>Ctrl</kbd> <kbd>K</kbd> anywhere to open · <kbd>↑</kbd><kbd>↓</kbd> to move · <kbd>Enter</kbd> to run</div>
+</div></div>
+<div class="hud hidden" id="hud" role="dialog" aria-label="Bowers Aether">
+  <div class="hud-top"><img src="/assets/art/aether-icon.webp" alt=""><div><b>Bowers Aether</b><small>IDEAS · CONTEXT · ACTION</small></div><span class="spacer"></span>
+    <label class="hands"><input type="checkbox" id="hud-hands"> Hands-free ("Hey Bowie")</label>
+    <button class="btn" id="hud-brief">Brief me</button><button class="btn" id="hud-graph">Knowledge Graph</button><button class="btn icon-only" id="hud-close" aria-label="Close">✕</button></div>
+  <div class="hud-core"><div class="ring"></div><div class="ring"></div><div class="ring"></div><img id="hud-bowie" src="/assets/art/aether-hero.webp" alt="Bowie Aether"></div>
+  <div class="hud-status" id="hud-status">Hi! Tap the mic and talk to me, or type below.</div>
+  <div class="hud-wave"><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="hud-chips" id="hud-chips"></div>
+  <div class="hud-log" id="hud-log"></div>
+  <div class="hud-ctrl"><button class="hud-mic" id="hud-mic" aria-label="Talk to Bowie"><span data-icon="mic"></span></button><input id="hud-input" placeholder="Ask Aether anything…"><button class="btn" id="hud-send">Send</button><button class="btn" id="hud-mute" title="Bowie speaks replies">🔊</button></div>
+</div>
 <script>
 // ---------------------------------------------------------------- icons
 const ICONS = {
   logo: '<path d="m8 7-5 5 5 5M16 7l5 5-5 5M13.5 4.5l-3 15"/>',
   play: '<path d="M7 5v14l11-7z"/>',
+  mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   panel: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/>',
   gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
@@ -1069,7 +1388,7 @@ const ICONS = {
 };
 const MARK = 'M100 72Q100 55 117 55H388C448 55 482 95 482 150C482 190 462 220 434 238C476 256 500 292 500 342C500 406 456 455 390 455H372Q355 455 355 438V384Q355 366 337 366H322Q305 366 305 384V438Q305 455 288 455H252Q235 455 235 438V384Q235 366 217 366H198Q180 366 180 384V438Q180 455 163 455H117Q100 455 100 438V322H30Q12 322 12 304V256Q12 238 30 238H100ZM188 148H230Q236 148 236 154V230Q236 236 230 236H188Q182 236 182 230V154Q182 148 188 148Z';
 const markSvg = (size = 22) => `<svg viewBox="4 45 504 420" width="${size}" height="${Math.round(size * 420 / 504)}" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="${MARK}"/></svg>`;
-const BOWIE = mood => `/assets/bowie-${mood}.webp`;
+const BOWIE = mood => `/assets/bowie/${{ focused: 'coding', relaxed: 'chilling' }[mood] || mood}.webp`;
 const icon = (name, size = 16) => `<svg class="icon" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 document.querySelectorAll('[data-icon]').forEach(e => { e.innerHTML = icon(e.dataset.icon, e.classList.contains('ic') ? 24 : e.classList.contains('logo-mark') ? 18 : 16); });
 document.querySelectorAll('[data-mark]').forEach(e => { e.innerHTML = markSvg(e.closest('.splash') ? 40 : 24); });
@@ -1084,8 +1403,8 @@ const store = { get(k, d) { try { return localStorage.getItem(k) ?? d; } catch (
 let token = '';
 try {
   const m = location.hash.match(/token=([\w-]+)/);
-  if (m) { token = m[1]; sessionStorage.setItem('docks-token', token); history.replaceState(null, '', location.pathname); }
-  else token = sessionStorage.getItem('docks-token') || '';
+  if (m) { token = m[1]; sessionStorage.setItem('docks-token', token); localStorage.setItem('bowers-app-token', token); history.replaceState(null, '', location.pathname); }
+  else token = sessionStorage.getItem('docks-token') || localStorage.getItem('bowers-app-token') || '';
 } catch (e) {}
 const api = (path, body) => fetch(path, {
   method: body ? 'POST' : 'GET',
@@ -1894,8 +2213,9 @@ let currentTab = 'preview';
 function showTab(name) {
   currentTab = name;
   document.querySelectorAll('.tab[data-tab]').forEach(t => t.classList.toggle('on', t.dataset.tab === name));
-  for (const v of ['preview', 'code', 'github', 'images']) $('view-' + v).classList.toggle('hidden', v !== name);
-  if (name === 'preview') reloadPreview(); if (name === 'github') loadGit(); if (name === 'images') loadImages();
+  if (name === 'images') { showPage('motion'); setMotionMode('photo'); return; }
+  for (const v of ['preview', 'code', 'github', 'terminal']) $('view-' + v).classList.toggle('hidden', v !== name);
+  if (name === 'preview') reloadPreview(); if (name === 'github') loadGit(); if (name === 'terminal') panelTerminal();
 }
 document.querySelectorAll('.tab[data-tab]').forEach(t => t.onclick = () => showTab(t.dataset.tab));
 function mobile(which) {
@@ -2367,16 +2687,20 @@ $('anim').onchange = () => { store.set('docks-anim', $('anim').checked ? 'on' : 
 // ---------------------------------------------------------------- start
 // ================================================================ Bowers: pages, home, Bowie, models
 let page = 'home', profileName = '';
-const PAGES = ['projects', 'tasks', 'library', 'studio', 'explore', 'settings'];
+const PAGES = ['projects', 'tasks', 'library', 'motion', 'forge', 'care', 'labs', 'graph', 'explore', 'settings'];
 function showPage(name) {
+  if (name === 'studio') name = 'motion';
+  if (name === 'graph' && !isAether()) { toast('The Knowledge Graph is part of Bowers Aether. Switch models to use it.'); name = 'home'; }
   page = name;
+  const brand = { motion: 'Motion', forge: 'Forge', care: 'Care', graph: 'Aether', labs: 'Labs' }[name];
+  $('side-sub').textContent = brand ? ' ' + brand : '';
   const home = name === 'home';
   $('app').classList.toggle('hidden', !home);
   for (const p of PAGES) $('page-' + p).classList.toggle('hidden', p !== name);
   document.querySelectorAll('.side-nav button').forEach(b => b.classList.toggle('on', b.dataset.page === name));
   document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.toggle('on', home ? b.dataset.m === 'chat' : b.dataset.m === name));
   $('more-sheet').classList.add('hidden');
-  ({ projects: loadProjects, tasks: loadTasks, library: loadLibrary, studio: renderStudio, explore: renderExplore, settings: openSettings })[name]?.();
+  ({ projects: loadProjects, tasks: loadTasks, library: loadLibrary, motion: renderMotion, forge: renderForgePage, care: renderCare, labs: renderLabs, graph: renderGraph, explore: renderExplore, settings: openSettings })[name]?.();
   if (home) { $('app').classList.remove('show-panel'); }
 }
 document.querySelectorAll('.side-nav button').forEach(b => b.onclick = () => showPage(b.dataset.page));
@@ -2411,7 +2735,7 @@ const HOME_CHIPS = [
 const HOME_CARDS = [
   ['box', 'Build something', 'Apps, websites and tools', () => showPage('explore')],
   ['file', 'Work with files', 'Documents and research', () => { prefill('@'); updatePalette(); }],
-  ['sparkle', 'Create designs', 'Visuals, images and prototypes', () => showPage('studio')],
+  ['sparkle', 'Create designs', 'Videos, images and prototypes', () => showPage('motion')],
   ['bulb', 'Explore ideas', 'Plan, analyse and improve', () => prefill('Help me explore ideas for ')],
 ];
 function prefill(text) { showPage('home'); const t = $('input'); t.value = text; autosize(); t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
@@ -2605,7 +2929,7 @@ function renderStudio() {
   }
 }
 function openStudioTool(action, title) {
-  if (action === 'image') { showPage('home'); setHome(false); showTab('images'); mobile('images'); setTimeout(() => $('img-prompt').focus(), 100); return; }
+  if (action === 'image') { showPage('motion'); setMotionMode('photo'); return; }
   if (action === 'code') { showPage('home'); setHome(false); showTab('code'); mobile('code'); return; }
   const modal = h('div', 'modal', `<div class="modal-box" style="width:min(560px,100%)"><div class="page-head"><h2></h2><span class="spacer"></span><button class="btn ghost icon-only" aria-label="Close">✕</button></div><div class="studio-form"><textarea class="input" placeholder="Describe what you want…"></textarea><button class="btn primary">Start creating ${icon('arrow-right')}</button></div></div>`);
   modal.querySelector('h2').textContent = title;
@@ -2758,6 +3082,7 @@ document.querySelectorAll('.set-tabs button').forEach(b => b.onclick = () => {
   document.querySelectorAll('.set-panel').forEach(p => p.classList.toggle('hidden', p.dataset.sp !== b.dataset.st));
   if (b.dataset.st === 'account') renderAccount();
   if (b.dataset.st === 'tools') renderAppCatalog($('settings-apps'));
+  if (b.dataset.st === 'voice') renderVoiceStudio();
 });
 async function openSettings() { $('profile-name').value = profileName; }
 async function renderAccount() { const card = $('account-card'); const g = await (await api('/api/git')).json().catch(() => ({})); card.replaceChildren(await accountCard(g)); }
@@ -2829,6 +3154,636 @@ function liveCard(info) {
   } catch (e) {}
   await loadFiles(); loadGit(); connect();
 })();
+
+// ================================================================ Bowers ecosystem: Motion, Forge, Care, Labs, Aether
+const STICKER = n => `/assets/bowie/${n}.webp`;
+const isAether = () => state.model === 'aether';
+const once = fn => { let done = false; return (...a) => { if (!done) { done = true; fn(...a); } }; };
+
+// Bowie's activity states follow what Bowers is doing (thinking, coding, testing, exploring, creating…)
+const TOOL_MOOD = { write_file: 'coding', edit_file: 'coding', read_file: 'reading', list_files: 'searching', grep: 'searching', glob: 'searching',
+  web_search: 'research', web_fetch: 'research', browser: 'exploring', generate_image: 'generating', generate_video: 'animating',
+  system_check: 'debugging', delegate: 'collaborating', code_intel: 'analyzing', update_plan: 'planning', start_process: 'running' };
+const _handle = handle;
+handle = ev => {
+  _handle(ev);
+  if (ev.type === 'tool_call') {
+    let m = TOOL_MOOD[ev.name];
+    if (ev.name === 'bash') m = /\b(test|pytest|jest|vitest|lint|check|tsc)\b/.test(ev.summary || '') ? 'analyzing' : 'coding';
+    if (m) document.querySelectorAll('img.bowie-live').forEach(i => { i.src = STICKER(m); });
+  }
+  if (ev.type === 'idle') document.querySelectorAll('img.bowie-live').forEach(i => { i.src = STICKER('celebrating'); setTimeout(() => { i.src = BOWIE('happy'); }, 3500); });
+  if (ev.type === 'motion') onMotionJob(ev);
+  hudEvent(ev);
+};
+
+// Aether-only things (the Knowledge Graph) show while the Bowers Aether model is chosen
+const _applyState = applyState;
+applyState = s => {
+  _applyState(s);
+  document.body.classList.toggle('is-aether', isAether());
+  const brand = { motion: 'Motion', forge: 'Forge', care: 'Care', graph: 'Aether', labs: 'Labs' }[page];
+  $('side-sub').textContent = brand ? ' ' + brand : '';
+  if (page === 'graph' && !isAether()) showPage('home');
+};
+
+// ---------------------------------------------------------------- theme: dark / light
+function currentTheme() { const t = store.get('docks-theme', 'system'); return t === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : t; }
+function paintThemeBtn() { $('theme-btn').innerHTML = icon(currentTheme() === 'dark' ? 'sun' : 'moon', 17); $('theme-btn').title = currentTheme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'; }
+$('theme-btn').onclick = () => { const next = currentTheme() === 'dark' ? 'light' : 'dark'; store.set('docks-theme', next); applyTheme(next); $('theme').value = next; paintThemeBtn(); };
+$('theme').addEventListener('change', paintThemeBtn); paintThemeBtn();
+
+// ---------------------------------------------------------------- Bowers Motion
+const MO = { mode: 'video', image: null, info: null, jobs: {} };
+const MO_TEMPLATES = [
+  ['Cinematic Travel', 'Turn landscapes into stories', 'linear-gradient(135deg,#f28a4a,#5b2a5e 70%,#1d1730)', 'exploring', 'Sweeping aerial drone shot over misty mountain peaks at golden hour, a lone traveler on a ridge, slow forward glide, cinematic color grade, gentle wind and distant birds', {}],
+  ['Character Animation', 'Bring characters to life', 'linear-gradient(135deg,#ff9b5c,#c2462a 60%,#3a1a12)', 'animating', 'A fluffy orange mascot character waves hello and hops happily in a sunny forest clearing, Pixar-style 3D animation, soft light, cheerful music', {}],
+  ['Product Showcase', 'Showcase your products', 'linear-gradient(135deg,#2c3a66,#0f1626)', 'build', 'Premium product shot: a sleek black sports car on a wet neon-lit street at night, slow orbit camera, reflections, deep bass engine hum', {}],
+  ['Cinematic Portrait', 'Create stunning portraits', 'linear-gradient(135deg,#e8a06b,#6b3a2a 65%,#211510)', 'create-image', 'Close-up portrait of a woman in warm sunset light, wind in her hair, shallow depth of field, slow push-in, film grain, soft ambient music', {}],
+  ['Social Short', 'Vertical clips for Reels and TikTok', 'linear-gradient(135deg,#ff5f8f,#7a2fd6)', 'share', 'Energetic vertical clip: a barista pours latte art in slow motion, then a quick cut to steam rising, upbeat lo-fi beat', { aspect: '9:16' }],
+  ['Logo Reveal', 'Intros for your brand', 'linear-gradient(135deg,#ff6b2c,#2a120a)', 'inspire', 'A glowing orange logo assembles from sparks and light streaks on a dark background, camera pulls back, cinematic whoosh and impact sound', {}],
+];
+function moSelects() {
+  const pro = $('mo-model').value === 'pro', lim = MO.info?.limits?.[pro ? 'ltx-2-5-pro' : 'ltx-2-5-fast'];
+  const secs = lim ? lim.durations : [6, 8, 10], ress = lim ? lim.resolutions : ['720p', '1080p'];
+  const keepS = $('mo-seconds').value || '8', keepR = $('mo-res').value || '1080p';
+  $('mo-seconds').innerHTML = (pro ? '' : '<option value="auto">Auto</option>') + secs.map(s => `<option value="${s}">${s}s</option>`).join('');
+  $('mo-res').innerHTML = ress.map(r => `<option value="${r}">${r === '4k' ? '4K (2160p)' : r}</option>`).join('');
+  $('mo-seconds').value = [...$('mo-seconds').options].some(o => o.value === keepS) ? keepS : '8';
+  $('mo-res').value = ress.includes(keepR) ? keepR : '1080p';
+}
+$('mo-model').onchange = moSelects;
+function setMotionMode(mode) {
+  MO.mode = mode;
+  document.querySelectorAll('.mo-mode').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+  $('mo-video').classList.toggle('hidden', mode !== 'video'); $('mo-photo').classList.toggle('hidden', mode !== 'photo');
+  if (mode === 'photo') { loadImages(); setTimeout(() => $('img-prompt')?.focus(), 50); } else $('mo-prompt').focus();
+}
+document.querySelectorAll('.mo-mode').forEach(b => b.onclick = () => setMotionMode(b.dataset.mode));
+$('mo-create').onclick = () => { $('mo-card').scrollIntoView({ behavior: 'smooth', block: 'start' }); (MO.mode === 'video' ? $('mo-prompt') : $('img-prompt')).focus(); };
+$('mo-attach').onclick = () => $('mo-file').click();
+$('mo-file').onchange = () => {
+  const f = $('mo-file').files[0]; if (!f) return;
+  if (f.size > 5e6) return toast('Pick an image up to 5 MB');
+  const rd = new FileReader(); rd.onload = () => { MO.image = rd.result; $('mo-ref').classList.remove('hidden'); $('mo-ref').querySelector('img').src = rd.result; }; rd.readAsDataURL(f);
+  $('mo-file').value = '';
+};
+$('mo-ref-x').onclick = () => { MO.image = null; $('mo-ref').classList.add('hidden'); };
+$('mo-go').onclick = async () => {
+  const prompt = $('mo-prompt').value.trim(); if (!prompt) { $('mo-prompt').focus(); return toast('Describe your video first'); }
+  const body = { prompt, image: MO.image || '', seconds: $('mo-seconds').value, aspect: $('mo-aspect').value, resolution: $('mo-res').value,
+    pro: $('mo-model').value === 'pro', sound: $('mo-sound').value === '1' };
+  $('mo-go').disabled = true;
+  const r = await api('/api/motion/generate', body); const d = await r.json(); $('mo-go').disabled = false;
+  if (!r.ok) return toast(d.error);
+  MO.jobs[d.id] = d; renderJobs(); toast('Bowie is making your video');
+};
+function renderJobs() {
+  const box = $('mo-jobs'); box.innerHTML = '';
+  for (const j of Object.values(MO.jobs).sort((a, b) => b.started - a.started)) {
+    if (j.status === 'done' && Date.now() / 1000 - j.started > 30) continue;
+    const err = j.status === 'error';
+    const row = h('div', 'job' + (err ? ' error' : ''), `<img src="${STICKER(err ? 'sad' : j.status === 'done' ? 'celebrating' : 'animating')}" alt=""><div style="min-width:0;flex:2"><b></b><small></small></div>${err || j.status === 'done' ? '' : '<div class="bar"><i></i></div>'}`);
+    row.querySelector('b').textContent = j.prompt.slice(0, 90);
+    row.querySelector('small').textContent = err ? j.error : j.status === 'done' ? 'Done! It\'s in Recent Creations.' : `${j.status}… (${Math.round(Date.now() / 1000 - j.started)}s)`;
+    box.appendChild(row);
+  }
+}
+setInterval(() => { if (page === 'motion' && Object.values(MO.jobs).some(j => !['done', 'error'].includes(j.status))) renderJobs(); }, 1000);
+function onMotionJob(ev) {
+  MO.jobs[ev.id] = { ...(MO.jobs[ev.id] || {}), ...ev };
+  if (ev.status === 'done') { toast('Your video is ready'); alertUser('Your Bowers Motion video is ready'); if (page === 'motion') renderCreations(); }
+  if (ev.status === 'error') toast(ev.error);
+  if (page === 'motion') renderJobs();
+}
+async function renderCreations() {
+  const [v, i] = await Promise.all([api('/api/motion').then(r => r.json()).catch(() => ({})), api('/api/images').then(r => r.json()).catch(() => ({}))]);
+  MO.info = v; moSelects();
+  for (const j of v.jobs || []) MO.jobs[j.id] = { ...(MO.jobs[j.id] || {}), ...j };
+  renderJobs();
+  const note = $('mo-note');
+  note.classList.toggle('warn', !v.available);
+  note.innerHTML = v.available ? `${icon('sparkle', 13)} Powered by LTX-2.5 with sound. Videos are saved in your project under assets/videos.`
+    : `${icon('alert', 13)} To make videos, add an <b>LTX_API_KEY</b> (from ltx.io) to your environment, then restart Bowers. Photos use <b>OPENAI_API_KEY</b>.`;
+  const items = [...(v.videos || []).map(x => ({ ...x, kind: 'video' })), ...(i.images || []).map(x => ({ ...x, kind: 'image' }))].sort((a, b) => b.created - a.created);
+  const grid = $('mo-creations'); grid.innerHTML = '';
+  for (const it of items.slice(0, 8)) {
+    const c = h('div', 'cre', `${it.kind === 'video' ? '<video muted loop playsinline preload="metadata"></video>' : '<img alt="">'}<div class="cre-body"><div><b></b><small></small></div></div>`);
+    const media = c.querySelector(it.kind === 'video' ? 'video' : 'img'); media.src = imgUrl(it.path);
+    if (it.kind === 'video') { media.onmouseenter = () => media.play().catch(() => {}); media.onmouseleave = () => media.pause(); media.onclick = () => window.open(imgUrl(it.path)); }
+    else media.onclick = () => { setMotionMode('photo'); };
+    c.querySelector('b').textContent = it.prompt; c.title = it.prompt;
+    c.querySelector('small').textContent = `${it.kind === 'video' ? 'Video' : 'Photo'} · ${it.kind === 'video' ? (it.seconds ? it.seconds + 's · ' : '') + (it.resolution || '') : ''} · ${ago(it.created)}`.replace(' ·  · ', ' · ');
+    grid.appendChild(c);
+  }
+  if (!items.length) grid.appendChild(h('div', 'empty-page', `<img src="${STICKER('create-video')}" alt=""><b>Nothing here yet</b>Your videos and photos will appear here.`));
+}
+$('mo-all').onclick = () => showPage('library');
+const moInit = once(() => {
+  $('mo-photo').appendChild(document.querySelector('.img-studio'));  // the photo generator lives in Motion now
+  const q = $('mo-quick');
+  for (const [st, title, sub, fn] of [
+    ['create-video', 'Text to Video', 'Turn text into videos', () => { setMotionMode('video'); $('mo-prompt').focus(); }],
+    ['animating', 'Image to Video', 'Animate your images', () => { setMotionMode('video'); $('mo-file').click(); }],
+    ['editing', 'Photo Studio', 'Create and edit photos', () => setMotionMode('photo')],
+    ['designing', 'Templates', 'Start from a template', () => $('mo-templates').scrollIntoView({ behavior: 'smooth' })],
+    ['love', 'Emote Maker', 'Stickers for Twitch and Discord', () => openLab('emotes')],
+    ['running', 'Video Clipper', 'Long video to short clips', () => openLab('clipper')],
+  ]) { const b = h('button', 'qa', `<img src="${STICKER(st)}" alt=""><span><b>${esc(title)}</b><small>${esc(sub)}</small></span>`); b.onclick = fn; q.appendChild(b); }
+  const t = $('mo-templates');
+  for (const [title, sub, bg, st, prompt, opts] of MO_TEMPLATES) {
+    const b = h('button', 'tpl', `<div class="tpl-art" style="background:${bg}"><img class="st" src="${STICKER(st)}" alt=""><span class="play">${icon('play', 13)}</span></div><div class="tpl-body"><b>${esc(title)}</b><small>${esc(sub)}</small></div>`);
+    b.onclick = () => { setMotionMode('video'); $('mo-prompt').value = prompt; if (opts.aspect) $('mo-aspect').value = opts.aspect; $('mo-card').scrollIntoView({ behavior: 'smooth' }); $('mo-prompt').focus(); };
+    t.appendChild(b);
+  }
+});
+function renderMotion() { moInit(); renderStudio(); renderCreations(); }
+
+// ---------------------------------------------------------------- Bowers Forge
+const STARTERS = [
+  ['layout', 'SaaS starter', 'Next.js, auth, Stripe billing, dashboard', 'Build a SaaS starter app (like nextjs/saas-starter): Next.js App Router, Postgres with Drizzle, email/password auth, Stripe subscriptions, a pricing page and a team dashboard. Its product is: '],
+  ['box', 'Online store', 'Products, cart, checkout', 'Build an online store (like yournextstore): product catalog, product pages, cart, Stripe checkout and an admin page to add products. The store sells: '],
+  ['chart', 'Banking dashboard', 'Accounts, transactions, transfers', 'Build a banking dashboard web app (like adrianhajdin/banking): sign-in, linked accounts overview, transaction history with categories, charts, and money transfers (use sample data and Plaid sandbox placeholders). Theme: '],
+  ['zap', 'Payments', 'Checkout with several providers', 'Add a payments layer to this project (inspired by juspay/hyperswitch): one checkout API that can route payments to Stripe or PayPal, webhooks, refunds and a payments dashboard. Details: '],
+  ['smartphone', 'Mobile app', 'Expo React Native app', 'Build a mobile app with Expo (React Native) that runs on iOS and Android, with tab navigation, a polished UI and the main screens for: '],
+  ['users', 'Project manager', 'Issues, boards, docs', 'Build a team project manager web app (inspired by Huly and Doable): projects, issues on a kanban board, a calendar, simple docs and comments. Focus on: '],
+  ['box', '3D editor', 'three.js scene editor', 'Build a browser 3D scene editor with three.js (inspired by three-editor and PlayCanvas): add/move/rotate/scale primitives and lights with gizmos, an outliner, a properties panel, import GLB, and save/load the scene as JSON. Extra: '],
+  ['sparkle', 'Animated UI kit', 'React Bits and Magic UI style', 'Build a landing page with polished animated components in the style of React Bits and Magic UI (animated gradients, marquee, number tickers, bento grid, shimmer buttons), responsive and accessible. It is for: '],
+  ['chat', 'Shopping agent', 'An AI agent that sells for you', 'Build an AI shopping assistant for a store (inspired by anthropics/commerce-agents): a chat widget that searches products, answers questions, compares items and adds to cart, using the Claude API. The store sells: '],
+];
+async function renderForge() {
+  const r = await api('/api/projects'); const d = r.ok ? await r.json() : { projects: [] };
+  const grid = $('forge-projects'); grid.innerHTML = '';
+  for (const p of d.projects.slice(0, 6)) {
+    const c = h('button', 'pcard', `<div class="pthumb"><span class="big"></span></div><div class="pc-body"><div><b></b><small></small></div>${p.current ? '<span class="pill here">Open</span>' : ''}</div>`);
+    c.querySelector('.big').textContent = p.name.slice(0, 1).toUpperCase(); c.querySelector('b').textContent = p.name;
+    c.querySelector('small').textContent = `${p.files} files · ${ago(p.updated)}`;
+    if (p.thumbnail) api('/api/projects/thumb?root=' + encodeURIComponent(p.root)).then(async rr => { if (rr.ok) { const img = h('img'); img.src = URL.createObjectURL(await rr.blob()); c.querySelector('.pthumb').replaceChildren(img); } });
+    c.onclick = async () => { if (p.current) return openWorkspace(); if (!confirm(`Open ${p.name}?`)) return; const rr = await api('/api/projects/open', { root: p.root }); if (!rr.ok) toast((await rr.json()).error); };
+    grid.appendChild(c);
+  }
+  $('ide-project').textContent = (state.root || '').split(/[\\/]/).pop();
+  const fr = await api('/api/files'); const list = fr.ok ? (await fr.json()).files : [];
+  const tree = $('ide-tree'); tree.innerHTML = '';
+  for (const f of list.slice(0, 400)) { const b = h('button', null); b.textContent = f; b.title = f; b.onclick = () => ideOpen(f, b); tree.appendChild(b); }
+  if (!list.length) tree.innerHTML = '<div class="muted">No files yet</div>';
+  ideTab(ideCurrent);
+}
+async function ideOpen(path, btn) {
+  document.querySelectorAll('#ide-tree button').forEach(b => b.classList.toggle('on', b === btn));
+  const r = await api('/api/file?path=' + encodeURIComponent(path)); if (!r.ok) return;
+  const d = await r.json(); $('ide-file').textContent = '· ' + path;
+  const code = $('ide-code'); code.innerHTML = '';
+  d.text.split('\n').slice(0, 3000).forEach((line, i) => { const ln = h('div', 'ln', `<i>${i + 1}</i><span></span>`); ln.lastChild.textContent = line; code.appendChild(ln); });
+}
+let ideCurrent = 'term', termLog = [];
+function ideTab(name) {
+  ideCurrent = name;
+  document.querySelectorAll('.ide-tabs button').forEach(b => b.classList.toggle('on', b.dataset.it === name));
+  const pane = $('ide-pane'); pane.innerHTML = '';
+  if (name === 'term') {
+    const t = h('div', 'term', `<pre></pre><form><input class="input" placeholder="${state.root && /\\/.test(state.root) ? 'PowerShell' : 'Shell'} command…" aria-label="Command"><button class="btn">Run</button></form>`);
+    const pre = t.querySelector('pre'); const paint = () => { pre.innerHTML = termLog.map(([c, o]) => `<span class="cmd">$ ${esc(c)}</span>\n${esc(o)}`).join('\n') || '<span class="muted">Commands run in your project folder. Bowers can also run them for you.</span>'; pre.scrollTop = 1e9; };
+    paint();
+    t.querySelector('form').onsubmit = async e => { e.preventDefault(); const inp = t.querySelector('input'); const cmd = inp.value.trim(); if (!cmd) return; inp.value = ''; termLog.push([cmd, '…']); paint();
+      const r = await api('/api/terminal', { command: cmd }); const d = await r.json(); termLog[termLog.length - 1][1] = d.output ?? d.error; paint(); };
+    pane.appendChild(t); setTimeout(() => t.querySelector('input').focus(), 30);
+  } else if (name === 'ai') {
+    const t = h('div', 'term', `<div class="muted" style="font-family:var(--sans)">Ask Bowie to build, explain or fix something in this project.</div><form><input class="input" placeholder="e.g. Add a dark mode toggle"><button class="btn primary">Ask</button></form>`);
+    t.querySelector('form').onsubmit = e => { e.preventDefault(); const v = t.querySelector('input').value.trim(); if (!v) return; openWorkspace(); send(v); };
+    pane.appendChild(t);
+  } else {
+    const src = $('preview').getAttribute('src');
+    pane.innerHTML = src ? `<iframe src="${esc(src)}" style="width:100%;height:280px;border:0;border-radius:8px;background:#fff" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>` : '<div class="muted" style="font-family:var(--sans)">Run the app to see it here.</div>';
+  }
+}
+document.querySelectorAll('.ide-tabs button').forEach(b => b.onclick = () => ideTab(b.dataset.it));
+function openWorkspace(tab) { showPage('home'); setHome(false); if (tab) { showTab(tab); mobile(tab); } }
+$('forge-open').onclick = () => openWorkspace('code');
+$('ide-run').onclick = () => { openWorkspace('preview'); send('Start this project so I can see it in the preview (install what it needs first).'); };
+$('ide-deploy').onclick = () => deploy();
+$('forge-new').onclick = () => $('new-project').click();
+document.querySelectorAll('[data-goto]').forEach(b => b.onclick = () => showPage(b.dataset.goto));
+const forgeInit = once(() => {
+  const f = $('forge-feats');
+  for (const [st, title, sub, fn] of [['helping', 'AI-Powered Assistant', 'Get help with your code', () => openWorkspace()], ['collaborating', 'Collaborate', 'Work with your team on GitHub', () => openWorkspace('github')],
+    ['flying', 'Deploy Instantly', 'From code to production', () => deploy()], ['reading', 'Docs & Examples', 'Learn and get started', () => showPage('explore')]]) {
+    const b = h('button', 'qa', `<img src="${STICKER(st)}" alt=""><span><b>${esc(title)}</b><small>${esc(sub)}</small></span>`); b.onclick = fn; f.appendChild(b);
+  }
+  const s = $('forge-starters');
+  for (const [ic, title, sub, prompt] of STARTERS) { const b = h('button', 'idea', `<span class="ic">${icon(ic, 18)}</span><span><b>${esc(title)}</b><span class="stack">${esc(sub)}</span></span>`); b.onclick = () => prefill(prompt); s.appendChild(b); }
+});
+function renderForgePage() { forgeInit(); renderForge(); }
+
+// ---------------------------------------------------------------- Bowers Care
+const CARE_PROBLEMS = [
+  ['analyzing', 'My computer is slow'], ['searching', 'No internet or Wi-Fi'], ['uploading', 'My disk is full'], ['debugging', 'An app keeps crashing'],
+  ['fixing', 'Updates won\'t install'], ['listening', 'No sound or a device isn\'t working'], ['running', 'Startup takes forever'], ['solving', 'I see a strange error message'],
+];
+const CARE_CHECKS = [['overview', 'Overview'], ['errors', 'System errors'], ['services', 'Failed services'], ['disk', 'Disk usage'], ['network', 'Network'], ['processes', 'Busy programs'], ['updates', 'Pending updates']];
+const gb = n => (n / 1024 ** 3).toFixed(1) + ' GB';
+function careSend(text) { showPage('home'); send(`My computer has a problem: ${text}\nFind the cause with system_check, explain it in plain words, then fix it step by step (ask me before each change).`); }
+async function renderCare() {
+  careInit();
+  const r = await api('/api/care'); if (!r.ok) return; const s = await r.json();
+  const box = $('care-stats'); box.innerHTML = '';
+  const meter = (free, total) => { const used = 1 - free / total; return `<div class="meter ${used > .9 ? 'high' : used > .75 ? 'mid' : ''}"><i style="width:${Math.round(used * 100)}%"></i></div>`; };
+  const stat = (label, value, extra = '') => { const c = h('div', 'stat', `<small>${esc(label)}</small><b></b>${extra}`); c.querySelector('b').textContent = value; box.appendChild(c); };
+  stat('System', s.os); stat('Up for', `${s.uptime} · ${s.cpus} CPU threads`, s.load ? `<small>Load ${s.load.map(x => x.toFixed(2)).join(' · ')}</small>` : '');
+  if (s.memory) stat('Memory', `${gb(s.memory.total - s.memory.free)} of ${gb(s.memory.total)} used`, meter(s.memory.free, s.memory.total));
+  for (const d of s.disks) stat(`Disk ${d.mount}`, `${gb(d.free)} free of ${gb(d.total)}`, meter(d.free, d.total));
+  $('care-warn').innerHTML = s.warnings.length ? `<div class="warn-list">${icon('alert', 14)} ${s.warnings.map(esc).join(' · ')} <button class="btn" id="care-warn-fix" style="margin-left:8px;height:28px">Fix this</button></div>`
+    : `<div class="warn-list ok">${icon('check', 14)} No problems found in the quick check. Shell: ${esc(s.shell)}.</div>`;
+  if (s.warnings.length) $('care-warn-fix').onclick = () => careSend(s.warnings.join('; '));
+}
+async function careCheck(sections) {
+  const out = $('care-out'); out.textContent = 'Checking… (read-only)';
+  const r = await api('/api/care/check', { sections }); const d = await r.json(); out.textContent = d.text || d.error;
+}
+const careInit = once(() => {
+  const g = $('care-problems');
+  for (const [st, text] of CARE_PROBLEMS) { const b = h('button', 'qa', `<img src="${STICKER(st)}" alt=""><span><b>${esc(text)}</b></span>`); b.onclick = () => careSend(text); g.appendChild(b); }
+  const c = $('care-checks');
+  for (const [k, label] of CARE_CHECKS) { const b = h('button', 'chip', esc(label)); b.onclick = () => careCheck([k]); c.appendChild(b); }
+  $('care-fix').onclick = () => { const v = $('care-text').value.trim(); if (!v) return $('care-text').focus(); careSend(v); $('care-text').value = ''; };
+  $('care-code-go').onclick = () => { const v = $('care-code').value.trim(); if (!v) return $('care-code').focus(); showPage('home');
+    send(`Fix this error. Find where it comes from in this project, explain the cause, fix it, and run it again to prove it's fixed:\n\n${v}`); $('care-code').value = ''; };
+  $('care-scan').onclick = () => { renderCare(); careCheck(['overview', 'errors', 'services']); };
+});
+
+// ---------------------------------------------------------------- Labs (features inspired by open-source projects)
+const LABS = [
+  ['trading', 'nav/trading', 'Trading Desk', 'A team of AI analysts researches a stock or crypto: fundamentals, news, technicals, bull vs bear debate, risk.', 'TradingAgents, QuantDinger'],
+  ['math', 'bowie/solving', 'Math Lab', 'Solve, simplify, differentiate, integrate and plot equations step by step.', 'SymPy, nerdamer, JSXGraph'],
+  ['arena', 'bowie/celebrating', 'Model Arena', 'Ask two models the same thing side by side and vote for the better answer.', 'LMArena, promptfoo'],
+  ['emotes', 'bowie/love', 'Emote Maker', 'Turn an image into emotes and stickers sized for Twitch, Discord, Slack and YouTube.', 'emote-forge, emojimaker, emoteresizer'],
+  ['interior', 'bowie/designing', 'Interior Restyler', 'Upload a room photo and restyle it, or virtually stage an empty home for sale.', 'AI interior restyler, Roomsmith, real-estate stager'],
+  ['studio3d', 'bowie/build', '3D Studio', 'Build interactive 3D scenes, games and editors with three.js or PlayCanvas, or Blender scripts.', 'three-editor, PlayCanvas, Blender'],
+  ['clipper', 'bowie/running', 'Video Clipper', 'Turn a long video into short highlight clips with captions, or a script into a storyboard.', 'AutoClip, OpenMontage, SkyReels, ArcReel'],
+  ['audit', 'bowie/searching', 'Site Audit', 'Lighthouse performance, accessibility and SEO audit of a site, with fixes.', 'Lighthouse, claude-seo, Clinic.js'],
+  ['ci', 'bowie/fixing', 'Local CI', 'Run this repo\'s GitHub Actions on your computer before you push.', 'nektos/act'],
+  ['crawl', 'bowie/exploring', 'Web Crawler', 'Crawl a website into clean Markdown for research or a knowledge base.', 'Firecrawl'],
+  ['skills', 'bowie/inspire', 'Skill Packs', 'Install skills, agents and plugins from GitHub into Bowers.', 'superpowers, awesome-claude-skills, agency-agents'],
+  ['resources', 'bowie/reading', 'Free Resources', 'Free tools, self-hosted apps and programming books, curated by the community.', 'free-for-dev, awesome-selfhosted, free-programming-books'],
+];
+function renderLabs() {
+  const g = $('labs-grid'); if (g.children.length) return;
+  for (const [id, art, title, text, src] of LABS) {
+    const b = h('button', 'lab', `<div class="lab-top"><img src="/assets/${art}.webp" alt=""><b>${esc(title)}</b></div><p>${esc(text)}</p><span class="src">Inspired by ${esc(src)}</span>`);
+    b.onclick = () => openLab(id); g.appendChild(b);
+  }
+}
+function pickImage(cb) { const i = h('input'); i.type = 'file'; i.accept = 'image/png,image/jpeg,image/webp'; i.onchange = () => { const f = i.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => cb(r.result, f.name); r.readAsDataURL(f); }; i.click(); }
+function labRun(prompt) { showPage('home'); send(prompt); }
+function openLab(id) {
+  if (page !== 'labs') showPage('labs');
+  const pane = $('lab-pane'); pane.classList.remove('hidden'); pane.innerHTML = '';
+  const lab = LABS.find(l => l[0] === id); pane.appendChild(h('div', 'sec-title', `<img src="/assets/${lab[1]}.webp" alt="" style="width:34px;height:34px"><h3>${esc(lab[2])}</h3><span class="spacer"></span><button class="btn ghost icon-only" aria-label="Close">✕</button>`));
+  pane.querySelector('.icon-only').onclick = () => pane.classList.add('hidden');
+  const body = h('div'); pane.appendChild(body); (LAB_UI[id] || (() => {}))(body);
+  pane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+const LAB_UI = {
+  trading(b) {
+    b.innerHTML = `<p class="muted">Research only, not financial advice. Bowers never places trades.</p><div class="row"><input class="input" id="tr-sym" placeholder="Ticker or coin, e.g. NVDA or BTC" style="max-width:260px"><select class="input" id="tr-h" style="max-width:200px"><option>next few weeks</option><option>next 6-12 months</option><option>long term (3+ years)</option></select><button class="btn primary" id="tr-go">Analyze</button></div>`;
+    b.querySelector('#tr-go').onclick = () => { const s = b.querySelector('#tr-sym').value.trim(); if (!s) return;
+      labRun(`Run a multi-agent trading research report on ${s} for the ${b.querySelector('#tr-h').value} (inspired by TradingAgents). Use delegate to run these analysts in parallel with web_search: 1) fundamentals (financials, valuation, earnings), 2) news and sentiment, 3) technical analysis (trend, support/resistance, momentum), 4) macro and sector. Then hold a short bull vs bear debate, then a risk manager review (position sizing ideas, what would invalidate the thesis). Finish with a clear summary table and a one-line overall view. Cite sources with dates. This is research only, not financial advice, and never place trades.`); };
+  },
+  math(b) {
+    b.innerHTML = `<div class="row"><input class="input" id="mx" placeholder="e.g. x^2 - 5x + 6 = 0, sin(x)/x, integrate x*e^x" style="flex:1"><select class="input" id="mop" style="max-width:170px"><option value="solve">Solve</option><option value="simplify">Simplify</option><option value="diff">Differentiate</option><option value="integrate">Integrate</option><option value="factor">Factor</option><option value="expand">Expand</option><option value="plot">Plot</option></select><button class="btn primary" id="mgo">Go</button><button class="btn" id="mexp">Explain steps</button></div><div class="lab-out" id="mout"></div><canvas class="plot hidden" id="mplot"></canvas>`;
+    const go = async () => { const expr = b.querySelector('#mx').value.trim(); if (!expr) return; const op = b.querySelector('#mop').value;
+      const r = await api('/api/math', { expr, op }); const d = await r.json(); const out = b.querySelector('#mout');
+      if (!r.ok) { out.innerHTML = `<pre>${esc(d.error)}</pre>`; return; }
+      out.innerHTML = `<pre>${esc(d.text)}</pre>`; if (d.latex) { const p = h('div', 'prose'); p.innerHTML = md('$$' + d.latex + '$$'); out.appendChild(p); scheduleMath(p); }
+      const cv = b.querySelector('#mplot'); cv.classList.toggle('hidden', !d.points); if (d.points) drawPlot(cv, d.points, expr); };
+    b.querySelector('#mgo').onclick = go; b.querySelector('#mx').onkeydown = e => { if (e.key === 'Enter') go(); };
+    b.querySelector('#mexp').onclick = () => { const v = b.querySelector('#mx').value.trim(); if (v) labRun(`Solve this step by step, explaining each step simply, and check the answer (use sympy in Python if it helps): ${v}`); };
+  },
+  arena(b) {
+    const opts = (state.models || []).map(m => `<option value="${esc(m.id)}">${esc(m.label)}</option>`).join('');
+    b.innerHTML = `<textarea class="input" id="ar-p" rows="3" placeholder="Ask both models the same question…" style="width:100%"></textarea><div class="row"><select class="input" id="ar-a" style="max-width:240px">${opts}</select><span class="muted">vs</span><select class="input" id="ar-b" style="max-width:240px">${opts}</select><button class="btn primary" id="ar-go">Battle</button><button class="btn ghost" id="ar-board">Leaderboard</button></div><div class="arena" id="ar-out"></div>`;
+    const ids = (state.models || []).map(m => m.id); b.querySelector('#ar-a').value = 'syntra'; b.querySelector('#ar-b').value = ids.includes('solace') ? 'solace' : ids[1];
+    b.querySelector('#ar-go').onclick = async () => { const p = b.querySelector('#ar-p').value.trim(); if (!p) return; const out = b.querySelector('#ar-out');
+      out.innerHTML = `<div class="side-ans"><h4>Model A</h4>Thinking…</div><div class="side-ans"><h4>Model B</h4>Thinking…</div>`;
+      const r = await api('/api/arena', { prompt: p, a: b.querySelector('#ar-a').value, b: b.querySelector('#ar-b').value }); const d = await r.json();
+      if (!r.ok) { out.innerHTML = `<pre>${esc(d.error)}</pre>`; return; }
+      out.innerHTML = ''; for (const [k, ans] of [['A', d.a], ['B', d.b]]) { const c = h('div', 'side-ans', `<h4>Model ${k} <span class="muted">(hidden until you vote)</span></h4><div class="prose"></div>`); c.querySelector('.prose').innerHTML = md(ans.text || ans.error || ''); out.appendChild(c); }
+      const votes = h('div', 'row', ''); for (const [v, label] of [['a', 'A is better'], ['b', 'B is better'], ['tie', 'Tie']]) { const vb = h('button', 'btn', label); vb.onclick = async () => { const rr = await api('/api/arena/vote', { id: d.id, winner: v }); const vd = await rr.json(); out.querySelectorAll('h4').forEach((el, i) => { el.textContent = `Model ${i ? 'B' : 'A'}: ${i ? vd.b : vd.a}`; }); votes.replaceChildren(h('span', 'muted', 'Thanks! Vote saved.')); }; votes.appendChild(vb); }
+      out.appendChild(votes); votes.style.gridColumn = '1 / -1'; };
+    b.querySelector('#ar-board').onclick = async () => { const d = await (await api('/api/arena')).json(); b.querySelector('#ar-out').innerHTML = `<pre style="grid-column:1/-1">${esc(d.board.map((x, i) => `${i + 1}. ${x.model}  wins ${x.wins}  losses ${x.losses}  ties ${x.ties}`).join('\n') || 'No votes yet.')}</pre>`; };
+  },
+  emotes(b) {
+    b.innerHTML = `<p class="muted">Pick a square-ish image (a transparent PNG works best). Bowers makes every size each platform asks for and saves them in assets/emotes.</p><div class="row"><button class="btn primary" id="em-pick">Choose image</button><button class="btn" id="em-make">Design an emote with AI</button></div><div class="emote-row" id="em-out"></div>`;
+    b.querySelector('#em-pick').onclick = () => pickImage(async (data, name) => { const r = await api('/api/emotes', { image: data, name }); const d = await r.json(); const out = b.querySelector('#em-out');
+      if (!r.ok) { out.textContent = d.error; return; }
+      out.innerHTML = d.sizes.map(s => `<figure><img src="${imgUrl(s.path)}" width="${Math.min(s.size, 112)}" height="${Math.min(s.size, 112)}" alt=""><figcaption>${esc(s.platform)}<br>${s.size}px</figcaption></figure>`).join('') + `<div class="muted" style="width:100%">Saved in ${esc(d.folder)}</div>`; });
+    b.querySelector('#em-make').onclick = () => { setMotionMode('photo'); showPage('motion'); $('img-prompt').value = 'Cute expressive emote of '; $('img-prompt').focus(); document.getElementById('img-transparent').checked = true; };
+  },
+  interior(b) {
+    const styles = ['Scandinavian', 'Japandi', 'Modern luxury', 'Mid-century modern', 'Industrial loft', 'Bohemian', 'Coastal', 'Minimalist', 'Virtual staging (furnish an empty room)'];
+    b.innerHTML = `<div class="row"><button class="btn" id="in-pick">Choose room photo</button><span class="muted" id="in-name">No photo yet</span><select class="input" id="in-style" style="max-width:280px">${styles.map(s => `<option>${s}</option>`).join('')}</select><button class="btn primary" id="in-go">Restyle</button></div><div class="emote-row" id="in-out"></div>`;
+    let photo = null; b.querySelector('#in-pick').onclick = () => pickImage((d, n) => { photo = d; b.querySelector('#in-name').textContent = n; });
+    b.querySelector('#in-go').onclick = async () => { if (!photo) return toast('Choose a room photo first'); const style = b.querySelector('#in-style').value; const out = b.querySelector('#in-out'); out.textContent = 'Restyling… (about a minute)';
+      const up = await api('/api/upload', { data: photo, folder: 'rooms' }); const u = await up.json(); if (!up.ok) { out.textContent = u.error; return; }
+      const prompt = style.startsWith('Virtual') ? 'Virtually stage this empty room for a real-estate listing: add tasteful, realistic furniture, rugs, plants and lighting. Keep walls, windows, floor and the camera angle exactly the same.'
+        : `Redesign this room in ${style} interior style: new furniture, colors, textiles and decor, photorealistic. Keep the room layout, walls, windows and camera angle exactly the same.`;
+      const r = await api('/api/images/generate', { prompt, edit: [u.path], quality: 'high' }); const d = await r.json();
+      out.innerHTML = r.ok ? d.made.map(m => `<figure><img src="${imgUrl(m.path)}" style="max-width:100%;width:520px;height:auto;border-radius:12px" alt=""><figcaption>${esc(style)}</figcaption></figure>`).join('') : esc(d.error); };
+  },
+  studio3d(b) { simpleLab(b, 'Describe the 3D scene, game or tool…', v => `Build this in 3D with three.js (a single index.html, orbit controls, good lighting, responsive, 60fps). If it's an editor, include gizmos, an outliner and save/load (inspired by three-editor/PlayCanvas). If I mention Blender, also write a Blender Python (bpy) script I can run with "blender --background --python". Open it in the browser tool to check it works: ${v}`); },
+  clipper(b) { simpleLab(b, 'Path to a video in this project, or a YouTube/URL, plus what clips you want…', v => `Turn this long video into short highlight clips (inspired by AutoClip/OpenMontage): use ffmpeg (install it if missing), transcribe with whisper if available, find the 3-6 most engaging moments, cut 15-60s vertical 9:16 clips with burned-in captions, and save them under assets/clips with a list of timestamps and titles. If I give a script instead of a video, write a shot-by-shot storyboard and make each shot with generate_video. Input: ${v}`); },
+  audit(b) { simpleLab(b, 'Website URL (or leave empty for this project\'s running app)…', v => `Audit ${v || 'this project\'s running site'} like Lighthouse plus an SEO expert (inspired by claude-seo): run "npx lighthouse <url> --output=json --quiet --chrome-flags=--headless" if Node is available, otherwise check with the browser tool. Report performance (LCP, CLS, INP), accessibility, SEO (titles, meta, headings, structured data, sitemap, robots) and best practices, ranked by impact, then fix what you can in this project.`, true); },
+  ci(b) { simpleLab(b, 'Which workflow or job? (leave empty for all)', v => `Run this repo's GitHub Actions locally with nektos/act before pushing: check act and Docker are installed (explain how to install them for my OS if not), list jobs with "act -l", run ${v || 'the push workflows'}, and fix any failures you find in the code.`, true); },
+  crawl(b) { simpleLab(b, 'Website to crawl, e.g. https://docs.example.com', v => `Crawl ${v} into clean Markdown (inspired by Firecrawl): fetch the pages (respect robots.txt, stay on the same site, at most 40 pages), strip navigation and ads, save each page under knowledge/<site>/ as .md with its URL and title at the top, and write an index.md summarizing what's there.`); },
+  skills(b) {
+    const packs = [['obra/superpowers', 'Superpowers: TDD, debugging and planning skills'], ['ComposioHQ/awesome-claude-skills', 'Awesome Claude Skills collection'], ['msitarzewski/agency-agents', 'Agency agents: specialist helper roles'],
+      ['anthropics/knowledge-work-plugins', 'Knowledge work plugins'], ['nextlevelbuilder/ui-ux-pro-max-skill', 'UI/UX Pro Max design skill'], ['AgriciDaniel/claude-seo', 'SEO skills']];
+    b.innerHTML = `<p class="muted">Skills and plugins in the Claude Code format work in Bowers. Third-party packs can include commands and hooks: Bowers asks before running any hook.</p><div class="row"><input class="input" id="sk-src" placeholder="owner/repo or a git URL" style="flex:1"><button class="btn primary" id="sk-go">Install</button></div><div id="sk-list"></div><div class="lab-out" id="sk-out"></div>`;
+    const list = b.querySelector('#sk-list');
+    for (const [repo, label] of packs) { const r = h('div', 'mcp-row', `<span>${esc(label)}</span><small>${esc(repo)}</small>`); const btn = h('button', 'btn', 'Install'); btn.onclick = () => install(repo); r.appendChild(btn); list.appendChild(r); }
+    const install = async src => { if (!confirm(`Install skills from ${src}?\n\nOnly install packs you trust.`)) return; const out = b.querySelector('#sk-out'); out.innerHTML = '<pre>Installing…</pre>';
+      const r = await api('/api/skills/install', { source: src }); const d = await r.json(); out.innerHTML = `<pre>${esc(r.ok ? 'Installed: ' + (d.installed.join(', ') || 'nothing new') : d.error)}</pre>`; };
+    b.querySelector('#sk-go').onclick = () => { const v = b.querySelector('#sk-src').value.trim(); if (v) install(v); };
+  },
+  resources(b) {
+    const links = [['free-for-dev', 'https://github.com/ripienaar/free-for-dev', 'Free tiers of services for developers'], ['awesome-selfhosted', 'https://github.com/awesome-selfhosted/awesome-selfhosted', 'Apps you can host yourself'],
+      ['free-programming-books', 'https://github.com/EbookFoundation/free-programming-books', 'Free books and courses for every language'], ['React Bits', 'https://github.com/DavidHDev/react-bits', 'Animated React components'],
+      ['Magic UI', 'https://github.com/magicuidesign/magicui', 'Beautiful UI components'], ['LiteLLM', 'https://github.com/BerriAI/litellm', 'One API for 100+ models (Bowers Router does this for Bowers)']];
+    b.innerHTML = links.map(([n, u, d]) => `<div class="mcp-row"><a href="${u}" target="_blank" rel="noopener"><b>${esc(n)}</b></a><small>${esc(d)}</small></div>`).join('') +
+      `<div class="row"><button class="btn" id="rs-ask">Ask Bowie to find a free tool for…</button></div>`;
+    b.querySelector('#rs-ask').onclick = () => prefill('Using free-for-dev and awesome-selfhosted, find me a free or self-hosted tool for ');
+  },
+};
+function simpleLab(b, placeholder, make, optional = false) {
+  b.innerHTML = `<div class="row"><input class="input" placeholder="${esc(placeholder)}" style="flex:1"><button class="btn primary">Start</button></div>`;
+  const go = () => { const v = b.querySelector('input').value.trim(); if (!v && !optional) return b.querySelector('input').focus(); labRun(make(v)); };
+  b.querySelector('button').onclick = go; b.querySelector('input').onkeydown = e => { if (e.key === 'Enter') go(); };
+}
+function drawPlot(cv, pts, label) {
+  const dpr = devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr;
+  const c = cv.getContext('2d'); c.scale(dpr, dpr); c.clearRect(0, 0, W, H);
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]).filter(y => y != null && isFinite(y));
+  if (!ys.length) return;
+  const x0 = Math.min(...xs), x1 = Math.max(...xs); let y0 = Math.min(...ys), y1 = Math.max(...ys); if (y0 === y1) { y0 -= 1; y1 += 1; }
+  const pad = 30, X = x => pad + (x - x0) / (x1 - x0) * (W - 2 * pad), Y = y => H - pad - (y - y0) / (y1 - y0) * (H - 2 * pad);
+  const css = getComputedStyle(document.documentElement);
+  c.strokeStyle = css.getPropertyValue('--line'); c.lineWidth = 1; c.beginPath();
+  if (y0 < 0 && y1 > 0) { c.moveTo(pad, Y(0)); c.lineTo(W - pad, Y(0)); } if (x0 < 0 && x1 > 0) { c.moveTo(X(0), pad); c.lineTo(X(0), H - pad); } c.stroke();
+  c.strokeStyle = css.getPropertyValue('--accent'); c.lineWidth = 2.2; c.beginPath(); let pen = false;
+  for (const [x, y] of pts) { if (y == null || !isFinite(y)) { pen = false; continue; } pen ? c.lineTo(X(x), Y(y)) : c.moveTo(X(x), Y(y)); pen = true; } c.stroke();
+  c.fillStyle = css.getPropertyValue('--muted'); c.font = '12px sans-serif'; c.fillText(`y = ${label}`, pad, 18); c.fillText(`x: ${x0} … ${x1}`, W - 140, H - 8);
+}
+
+// ---------------------------------------------------------------- Knowledge Graph (Bowers Aether)
+const KG_ICON = { you: 'users', memories: 'brain', projects: 'folder', files: 'image', tools: 'grid', knowledge: 'book', goals: 'check', motion: 'play', forge: 'code', history: 'history' };
+let KG = null;
+async function renderGraph() {
+  const r = await api('/api/graph'); if (!r.ok) return toast('Could not load the graph'); KG = await r.json();
+  drawGraph(); kgSide();
+  $('kg-thinking').textContent = `Bowie is connected to ${KG.stats.connections.toLocaleString()} pieces of your work`;
+}
+function kgBody(n) {
+  if (n.items?.length) return `<ul>${n.items.slice(0, 4).map(i => `<li>${esc(i)}</li>`).join('')}</ul>`;
+  if (n.goals?.length) return `<ul>${n.goals.slice(0, 4).map(g => `<li>${g.done ? '✓ ' : ''}${esc(g.text)}</li>`).join('')}</ul>`;
+  if (n.counts) return `<ul><li>${n.counts.image} images · ${n.counts.video} videos</li><li>${n.counts.doc} docs · ${n.counts.code} code files</li></ul>`;
+  if (n.media?.length) return `<div class="thumbs">${n.media.slice(0, 4).map(p => /\.(mp4|webm|mov)$/i.test(p) ? `<video src="${imgUrl(p)}" muted></video>` : `<img src="${imgUrl(p)}" alt="">`).join('')}</div>`;
+  return '';
+}
+function drawGraph() {
+  const box = $('kg'); if (!KG || box.classList.contains('hidden')) return;
+  box.innerHTML = `<svg aria-hidden="true"></svg><div class="kg-core"><img src="/assets/art/aether-hero.webp" alt="Bowie"><div class="lbl"><b>${esc(KG.center.title)}</b><small>${esc(KG.center.sub)}</small></div></div>`;
+  const W = box.clientWidth, H = box.clientHeight, cx = W / 2, cy = H / 2, rx = W / 2 - 120, ry = H / 2 - 80;
+  const svg = box.querySelector('svg'); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const n = KG.nodes.length; let paths = '';
+  KG.nodes.forEach((node, i) => {
+    const a = -Math.PI / 2 + i * 2 * Math.PI / n, x = cx + rx * Math.cos(a), y = cy + ry * Math.sin(a);
+    const mx = cx + (x - cx) * .55 + Math.sin(a) * 30, my = cy + (y - cy) * .55 - Math.cos(a) * 30;
+    paths += `<path d="M${cx},${cy} Q${mx},${my} ${x},${y}" stroke="url(#kgl)" stroke-width="1.6" fill="none" opacity=".85"/><circle cx="${x}" cy="${y}" r="3" fill="#ff8a4d"/><text class="kg-edge-label" x="${(cx + x) / 2 + Math.sin(a) * 18}" y="${(cy + y) / 2 - Math.cos(a) * 18}" text-anchor="middle">${esc(node.link)}</text>`;
+    const el = h('button', 'kg-node', `<div class="kh"><span class="ki">${icon(KG_ICON[node.kind] || 'sparkle', 16)}</span><div style="min-width:0"><b></b><small></small></div></div>${kgBody(node)}`);
+    el.querySelector('b').textContent = node.title; el.querySelector('small').textContent = node.sub;
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    el.onclick = () => node.page ? showPage(node.page) : node.kind === 'history' ? openDrawer('sessions') : node.kind === 'memories' || node.kind === 'you' ? showMemory() : prefill(`Using what you know about my ${node.title.toLowerCase()}, `);
+    box.appendChild(el);
+  });
+  svg.innerHTML = `<defs><linearGradient id="kgl" x1="0" x2="1"><stop offset="0" stop-color="#ff6b2c" stop-opacity=".9"/><stop offset="1" stop-color="#ffb38a" stop-opacity=".3"/></linearGradient></defs>${paths}`;
+  for (let k = 0; k < 40; k++) svg.insertAdjacentHTML('beforeend', `<circle cx="${Math.random() * W}" cy="${Math.random() * H}" r="${Math.random() * 1.4 + .3}" fill="#ff9a62" opacity="${Math.random() * .6 + .2}"/>`);
+}
+function kgSide() {
+  const act = $('kg-actions'); act.innerHTML = '';
+  for (const [ic, label, fn] of [['chat', 'Ask Bowie', () => openHud()], ['search', 'Find related files', () => openCmdk('')], ['layout', 'Show project context', () => showContext()], ['plus', 'Create new project', () => $('new-project').click()]]) {
+    const b = h('button', 'qa', `${icon(ic, 16)}<span><b>${esc(label)}</b></span>`); b.style.width = '100%'; b.onclick = fn; act.appendChild(b);
+  }
+  $('kg-recent').innerHTML = KG.recent.map(r => `<div class="stat-row"><span>${esc(r.title)}</span><small>${ago(r.time)}</small></div>`).join('') || '<div class="muted" style="font-size:13px;margin-top:6px">Your chats will connect here.</div>';
+  const s = KG.stats; $('kg-stats').innerHTML = [['Projects', s.projects], ['Files & Assets', s.files.toLocaleString()], ['Connections', s.connections.toLocaleString()], ['Last Updated', ago(s.updated)]].map(([k, v]) => `<div class="stat-row"><span>${k}</span><b>${v}</b></div>`).join('');
+}
+addEventListener('resize', () => { if (page === 'graph') drawGraph(); });
+document.querySelectorAll('#kg-tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#kg-tabs button').forEach(x => x.classList.toggle('on', x === b));
+  const code = b.dataset.v === 'code'; $('kg').classList.toggle('hidden', code); $('kg-code').classList.toggle('hidden', !code);
+  if (code) codeMap(); else drawGraph();
+});
+let CM = null;
+function codeMap() {
+  if (!KG) return; const cv = $('kg-canvas'), W = cv.clientWidth, H = cv.clientHeight, dpr = devicePixelRatio || 1; cv.width = W * dpr; cv.height = H * dpr;
+  const nodes = KG.code.nodes.map((n, i) => ({ ...n, x: W / 2 + Math.cos(i * 2.4) * (40 + 6 * i), y: H / 2 + Math.sin(i * 2.4) * (40 + 6 * i), vx: 0, vy: 0 }));
+  if (!nodes.length) { const c2 = cv.getContext('2d'); c2.setTransform(dpr, 0, 0, dpr, 0, 0); c2.clearRect(0, 0, W, H); c2.fillStyle = '#b8aca3'; c2.font = '14px sans-serif'; c2.fillText('No code files yet: the map appears as Bowers writes code.', 24, 40); return; }
+  const idx = Object.fromEntries(nodes.map((n, i) => [n.id, i])); const edges = KG.code.edges.map(([a, b]) => [idx[a], idx[b]]).filter(([a, b]) => a != null && b != null);
+  const groups = [...new Set(nodes.map(n => n.group))], hue = g => (groups.indexOf(g) * 67 + 18) % 360;
+  CM = { nodes, edges, scale: 1, ox: 0, oy: 0, hover: null, tick: 0 };
+  const ctx = cv.getContext('2d');
+  const step = () => {
+    if (!CM || CM.nodes !== nodes) return;
+    if (CM.tick++ < 260) {
+      for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i], b = nodes[j]; let dx = a.x - b.x, dy = a.y - b.y, d2 = Math.max(dx * dx + dy * dy, 100); const f = 140 / d2;
+        a.vx += dx * f; a.vy += dy * f; b.vx -= dx * f; b.vy -= dy * f; }
+      for (const [i, j] of edges) { const a = nodes[i], b = nodes[j], dx = b.x - a.x, dy = b.y - a.y; a.vx += dx * .012; a.vy += dy * .012; b.vx -= dx * .012; b.vy -= dy * .012; }
+      for (const n of nodes) { n.vx += (W / 2 - n.x) * .004; n.vy += (H / 2 - n.y) * .004; const sp = Math.hypot(n.vx, n.vy); if (sp > 8) { n.vx *= 8 / sp; n.vy *= 8 / sp; }
+        n.x = Math.min(W - 20, Math.max(20, n.x + n.vx)); n.y = Math.min(H - 20, Math.max(20, n.y + n.vy)); n.vx *= .82; n.vy *= .82; }
+    }
+    ctx.setTransform(dpr * CM.scale, 0, 0, dpr * CM.scale, dpr * CM.ox, dpr * CM.oy); ctx.clearRect(-1e4, -1e4, 3e4, 3e4);
+    ctx.strokeStyle = 'rgba(255,140,80,.22)'; ctx.lineWidth = 1 / CM.scale; ctx.beginPath();
+    for (const [i, j] of edges) { ctx.moveTo(nodes[i].x, nodes[i].y); ctx.lineTo(nodes[j].x, nodes[j].y); } ctx.stroke();
+    for (const n of nodes) { ctx.fillStyle = `hsl(${hue(n.group)} 80% 62%)`; ctx.beginPath(); ctx.arc(n.x, n.y, 3 + Math.min(9, n.degree), 0, 7); ctx.fill(); }
+    ctx.fillStyle = '#e9ddd3'; ctx.font = `${11 / CM.scale}px sans-serif`;
+    for (const n of nodes) if (n.degree > 4 || n === CM.hover) ctx.fillText(n.id.split('/').pop(), n.x + 8, n.y + 3);
+    requestAnimationFrame(step);
+  };
+  step();
+  const at = e => { const r = cv.getBoundingClientRect(), x = (e.clientX - r.left - CM.ox) / CM.scale, y = (e.clientY - r.top - CM.oy) / CM.scale; return nodes.find(n => (n.x - x) ** 2 + (n.y - y) ** 2 < 120); };
+  let drag = null;
+  cv.onmousedown = e => { drag = { x: e.clientX, y: e.clientY, ox: CM.ox, oy: CM.oy, moved: false }; };
+  cv.onmousemove = e => { if (drag) { CM.ox = drag.ox + e.clientX - drag.x; CM.oy = drag.oy + e.clientY - drag.y; drag.moved = true; } else { CM.hover = at(e); cv.title = CM.hover ? `${CM.hover.id} (${CM.hover.degree} links)` : ''; } };
+  cv.onmouseup = e => { if (drag && !drag.moved) { const n = at(e); if (n) { showPage('forge'); setTimeout(() => ideOpen(n.id), 300); } } drag = null; };
+  cv.onwheel = e => { e.preventDefault(); const k = e.deltaY < 0 ? 1.12 : 1 / 1.12; const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top; CM.ox = mx - (mx - CM.ox) * k; CM.oy = my - (my - CM.oy) * k; CM.scale *= k; };
+}
+
+// ---------------------------------------------------------------- Ctrl+K command palette
+let cmdkItems = [], cmdkSel = 0, cmdkProjects = null;
+function cmdkActions() {
+  const a = [
+    ['create-video', 'Create a video', 'Motion', () => { showPage('motion'); setMotionMode('video'); }],
+    ['create-image', 'Create an image', 'Motion', () => { showPage('motion'); setMotionMode('photo'); }],
+    ['coding', 'Open Bowers Forge', 'Forge', () => showPage('forge')],
+    ['fixing', 'Fix my computer', 'Care', () => showPage('care')],
+    ['debugging', 'Fix a code error', 'Care', () => { showPage('care'); setTimeout(() => $('care-code').focus(), 200); }],
+    ['flying', 'Deploy to production', 'Deploy', () => deploy()],
+    ['planning', 'New project', 'Projects', () => $('new-project').click()],
+    ['reading', 'Go to library', 'Library', () => showPage('library')],
+    ['inspire', 'Open Labs', 'Labs', () => showPage('labs')],
+    ['hello', 'New chat', 'Chat', () => { showPage('home'); newChat(); }],
+    ['listening', 'Talk to Bowers Aether', 'Aether', () => openHud()],
+    ['discovering', 'Knowledge Graph', 'Aether', () => { if (!isAether()) return toast('Switch to Bowers Aether to use the Knowledge Graph'); showPage('graph'); }],
+    ['chilling', 'Toggle dark / light mode', 'Theme', () => $('theme-btn').click()],
+    ['analyzing', 'Choose a model', 'Model', () => openModelPicker()],
+    ['helping', 'Settings', 'Settings', () => showPage('settings')],
+  ];
+  for (const [id, , title] of LABS) a.push(['inspire', title, 'Labs', () => openLab(id)]);
+  for (const p of cmdkProjects || []) a.push(['projects', 'Open project: ' + p.name, 'Projects', async () => { if (p.current) return; const r = await api('/api/projects/open', { root: p.root }); if (!r.ok) toast((await r.json()).error); }]);
+  for (const f of (files || []).slice(0, 3000)) a.push(['searching', f, 'File', () => { showPage('forge'); setTimeout(() => ideOpen(f), 300); }]);
+  return a;
+}
+function openCmdk(q = '') {
+  $('cmdk').classList.remove('hidden'); $('cmdk-input').value = q; renderCmdk(); $('cmdk-input').focus();
+  if (!cmdkProjects) api('/api/projects').then(r => r.json()).then(d => { cmdkProjects = d.projects; renderCmdk(); }).catch(() => {});
+}
+function closeCmdk() { $('cmdk').classList.add('hidden'); }
+function renderCmdk() {
+  const q = $('cmdk-input').value.toLowerCase().trim();
+  const all = cmdkActions();
+  cmdkItems = (q ? all.filter(([, t, tag]) => (t + ' ' + tag).toLowerCase().includes(q)) : all.filter(x => x[2] !== 'File')).slice(0, 40);
+  cmdkSel = Math.min(cmdkSel, Math.max(0, cmdkItems.length - 1));
+  const list = $('cmdk-list'); list.innerHTML = '';
+  cmdkItems.forEach(([st, title, tag, fn], i) => { const b = h('button', 'cmdk-item' + (i === cmdkSel ? ' on' : ''), `<img src="${STICKER(st === 'projects' ? 'planning' : st)}" alt=""><span></span><span class="tag">${esc(tag)}</span>`); b.querySelector('span').textContent = title; b.onclick = () => { closeCmdk(); fn(); }; list.appendChild(b); });
+  if (!cmdkItems.length) list.appendChild(h('div', 'muted', '<div style="padding:14px">Nothing found. Press Enter to ask Bowie.</div>'));
+}
+$('cmdk-input').oninput = () => { cmdkSel = 0; renderCmdk(); };
+$('cmdk-input').onkeydown = e => {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); cmdkSel = (cmdkSel + (e.key === 'ArrowDown' ? 1 : -1) + cmdkItems.length) % Math.max(1, cmdkItems.length); renderCmdk(); $('cmdk-list').children[cmdkSel]?.scrollIntoView({ block: 'nearest' }); }
+  else if (e.key === 'Enter') { e.preventDefault(); const it = cmdkItems[cmdkSel]; closeCmdk(); if (it) it[3](); else if ($('cmdk-input').value.trim()) { showPage('home'); send($('cmdk-input').value.trim()); } }
+  else if (e.key === 'Escape') closeCmdk();
+};
+$('cmdk').onclick = e => { if (e.target.id === 'cmdk') closeCmdk(); };
+$('top-search').onclick = () => openCmdk();
+document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); $('cmdk').classList.contains('hidden') ? openCmdk() : closeCmdk(); } });
+
+// ---------------------------------------------------------------- Bowie's voice (voice studio)
+const VOICE = { get engine() { return store.get('bowie-voice-engine', 'browser'); }, get name() { return store.get('bowie-voice-name', ''); },
+  get pitch() { return +store.get('bowie-voice-pitch', '1.35'); }, get rate() { return +store.get('bowie-voice-rate', '1.05'); }, get eleven() { return store.get('bowie-voice-eleven', ''); } };
+let voiceAudio = null;
+function speakable(text) { return text.replace(/```[\s\S]*?```/g, ' (code on screen) ').replace(/`([^`]+)`/g, '$1').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[#*_>|~-]{1,3}/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 1200); }
+async function speak(text, onEnd) {
+  text = speakable(text); if (!text) { onEnd?.(); return; }
+  stopSpeaking();
+  if (VOICE.engine === 'eleven' && VOICE.eleven) {
+    const r = await api('/api/voice/speak', { text, voice: VOICE.eleven });
+    if (r.ok) { voiceAudio = new Audio(URL.createObjectURL(await r.blob())); voiceAudio.onended = () => onEnd?.(); voiceAudio.play().catch(() => onEnd?.()); return; }
+    toast((await r.json()).error + ' (using the built-in voice)');
+  }
+  if (!('speechSynthesis' in window)) { onEnd?.(); return; }
+  const u = new SpeechSynthesisUtterance(text); const v = speechSynthesis.getVoices().find(x => x.name === VOICE.name) || bowieDefaultVoice();
+  if (v) u.voice = v; u.pitch = VOICE.pitch; u.rate = VOICE.rate; u.onend = () => onEnd?.(); u.onerror = () => onEnd?.(); speechSynthesis.speak(u);
+}
+function stopSpeaking() { try { speechSynthesis.cancel(); } catch (e) {} if (voiceAudio) { voiceAudio.pause(); voiceAudio = null; } }
+function bowieDefaultVoice() {  // a bright, friendly voice in the page's language
+  const vs = speechSynthesis.getVoices(), lang = (navigator.language || 'en').slice(0, 2);
+  return vs.find(v => /aria|jenny|samantha|google us english|zira|ava|karen/i.test(v.name) && v.lang.startsWith(lang)) || vs.find(v => v.lang.startsWith(lang)) || vs[0];
+}
+async function renderVoiceStudio() {
+  const p = document.querySelector('[data-sp="voice"]'); if (!p) return;
+  const vs = ('speechSynthesis' in window) ? speechSynthesis.getVoices() : [];
+  const ev = await (await api('/api/voice')).json().catch(() => ({ available: false, voices: [] }));
+  p.innerHTML = `<div class="set-card"><div class="voice-hero"><img src="${STICKER('listening')}" alt=""><div><b>Bowie's voice</b><br><small class="muted">Used by Bowers Aether voice mode and "Read aloud". Pick a voice that suits Bowie: small, warm and friendly.</small></div></div>
+    <label>Voice engine<select class="input" id="vs-engine"><option value="browser">Built-in (free, works offline)</option><option value="eleven" ${ev.available ? '' : 'disabled'}>ElevenLabs ${ev.available ? '' : '(add ELEVENLABS_API_KEY)'}</option></select></label>
+    <div id="vs-browser"><label>Voice<select class="input" id="vs-name"><option value="">Bowie's pick</option>${vs.map(v => `<option ${v.name === VOICE.name ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}</select></label>
+      <div class="voice-row"><label>Pitch <input type="range" id="vs-pitch" min="0.6" max="2" step="0.05" value="${VOICE.pitch}"></label><label>Speed <input type="range" id="vs-rate" min="0.6" max="1.6" step="0.05" value="${VOICE.rate}"></label></div></div>
+    <div id="vs-eleven" class="hidden"><label>ElevenLabs voice<select class="input" id="vs-el">${(ev.voices || []).map(v => `<option value="${esc(v.id)}" ${v.id === VOICE.eleven ? 'selected' : ''}>${esc(v.name)}${v.category ? ' (' + esc(v.category) + ')' : ''}</option>`).join('') || '<option value="">No voices found</option>'}</select></label>
+      <small class="muted">${ev.error ? esc(ev.error) : 'Tip: in ElevenLabs Voice Design, describe "a small, cheerful, fluffy orange mascot with a warm, slightly high, playful voice", save it, and pick it here.'}</small></div>
+    <div class="voice-row"><button class="btn primary" id="vs-test">${icon('play', 13)} Hear Bowie</button><button class="btn ghost" id="vs-stop">Stop</button></div></div>`;
+  const engine = p.querySelector('#vs-engine'); engine.value = ev.available ? VOICE.engine : 'browser';
+  const sync = () => { p.querySelector('#vs-browser').classList.toggle('hidden', engine.value !== 'browser'); p.querySelector('#vs-eleven').classList.toggle('hidden', engine.value !== 'eleven'); };
+  engine.onchange = () => { store.set('bowie-voice-engine', engine.value); sync(); }; sync();
+  p.querySelector('#vs-name').onchange = e => store.set('bowie-voice-name', e.target.value);
+  p.querySelector('#vs-pitch').oninput = e => store.set('bowie-voice-pitch', e.target.value);
+  p.querySelector('#vs-rate').oninput = e => store.set('bowie-voice-rate', e.target.value);
+  p.querySelector('#vs-el').onchange = e => store.set('bowie-voice-eleven', e.target.value);
+  if (ev.available && !VOICE.eleven && ev.voices?.[0]) store.set('bowie-voice-eleven', ev.voices[0].id);
+  p.querySelector('#vs-test').onclick = () => speak(`Hi${profileName ? ' ' + profileName : ''}! I'm Bowie. I can build apps, make videos, fix your computer, and remember what matters to you.`);
+  p.querySelector('#vs-stop').onclick = stopSpeaking;
+}
+if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => { if (document.querySelector('[data-sp="voice"]:not(.hidden)')) renderVoiceStudio(); };
+
+// ---------------------------------------------------------------- Bowers Aether: voice assistant (Jarvis-style)
+const HUD = { open: false, listening: false, rec: null, hands: false, muted: store.get('hud-muted', '0') === '1', reply: {}, last: null, waiting: false };
+function hudStatus(text) { $('hud-status').textContent = text; }
+function hudLine(text, cls = '') { const l = h('div', 'hl ' + cls); l.textContent = text; $('hud-log').appendChild(l); while ($('hud-log').children.length > 30) $('hud-log').firstChild.remove(); l.scrollIntoView({ block: 'end' }); return l; }
+async function openHud() {
+  if (!isAether() && !(await pickModel('aether'))) return;
+  HUD.open = true; $('hud').classList.remove('hidden');
+  $('hud-bowie').src = '/assets/art/aether-hero.webp';
+  if (!$('hud-chips').children.length) for (const [label, prompt] of [["What's next?", 'Looking at this project and what we did recently, what should I do next? Give me the top three.'],
+    ['Check my computer', 'Check my computer\'s health with system_check and tell me if anything needs attention.'], ['Make a video', null],
+    ['Summarize my week', 'Summarize what I worked on this week from our recent conversations and the git history.']]) {
+    const b = h('button', null, esc(label)); b.onclick = () => prompt ? hudAsk(prompt, label) : (closeHud(), showPage('motion')); $('hud-chips').appendChild(b); }
+  $('hud-mute').textContent = HUD.muted ? '🔇' : '🔊';
+  hudStatus(`${greetWord()}${profileName ? ', ' + profileName : ''}. Tap the mic and talk to me, or type below.`);
+  $('hud-input').focus();
+}
+function closeHud() { HUD.open = false; $('hud').classList.add('hidden'); stopListening(); stopSpeaking(); HUD.hands = false; $('hud-hands').checked = false; }
+async function hudAsk(text, shown) {
+  if (!text.trim()) return;
+  hudLine(shown || text, 'you'); hudStatus('Thinking…'); $('hud-bowie').src = '/assets/aether/thinking.webp'; HUD.waiting = true; HUD.reply = {};
+  const r = await api('/api/chat', { message: text, voice: true });
+  if (!r.ok) { hudStatus((await r.json()).error); HUD.waiting = false; }
+}
+function hudEvent(ev) {
+  if (!HUD.open || !HUD.waiting) return;
+  if (ev.type === 'tool_call') { hudLine('· ' + (ev.summary || ev.name), 'step'); hudStatus('Working on it…'); $('hud-bowie').src = '/assets/aether/focused.webp'; }
+  if (ev.type === 'text') { HUD.reply[ev.id] = (HUD.reply[ev.id] || '') + ev.text; HUD.last = ev.id; }
+  if (ev.type === 'approval') hudStatus('I need your OK in the chat window for that step.');
+  if (ev.type === 'idle') {
+    HUD.waiting = false; const text = HUD.last ? HUD.reply[HUD.last] : '';
+    $('hud-bowie').src = '/assets/aether/celebrating.webp';
+    if (text) hudLine(text);
+    hudStatus(text ? 'Done.' : 'Done. Details are in the chat.');
+    if (text && !HUD.muted) { $('hud').classList.add('speaking'); speak(text, () => { $('hud').classList.remove('speaking'); if (HUD.hands) startListening(true); }); }
+    else if (HUD.hands) startListening(true);
+    setTimeout(() => { if (!HUD.waiting) $('hud-bowie').src = '/assets/art/aether-hero.webp'; }, 4000);
+  }
+}
+function startListening(handsFree = false) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { hudStatus('Voice input needs Chrome or Edge. You can still type.'); return; }
+  stopSpeaking(); stopListening();
+  const rec = new SR(); HUD.rec = rec; rec.lang = navigator.language || 'en-US'; rec.interimResults = true; rec.continuous = handsFree;
+  let finalText = '';
+  rec.onstart = () => { HUD.listening = true; $('hud').classList.add('listening'); hudStatus(handsFree ? 'Listening for "Hey Bowie"…' : 'Listening…'); };
+  rec.onresult = e => {
+    let interim = ''; for (let i = e.resultIndex; i < e.results.length; i++) { const t = e.results[i][0].transcript; e.results[i].isFinal ? finalText += t : interim += t; }
+    if (!handsFree) { hudStatus(interim || finalText || 'Listening…'); return; }
+    const said = (finalText + ' ' + interim).toLowerCase(); const m = said.match(/(?:hey |hi |ok )?bowie[,.!]?\s+(.+)/);
+    if (m && finalText) { const cmd = finalText.replace(/^.*?bowie[,.!]?\s*/i, ''); finalText = ''; if (cmd.trim()) { stopListening(); hudAsk(cmd); } }
+  };
+  rec.onerror = e => { if (e.error !== 'no-speech' && e.error !== 'aborted') hudStatus('Microphone: ' + e.error); };
+  rec.onend = () => { HUD.listening = false; $('hud').classList.remove('listening'); if (!handsFree && finalText.trim()) hudAsk(finalText.trim()); else if (handsFree && HUD.hands && !HUD.waiting) setTimeout(() => startListening(true), 300); };
+  try { rec.start(); } catch (e) { hudStatus('Could not start the microphone'); }
+}
+function stopListening() { if (HUD.rec) { const r = HUD.rec; HUD.rec = null; r.onend = null; try { r.stop(); } catch (e) {} } HUD.listening = false; $('hud').classList.remove('listening'); }
+$('hud-mic').onclick = () => HUD.listening ? stopListening() : startListening(false);
+$('hud-send').onclick = () => { const v = $('hud-input').value; $('hud-input').value = ''; hudAsk(v); };
+$('hud-input').onkeydown = e => { if (e.key === 'Enter') $('hud-send').click(); if (e.key === 'Escape') closeHud(); };
+$('hud-close').onclick = closeHud;
+$('hud-mute').onclick = () => { HUD.muted = !HUD.muted; store.set('hud-muted', HUD.muted ? '1' : '0'); $('hud-mute').textContent = HUD.muted ? '🔇' : '🔊'; if (HUD.muted) stopSpeaking(); };
+$('hud-hands').onchange = e => { HUD.hands = e.target.checked; if (HUD.hands) startListening(true); else stopListening(); };
+$('hud-brief').onclick = () => hudAsk("Give me a short spoken briefing: what's going on in this project (git status and recent work), any open pull requests, any computer health warnings (system_check overview), and what you suggest I do next.", 'Brief me');
+$('hud-graph').onclick = () => { closeHud(); showPage('graph'); };
+$('side-aether').onclick = () => openHud(); $('top-aether').onclick = () => openHud();
+
+// deep links from the installed app's shortcuts (#motion, #forge, #care)
+addEventListener('load', () => { const want = location.hash.slice(1); if (['motion', 'forge', 'care', 'labs'].includes(want)) setTimeout(() => showPage(want), 400); });
+if ('serviceWorker' in navigator && location.protocol === 'http:' && /^(127\.0\.0\.1|localhost)$/.test(location.hostname)) navigator.serviceWorker.register('/sw.js').catch(() => {});
+
+function panelTerminal() { const box = $('panel-term'); if (box.children.length) return; ideTab('term'); box.replaceChildren(...$('ide-pane').childNodes); }
 </script>
 </body>
 </html>

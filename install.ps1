@@ -30,7 +30,7 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue) -and $Source -like "git
 }
 
 Write-Host "Installing Bowers..." -ForegroundColor Cyan
-& $py[0] $py[1..9] -m pip install --user --upgrade "docks[browser] @ $Source"
+& $py[0] $py[1..9] -m pip install --user --upgrade "docks[browser,labs] @ $Source"
 & $py[0] $py[1..9] -m docks install-app
 
 Write-Host ""

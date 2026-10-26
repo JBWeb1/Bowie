@@ -18,6 +18,16 @@ Each Bowers model is a tuned profile on top of the newest Claude model in its fa
 
 ## Install
 
+**Windows (one step):** open PowerShell and run
+
+```powershell
+irm https://raw.githubusercontent.com/JBWeb1/Bowie/main/install.ps1 | iex
+```
+
+This installs Python and Git if needed, then Bowers. It also adds **Bowers** to the Start menu and the desktop, and opens it in its own app window. The window can also be pinned with your browser's **Install app** button. **macOS / Linux:** `curl -fsSL https://raw.githubusercontent.com/JBWeb1/Bowie/main/install.sh | sh`. Already installed? `bowers app` opens the app window, and `bowers install-app` adds the shortcuts.
+
+From source:
+
 ```bash
 pip install -e .
 export ANTHROPIC_API_KEY=sk-ant-...   # get one at https://console.anthropic.com
@@ -330,6 +340,33 @@ Routes support `fallback` (in order), `round-robin`, and `latency` (fastest firs
 Set `DOCKS_ROUTER_KEY` to require a key from clients. It's required if you listen on anything other than localhost. Provider keys come from environment variables and never leave your machine except to their own provider. The router logs request metadata only, never prompts.
 
 Not supported yet: the OpenAI Responses API, which current Codex CLI requires.
+
+## The Bowers apps
+
+The browser app has one section per job, each with its own page in the sidebar (Bowie's icons) and in the **Ctrl+K** command palette. It has dark and light modes: use the sun/moon button at the top.
+
+- **Bowers Motion**: videos with sound from text or from an image (LTX-2.5 Fast or Pro, 6–20 s, up to 4K, 16:9 or 9:16), plus the photo generator, templates, and your recent creations. Videos need `LTX_API_KEY` from [ltx.io](https://ltx.io) and are saved under `assets/videos`. From the terminal: `bowers video "a fox in the snow, slow push in" --seconds 8 --pro`.
+- **Bowers Forge**: the coding section. It shows recent projects and a workspace with a file tree, a code view, a terminal (PowerShell on Windows), the AI assistant and a live preview. It also has starters such as a SaaS app, a store, a banking dashboard, payments, a mobile app, a project manager, a 3D editor, an animated UI kit and a shopping agent.
+- **Bowers Care**: fixes Windows, Linux and Mac problems and code errors. It shows a health dashboard (memory, disks, warnings) and lists common problems you can pick. You can also describe your own problem or paste an error. Read-only checks cover system errors (journal or Event Log), failed services, disk, network, busy programs and updates. Bowie explains what's wrong and fixes it step by step; each command asks you first. From the terminal: `bowers care` or `bowers care "wifi keeps dropping"`.
+- **Labs**: more tools inspired by open-source projects you might know:
+  - Trading Desk: multi-agent research, never trades
+  - Math Lab: SymPy solve, differentiate, integrate and plot
+  - Model Arena: two models side by side, with votes and a leaderboard
+  - Emote Maker: Twitch, Discord, Slack, YouTube and Telegram sizes
+  - Interior Restyler and virtual staging
+  - 3D Studio: three.js, PlayCanvas-style editor, Blender scripts
+  - Video Clipper: highlight clips with captions
+  - Site Audit: Lighthouse and SEO
+  - Local CI: GitHub Actions with `act`
+  - Web Crawler: site to Markdown
+  - Skill Packs: install skills from GitHub
+  - Free Resources
+
+  Most also work as commands: `/trading-research`, `/site-audit`, `/local-ci`, `/crawl`, `/video-clips`, `/explain-codebase`, `/prompt-eval`, `/scene-3d`. Math and emotes need `pip install "docks[labs]"`.
+- **Bowers Aether** (choose the Aether model): a voice assistant. Talk to Bowie with the mic, or turn on hands-free and say "Hey Bowie…". It answers out loud, shows each step it takes, and gives briefings ("Brief me"). Aether learns as it works: preferences it notices are saved to your memory file, and it uses them from then on. It only shows the **Knowledge Graph**, a map of how your projects, files, memories, tools, goals, creations and history connect, plus a **code map** of which files import which.
+- **Bowie's voice**: Settings → Voice. The built-in voice is free; tune its pitch and speed. Or add `ELEVENLABS_API_KEY` and pick an ElevenLabs voice. You can design one in ElevenLabs Voice Design (for example "a small, cheerful, fluffy orange mascot with a warm, playful voice").
+
+Bowers is a set of profiles and tools on top of Claude (and optionally OpenAI) models: Aether runs on Claude Fable. It doesn't train its own model. It "learns" by keeping notes in your memory files, which you can read and edit with `/memory`.
 
 ## Observer and replay
 

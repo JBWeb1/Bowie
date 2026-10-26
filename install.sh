@@ -9,9 +9,9 @@ for c in python3 python; do
 done
 [ -n "$PY" ] || { echo "Bowers needs Python 3.10 or newer: https://www.python.org/downloads/"; exit 1; }
 if command -v pipx >/dev/null 2>&1; then
-  pipx install --force "docks[browser] @ $SOURCE"
+  pipx install --force "docks[browser,labs] @ $SOURCE"
 else
-  "$PY" -m pip install --user --upgrade "docks[browser] @ $SOURCE" || "$PY" -m pip install --user --break-system-packages --upgrade "docks[browser] @ $SOURCE"
+  "$PY" -m pip install --user --upgrade "docks[browser,labs] @ $SOURCE" || "$PY" -m pip install --user --break-system-packages --upgrade "docks[browser,labs] @ $SOURCE"
 fi
 bowers install-app 2>/dev/null || "$PY" -m docks install-app
 echo
