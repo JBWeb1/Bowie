@@ -407,7 +407,12 @@ function drawPlot(cv, pts, label) {
   if (y0 < 0 && y1 > 0) { c.moveTo(pad, Y(0)); c.lineTo(W - pad, Y(0)); } if (x0 < 0 && x1 > 0) { c.moveTo(X(0), pad); c.lineTo(X(0), H - pad); } c.stroke();
   c.strokeStyle = css.getPropertyValue('--accent'); c.lineWidth = 2.2; c.beginPath(); let pen = false;
   for (const [x, y] of pts) { if (y == null || !isFinite(y)) { pen = false; continue; } pen ? c.lineTo(X(x), Y(y)) : c.moveTo(X(x), Y(y)); pen = true; } c.stroke();
-  c.fillStyle = css.getPropertyValue('--muted'); c.font = '12px sans-serif'; c.fillText(`y = ${label}`, pad, 18); c.fillText(`x: ${x0} … ${x1}`, W - 140, H - 8);
+  if (y0 < 0 && y1 > 0) for (let i = 1; i < pts.length; i++) {  // mark where it crosses zero
+    const [xa, ya] = pts[i - 1], [xb, yb] = pts[i]; if (ya == null || yb == null || Math.sign(ya) === Math.sign(yb) || ya === 0) continue;
+    const xr = xa - ya * (xb - xa) / (yb - ya); c.fillStyle = css.getPropertyValue('--accent'); c.beginPath(); c.arc(X(xr), Y(0), 5, 0, 7); c.fill();
+    c.fillStyle = css.getPropertyValue('--fg'); c.font = '600 13px sans-serif'; c.fillText(`x = ${+xr.toFixed(3)}`, X(xr) - 22, Y(0) - 12);
+  }
+  c.fillStyle = css.getPropertyValue('--muted'); c.font = '12px sans-serif'; c.fillText(`y = ${label}`, pad, 18); c.fillText(`x: ${+x0.toFixed(2)} … ${+x1.toFixed(2)}`, W - 150, H - 8);
 }
 
 // ---------------------------------------------------------------- Knowledge Graph (Bowers Aether)

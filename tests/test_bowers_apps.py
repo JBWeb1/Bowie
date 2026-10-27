@@ -48,6 +48,9 @@ def test_math_lab():
     assert labs.solve_math("x^2 - 5x + 6 = 0")["text"] == "x = 2, 3"
     assert "cos(x)" in labs.solve_math("sin(x)", "diff")["text"]
     assert labs.solve_math("x^2-1", "factor")["text"] == "(x - 1)*(x + 1)"
+    assert labs.solve_math("x^2 - 5x + 6 = 0", "factor")["text"] in ("(x - 3)*(x - 2)", "(x - 2)*(x - 3)")  # an equation works for every op
+    framed = labs.solve_math("x^2 - 5x + 6", "plot")["points"]
+    assert framed[0][0] < 2 < 3 < framed[-1][0] < 10  # the plot frames the roots
     pts = labs.solve_math("1/x", "plot")["points"]
     assert len(pts) == 401 and any(p[1] is None for p in pts)  # the gap at x = 0
     with pytest.raises(labs.LabError):

@@ -47,7 +47,7 @@ def solve_math(expr: str, op: str = "solve") -> dict:
     for word in ("solve", "simplify", "differentiate", "derivative of", "integrate", "integral of", "factor", "expand", "plot"):
         if text.lower().startswith(word + " "):
             text = text[len(word):].strip()
-    if "=" in text and op == "solve":
+    if "=" in text:  # an equation: work with left minus right
         left, right = text.split("=", 1)
         eq = sp.Eq(_parse(sp, left), _parse(sp, right))
         target = eq.lhs - eq.rhs
@@ -71,14 +71,20 @@ def solve_math(expr: str, op: str = "solve") -> dict:
         r = sp.expand(target); out, latex = sp.sstr(r), sp.latex(r)
     elif op == "plot":
         f = sp.lambdify(x, target, modules=["math"])
+        lo, step = -10.0, 0.05
+        if target.is_polynomial(x) and sp.degree(target, x) > 0:  # frame the roots, so you can see where it crosses
+            roots = [float(r) for r in sp.Poly(target, x).nroots() if abs(sp.im(r)) < 1e-9]
+            if roots:
+                half = max(3.0, (max(roots) - min(roots)) / 2 + 3)
+                lo, step = (max(roots) + min(roots)) / 2 - half, half / 200
         pts = []
         for i in range(401):
-            xv = -10 + i * 0.05
+            xv = lo + i * step
             try:
                 yv = float(f(xv))
-                pts.append([round(xv, 3), yv if math.isfinite(yv) and abs(yv) < 1e6 else None])
+                pts.append([round(xv, 4), yv if math.isfinite(yv) and abs(yv) < 1e6 else None])
             except (ValueError, ZeroDivisionError, OverflowError, TypeError):
-                pts.append([round(xv, 3), None])
+                pts.append([round(xv, 4), None])
         return {"text": f"y = {sp.sstr(target)}", "latex": f"y = {sp.latex(target)}", "points": pts}
     else:
         raise LabError("pick solve, simplify, diff, integrate, factor, expand or plot")
