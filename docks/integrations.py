@@ -321,6 +321,8 @@ def plan(e: dict) -> list[str]:
         else:
             cmd = _pick(step)
             lines.append(cmd or "(not available on this OS)")
+    if any(re.search(r"(curl|iwr|irm)\b.*\|\s*(sh|bash|iex)\b", line) for line in lines):
+        lines.append("⚠ this downloads and runs the project's own install script from its website")
     return lines
 
 
@@ -497,6 +499,14 @@ def held_hooks(id_: str) -> list[dict]:
                 for h in g.get("hooks", []) if isinstance(g, dict) else []:
                     out.append({"plugin": n, "event": event, "matcher": g.get("matcher", ""), "command": h.get("command", "")[:300]})
     return out
+
+
+def held_hooks_for(names: list[str]) -> list[dict]:
+    """Like held_hooks, for plugins installed outside the catalog (Labs > Skill Packs)."""
+    state = _state()
+    state["custom"] = {"hooks_held": names}
+    _save_state(state)
+    return held_hooks("custom")
 
 
 def enable_hooks(id_: str) -> list[str]:

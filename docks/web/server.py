@@ -43,6 +43,17 @@ def _clip(value, limit=4000):
 
 
 ASSETS = Path(__file__).parent / "assets"
+APP_FILES = Path(__file__).parent / "app"  # the page's own CSS and JS
+LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1", "[::1]"}
+# The page may only run its own scripts (and KaTeX from a fixed CDN), can't be framed by other sites, and only
+# talks to this server. That keeps injected HTML from running even if some got through.
+CSP = ("default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; "
+       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
+       "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
+       "img-src 'self' data: blob: https: http://127.0.0.1:* http://localhost:*; "
+       "media-src 'self' data: blob: http://127.0.0.1:* http://localhost:*; connect-src 'self'; "
+       "frame-src 'self' https: http://127.0.0.1:* http://localhost:*; worker-src 'self'; "
+       "frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'")
 
 
 class Session:
@@ -500,13 +511,59 @@ def list_files(root: Path, limit: int = 3000) -> list[str]:
     return out
 
 
-def make_handler(session: Session, token: str, preview: dict):
+def make_handler(session: Session, token: str, preview: dict, allowed_hosts: set | None = None):
     page = resources.files("docks.web").joinpath("app.html").read_text()
+    hosts = None if allowed_hosts is None else set(allowed_hosts)  # None: any (bound to all interfaces)
+
     class Handler(BaseHTTPRequestHandler):
         server_version = "Bowers"
 
         def log_message(self, *args):
             pass
+
+        def end_headers(self):
+            self.send_header("x-content-type-options", "nosniff")
+            self.send_header("referrer-policy", "no-referrer")
+            self.send_header("x-frame-options", "DENY")
+            self.send_header("cross-origin-opener-policy", "same-origin")
+            super().end_headers()
+
+        def _host_ok(self) -> bool:
+            """Refuse requests whose Host isn't this machine: stops DNS-rebinding pages from reaching Bowers."""
+            if hosts is None:
+                return True
+            host = (self.headers.get("host") or "").strip().lower()
+            name = host.rsplit(":", 1)[0] if not host.startswith("[") else host.split("]")[0] + "]"
+            return name in hosts
+
+        def _origin_ok(self) -> bool:
+            """Changes must come from Bowers' own page (browsers send Origin on cross-site requests)."""
+            origin = self.headers.get("origin")
+            if not origin:
+                return True
+            from urllib.parse import urlsplit
+            o = urlsplit(origin)
+            return o.netloc.lower() == (self.headers.get("host") or "").lower()
+
+        def _deny(self, status: int, message: str) -> None:
+            body = json.dumps({"error": message}).encode()
+            self.send_response(status)
+            self.send_header("content-type", "application/json")
+            self.send_header("content-length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _app_file(self, name: str):
+            target = APP_FILES / name
+            if not re.fullmatch(r"[\w-]+\.(js|css)", name) or not target.is_file():
+                return self._deny(404, "not found")
+            data = target.read_bytes()
+            self.send_response(200)
+            self.send_header("content-type", ("text/javascript" if name.endswith(".js") else "text/css") + "; charset=utf-8")
+            self.send_header("content-length", str(len(data)))
+            self.send_header("cache-control", "no-cache")
+            self.end_headers()
+            self.wfile.write(data)
 
         def _json(self, status: int, obj) -> None:
             body = json.dumps(obj).encode()
@@ -530,8 +587,12 @@ def make_handler(session: Session, token: str, preview: dict):
                 return {}
 
         def do_GET(self):
+            if not self._host_ok():
+                return self._deny(421, "this address isn't Bowers; open the link printed in your terminal")
             root = session.agent.root  # the open project (you can switch projects while Bowers runs)
             path, _, query = self.path.partition("?")
+            if path.startswith("/app/"):
+                return self._app_file(path[len("/app/"):])
             if path.startswith("/assets/"):
                 return self._asset(path[len("/assets/"):])
             if path in ("/manifest.webmanifest", "/sw.js"):  # installing Bowers as an app
@@ -545,6 +606,7 @@ def make_handler(session: Session, token: str, preview: dict):
             if path == "/":
                 body = page.encode()
                 self.send_response(200)
+                self.send_header("content-security-policy", CSP)
                 self.send_header("content-type", "text/html; charset=utf-8")
                 self.send_header("content-length", str(len(body)))
                 self.send_header("cache-control", "no-store")
@@ -618,7 +680,10 @@ def make_handler(session: Session, token: str, preview: dict):
             if path == "/api/projects/thumb":
                 from urllib.parse import parse_qs
                 q = {k: v[0] for k, v in parse_qs(query).items()}
-                found = library.thumbnail_file(Path(q.get("root", "")))
+                asked = Path(q.get("root", "")).expanduser().resolve()
+                if str(asked) not in {p["root"] for p in library.projects(session.agent.root)}:
+                    return self._json(404, {"error": "not a known project"})
+                found = library.thumbnail_file(asked)
                 if not found:
                     return self._json(404, {"error": "no thumbnail"})
                 data = found.read_bytes()
@@ -748,6 +813,10 @@ def make_handler(session: Session, token: str, preview: dict):
 
         def do_POST(self):
             root = session.agent.root
+            if not self._host_ok():
+                return self._deny(421, "this address isn't Bowers")
+            if not self._origin_ok():
+                return self._deny(403, "requests must come from the Bowers page")
             if not self._authorized():
                 return self._json(401, {"error": "missing or wrong token"})
             path, body = self.path, self._body()
@@ -897,10 +966,11 @@ def make_handler(session: Session, token: str, preview: dict):
                     source = str(body.get("source", "")).strip()
                     if not re.fullmatch(r"[\w.-]+/[\w.-]+|https://[\w./-]+(\.git)?", source):
                         return self._json(400, {"error": "use owner/repo or an https git URL"})
+                    from .. import integrations
                     installed = plugins.install(source)
-                    session.agent.ext = plugins.Extensions.load(root)
-                    session.agent.refresh_tools()
-                    return self._json(200, {"installed": installed})
+                    held = [n for n in installed if integrations._hold_hooks(plugins.plugins_dir() / n)]
+                    session.reload_extensions()
+                    return self._json(200, {"installed": installed, "hooks": integrations.held_hooks_for(held) if held else []})
                 except labs.LabError as e:
                     return self._json(400, {"error": str(e)})
                 except Exception as e:  # e.g. a plugin repo that won't clone
@@ -908,7 +978,7 @@ def make_handler(session: Session, token: str, preview: dict):
             if path.startswith("/api/integrations/"):
                 from .. import integrations
                 action, id_ = path.rsplit("/", 1)[1], str(body.get("id", ""))
-                if integrations.find(id_) is None:
+                if integrations.find(id_) is None and id_ != "custom":
                     return self._json(404, {"error": "no such integration"})
                 try:
                     if action == "install":
@@ -924,6 +994,10 @@ def make_handler(session: Session, token: str, preview: dict):
                         return self._json(200, integrations.run(id_))
                     if action == "hooks":
                         return self._json(200, {"hooks": integrations.held_hooks(id_)})
+                    if action == "enable-hooks" and id_ == "custom":
+                        integrations.enable_hooks("custom")
+                        session.reload_extensions()
+                        return self._json(200, {"ok": True})
                     if action == "enable-hooks":
                         integrations.enable_hooks(id_)
                         session.reload_extensions()
@@ -1085,11 +1159,16 @@ class PreviewHandler(SimpleHTTPRequestHandler):
     """Static files of the project, under a secret path prefix. Dotfiles (.env, .git) are never served."""
 
     prefix = "/"
+    allowed_hosts = None
 
     def log_message(self, *args):
         pass
 
     def send_head(self):
+        host = (self.headers.get("host") or "").rsplit(":", 1)[0].lower()
+        if self.allowed_hosts is not None and host not in self.allowed_hosts:
+            self.send_error(421)
+            return None
         path = self.path.split("?")[0].split("#")[0]
         if not path.startswith(self.prefix) or any(p.startswith(".") for p in path.split("/") if p):
             self.send_error(404)
@@ -1171,8 +1250,9 @@ def serve(agent: Agent, host: str = "127.0.0.1", port: int = 8788, open_browser:
     token = app_token() if app else secrets.token_urlsafe(24)
     shown_host = "127.0.0.1" if host in ("0.0.0.0", "::") else host
     preview_prefix = f"/{secrets.token_urlsafe(12)}/"
-    main_server = ThreadingHTTPServer((host, port), make_handler(session, token, {"port": port + 1, "prefix": preview_prefix}))
-    handler = type("Preview", (PreviewHandler,), {"prefix": preview_prefix})
+    allowed = None if host in ("0.0.0.0", "::") else LOCAL_HOSTS | {host.lower()}
+    main_server = ThreadingHTTPServer((host, port), make_handler(session, token, {"port": port + 1, "prefix": preview_prefix}, allowed))
+    handler = type("Preview", (PreviewHandler,), {"prefix": preview_prefix, "allowed_hosts": allowed})
     preview = ThreadingHTTPServer((host, port + 1), lambda *a: handler(*a, directory=str(session.agent.root)))
     for server in (main_server, preview):
         server.daemon_threads = True
