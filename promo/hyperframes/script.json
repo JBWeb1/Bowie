@@ -1,0 +1,383 @@
+{
+ "voice": "am_puck",
+ "chapters": [
+  {
+   "id": "c00-open",
+   "clock": "8:02",
+   "beats": [
+    {
+     "msg": "Launch is TOMORROW 😬"
+    },
+    {
+     "msg": "9:00 · interview a new AI"
+    },
+    {
+     "say": "Morning! Sorry, I'm early."
+    },
+    {
+     "say": "I'm Bowie, and I'm here about the job."
+    }
+   ]
+  },
+  {
+   "id": "c01-interview",
+   "clock": "9:00",
+   "beats": [
+    {
+     "say": "Nice office. Is this chair supposed to spin? It's very spinny."
+    },
+    {
+     "pause": 1.0,
+     "tag": "spin"
+    },
+    {
+     "say": "Yes, that's my résumé. It's short. It only says one thing."
+    },
+    {
+     "say": "I do the work."
+    },
+    {
+     "pause": 1.2,
+     "tag": "resume"
+    },
+    {
+     "say": "Most AI will tell you how to build a website, in a long list of steps, and then wish you luck."
+    },
+    {
+     "say": "I build it. I test it. And I put it online."
+    },
+    {
+     "msg": "My launch is tomorrow and I have no website. Prove it."
+    },
+    {
+     "say": "Deal. Hand me your laptop."
+    }
+   ]
+  },
+  {
+   "id": "c02-code",
+   "clock": "9:15",
+   "q": "Can you code?",
+   "beats": [
+    {
+     "say": "This is Bowers. You tell me what you want in plain words, and I get to work. No setup screens, no settings maze."
+    },
+    {
+     "say": "I read your project first, so I build on what's already there."
+    },
+    {
+     "say": "Then I write the files, start a little server, and open the page in a real browser to check it actually works."
+    },
+    {
+     "pause": 2.5,
+     "tag": "build"
+    },
+    {
+     "say": "You can see every step I take, and open any of them for the details."
+    },
+    {
+     "say": "Hmm. No. Even I can't ship that."
+    },
+    {
+     "pause": 0.8,
+     "tag": "cringe"
+    },
+    {
+     "say": "Good news: every change I make has an undo. One click, and your files are back exactly how they were. So, take two."
+    },
+    {
+     "pause": 1.6,
+     "tag": "undo"
+    },
+    {
+     "say": "Lemon Lane. Your order form, delivery times, and zero errors in the browser console."
+    },
+    {
+     "pause": 2.6,
+     "tag": "payoff"
+    },
+    {
+     "say": "The live preview sits right next to our chat, with the code, GitHub, and a terminal one tab away."
+    },
+    {
+     "say": "One click on Deploy, and it's live."
+    },
+    {
+     "pause": 2.0,
+     "tag": "deploy"
+    }
+   ]
+  },
+  {
+   "id": "c03-creative",
+   "clock": "10:40",
+   "q": "Are you creative?",
+   "beats": [
+    {
+     "msg": "Cute. Now I need a video for socials."
+    },
+    {
+     "say": "Videos are my favourite."
+    },
+    {
+     "say": "Bowers Motion turns an idea into a video with sound, powered by LTX, once you add your key. Pick the shape, the length and the resolution, up to 4K."
+    },
+    {
+     "say": "Or I write the video in code, frame by frame, with HyperFrames, so every render comes out exactly the same."
+    },
+    {
+     "say": "Vertical, ready for Reels and TikTok."
+    },
+    {
+     "pause": 6.0,
+     "tag": "clip"
+    },
+    {
+     "say": "And for pictures, switch Motion to photo. Logos, posters, thumbnails, or edits to your own photos, all saved to your library."
+    }
+   ]
+  },
+  {
+   "id": "c04-care",
+   "clock": "12:55",
+   "q": "Can you fix things?",
+   "beats": [
+    {
+     "say": "Uh oh. Your laptop is struggling."
+    },
+    {
+     "say": "Good thing fixing computers is on my résumé too. In very small letters."
+    },
+    {
+     "say": "Bowers Care checks your memory, your disk, and how long you've been running, and tells you what's wrong in plain English."
+    },
+    {
+     "say": "Your disk is almost full. The fix is right there."
+    },
+    {
+     "pause": 2.0,
+     "tag": "fix"
+    },
+    {
+     "say": "Slow computer, no internet, an app that keeps crashing, a scary error message. Pick the problem, or paste the error, and I'll walk you through it, on Windows, Mac or Linux."
+    }
+   ]
+  },
+  {
+   "id": "c05-money",
+   "clock": "1:30",
+   "q": "Lunch question",
+   "beats": [
+    {
+     "msg": "Should I buy shares in a lemon company? 🍋"
+    },
+    {
+     "say": "Ooh, a money question."
+    },
+    {
+     "say": "The Trading Desk sends a team of analysts. One reads the fundamentals, one reads the news, one reads the charts."
+    },
+    {
+     "say": "Then a bull and a bear argue it out, so you see both sides before you decide."
+    },
+    {
+     "say": "It's research only. I never place trades. That part is always your call."
+    }
+   ]
+  },
+  {
+   "id": "c06-teach",
+   "clock": "4:10",
+   "q": "Do you teach?",
+   "beats": [
+    {
+     "msg": "My kid's stuck on homework. Help?"
+    },
+    {
+     "say": "Math Lab. Not just the answer. The steps, so it makes sense."
+    },
+    {
+     "say": "It factors into x minus two, times x minus three."
+    },
+    {
+     "say": "So x is two, or three. And here's the graph, crossing the line right at two and three."
+    },
+    {
+     "pause": 2.0,
+     "tag": "plot"
+    },
+    {
+     "say": "Labs is full of extras like that. A model arena where two AIs answer the same question and you pick the winner. A 3D studio. An emote maker for Twitch and Discord. Website audits."
+    }
+   ]
+  },
+  {
+   "id": "c07-listen",
+   "clock": "7:20",
+   "q": "Do you listen?",
+   "beats": [
+    {
+     "say": "This is Aether, my voice mode. Like a real assistant. You talk, I answer out loud."
+    },
+    {
+     "hud": "Hey Bowie, what's left today?"
+    },
+    {
+     "say": "Just the launch post. Everything else is done."
+    },
+    {
+     "say": "My voice runs right on your computer, with the open Kokoro model. Free, offline, and private. Or pick another voice in the voice studio."
+    },
+    {
+     "say": "Aether also learns. Tell me once that you like short answers, and I remember it from then on."
+    },
+    {
+     "say": "And here's your whole day in the Knowledge Graph. Projects, files, memories and goals, all connected, with me in the middle."
+    },
+    {
+     "pause": 3.0,
+     "tag": "graph"
+    }
+   ]
+  },
+  {
+   "id": "c08-team",
+   "clock": "8:45",
+   "q": "Do you work well with others?",
+   "beats": [
+    {
+     "say": "Very well. I brought a team."
+    },
+    {
+     "say": "Twenty eight specialist helpers I can hand work to. A codebase cartographer, a film director, a growth marketer, a math tutor."
+    },
+    {
+     "pause": 2.5,
+     "tag": "team"
+    },
+    {
+     "say": "And a reality checker, who keeps the rest of us honest."
+    },
+    {
+     "say": "Plus seventy eight open-source projects, one click away. HyperFrames and Remotion for video, Sandcastle for running coding agents in sandboxes, and plenty more."
+    }
+   ]
+  },
+  {
+   "id": "c09-dev",
+   "clock": "9:40",
+   "q": "What about real developers?",
+   "beats": [
+    {
+     "say": "Developers feel right at home."
+    },
+    {
+     "say": "I connect to GitHub, make branches, open pull requests, and keep an eye on their checks."
+    },
+    {
+     "say": "I understand code with language servers, so I can jump to any definition and find every place it's used."
+    },
+    {
+     "say": "And Bowers Forge is your coding workspace. Your files, a full terminal, and deploy, side by side."
+    }
+   ]
+  },
+  {
+   "id": "c10-organised",
+   "clock": "10:20",
+   "q": "Are you organised?",
+   "beats": [
+    {
+     "say": "Every project we touch is saved, with a preview, so you can jump back in."
+    },
+    {
+     "say": "Need a head start? Begin from a template. A landing page, a dashboard, a browser game, a mobile app."
+    },
+    {
+     "say": "Every image, video and document lands in your library."
+    },
+    {
+     "say": "Press Control K anywhere, and I'll take you to any page in a second. Dark mode or light, it's your space."
+    }
+   ]
+  },
+  {
+   "id": "c11-weakness",
+   "clock": "11:20",
+   "q": "Any weaknesses?",
+   "beats": [
+    {
+     "say": "Honestly? I ask a lot of questions."
+    },
+    {
+     "say": "I ask before anything risky. Every time. You choose how much freedom I get."
+    },
+    {
+     "say": "Plugins from the internet stay switched off until you say yes. And your keys stay on your computer, never in a chat."
+    }
+   ]
+  },
+  {
+   "id": "c11b-post",
+   "clock": "11:45",
+   "q": "And the launch post?",
+   "beats": [
+    {
+     "say": "Right. The last thing on the list."
+    },
+    {
+     "say": "Short, friendly, with the link and the delivery times. Written in your voice, because I've read everything you've written today."
+    },
+    {
+     "pause": 2.0,
+     "tag": "post"
+    },
+    {
+     "say": "Post it in the morning. I'll remind you."
+    }
+   ]
+  },
+  {
+   "id": "c12-hired",
+   "clock": "11:58",
+   "beats": [
+    {
+     "msg": "You're hired."
+    },
+    {
+     "say": "I'm hired? I'm hired!"
+    },
+    {
+     "pause": 2.0,
+     "tag": "celebrate"
+    },
+    {
+     "say": "Okay. Go to sleep. Launch is tomorrow, and it's ready."
+    },
+    {
+     "pause": 3.5,
+     "tag": "lamp"
+    }
+   ]
+  },
+  {
+   "id": "c13-end",
+   "clock": "12:00",
+   "beats": [
+    {
+     "say": "Bowers installs like a real app. On Windows, run the setup, and I update myself when there's something new. Mac and Linux too."
+    },
+    {
+     "say": "Oh, and this whole film was made in code, with HyperFrames. I can make yours."
+    },
+    {
+     "say": "Download Bowers, and say hi. I'll be there."
+    },
+    {
+     "pause": 4.0,
+     "tag": "endcard"
+    }
+   ]
+  }
+ ]
+}
