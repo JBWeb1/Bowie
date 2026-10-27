@@ -165,6 +165,12 @@ add("openmontage", "OpenMontage", "app", "video-producer", "calesthio/OpenMontag
     steps=["make setup", {"plugin": "."}], notes="Its 140 production skills are added to Bowers too.")
 add("openhouse-3d", "OpenHouse 3D", "app", "property-visualizer", "yunfanye/openhouse-3d", license="MIT", needs=["git", "python"],
     steps=[{"venv": True}, {"pip": "-e ."}], notes="Rebuilds a house in 3D from listing photos and renders a walkthrough with Blender (install the Blender integration to render).")
+add("open-higgsfield", "Open Higgsfield", "app", "video-producer", "wide-trace/open-higgsfield", needs=["git", "node", "pnpm"],
+    steps=["pnpm install", {"write": ".env.local", "text": "HF_API_BASE_URL=https://platform.higgsfield.ai\n"}],
+    run="pnpm exec next dev --port 3010", open_url="http://localhost:3010", keys=["Higgsfield Cloud key (id:secret), entered in the studio"],
+    notes="One studio for 38 image and video models (Kling 3, Seedance, Wan, LTX, MiniMax, Soul and more), with a gallery of every run. "
+          "Generating uses your own Higgsfield Cloud key, which is paid; the studio is free. Uploading start frames also needs a "
+          "Vercel Blob token (OPEN_HIGGSFIELD_READ_WRITE_TOKEN in .env.local). The repository has no licence file yet.")
 add("realestateos", "RealEstateOS", "app", "property-visualizer", "engrtitooo/RealEstateOS", license="MIT", needs=["git", "node"],
     steps=["npm install"], run="npm run dev", open_url="http://localhost:3000", keys=["GOOGLE_API_KEY"])
 add("ai-real-estate-stager", "AI Real Estate Stager", "app", "property-visualizer", "SamurAIGPT/ai-real-estate-stager", needs=["git", "node"],
@@ -347,6 +353,8 @@ def plan(e: dict) -> list[str]:
             lines.append(f"copy {step['env']} to {step.get('to', '.env')} (if missing; add your keys there)")
         elif "cd" in step:
             lines.append(f"cd {step['cd']}")
+        elif "write" in step:
+            lines.append(f"write {step['write']} (if missing): {step['text'].strip()}")
         elif "plugin" in step:
             lines.append("add its skills to Bowers")
         elif "py" in step:
@@ -438,6 +446,11 @@ def install(id_: str, log=print, install_prereqs: bool = False, project: Path | 
                 _run(step, cwd, log)
             elif "cd" in step:
                 cwd = cwd / step["cd"]
+            elif "write" in step:
+                to = cwd / step["write"]
+                if not to.exists():
+                    to.write_text(step["text"])
+                    log(f"made {to.name}")
             elif "venv" in step:
                 if not _venv_python(cwd).exists():
                     _run([sys.executable, "-m", "venv", ".venv"], cwd, log)

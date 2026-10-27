@@ -71,12 +71,14 @@ def test_app_install_steps_status_and_run(catalog):
     repo = git_repo(catalog / "app-src", {".env.example": "KEY=\n", "serve.py": "print('serving')\n"})
     py = f'"{sys.executable}"'
     entry(id="demo-app", name="Demo App", kind="app", url=str(repo), needs=["git"],
-          steps=[{"env": ".env.example"}, f"{py} -c \"open('built.txt','w').write('ok')\""], run=f"{py} serve.py", open_url="http://localhost:9")
+          steps=[{"env": ".env.example"}, {"write": ".env.local", "text": "API=https://example.test\n"},
+                 f"{py} -c \"open('built.txt','w').write('ok')\""], run=f"{py} serve.py", open_url="http://localhost:9")
     e = I.find("demo-app")
     lines = []
     I.install("demo-app", log=lines.append)
     where = I.app_dir(e)
     assert (where / ".env").is_file() and (where / "built.txt").read_text() == "ok" and I.status(e) == "installed"
+    assert (where / ".env.local").read_text() == "API=https://example.test\n" and any("write .env.local" in x for x in I.plan(e))
     assert any(line.startswith("$ ") for line in lines)
     info = I.run("demo-app")
     I.RUNNING["demo-app"].wait(timeout=20)

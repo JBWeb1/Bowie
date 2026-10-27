@@ -374,7 +374,7 @@ The browser app has one section per job, each with its own page in the sidebar (
   | codebase-cartographer | Understand-Anything, Graphify |
   | model-router | OmniRoute, LiteLLM |
   | launch-film-director | onetake, ClaudeAnimationBase, lemo-opuscar |
-  | video-producer | OpenMontage, ArcReel, SkyReels-V2, MiniMax H3, AutoClip |
+  | video-producer | OpenMontage, ArcReel, SkyReels-V2, MiniMax H3, AutoClip, Open Higgsfield |
   | emote-artist | emote-forge, emojimaker, emoteresizer |
   | autonomous-engineer | OpenHands, Open Interpreter, BLADE, Hermes Agent |
   | prompt-evaluator | promptfoo, LMArena |
@@ -405,7 +405,8 @@ The browser app has one section per job, each with its own page in the sidebar (
   - **Plugins and skill packs**, added to Bowers: Understand Anything, Claude SEO, Hallmark, Ponytail, Superpowers, UI/UX Pro Max, Ruflo (core, swarm, workflows, goals), Knowledge Work Plugins, Commerce Agents, Lemo Opuscar, onetake, The Agency, Emote Forge, MiniMax H3, REA and AutoClip. Awesome Claude Skills has over 800 skills, so you pick the ones you want. Third-party hooks stay **off** until you review and turn them on (`bowers integrations enable-hooks ID`).
   - **Tools**: Graphify, TradingAgents, LiteLLM, OmniRoute, promptfoo, Lighthouse, Clinic.js, Firecrawl, LangGraph, SymPy, OpenHands, Hermes Agent and BLADE.
   - **Programs**: act and Blender, through winget, brew or snap.
-  - **Apps**, cloned into `~/Bowers Apps` and set up there: MiroFish, RAGFlow, Huly, Doable, Hyperswitch, QuantDinger, ArcReel, AutoClip, OpenMontage, OpenHouse 3D, RealEstateOS, the AI real-estate stager, SpaceAI and the AI interior restyler, God's Eye View, three-editor, StemStudio, Vibra Code, Interpreter Workstation, Emoji Maker, Soup, Edge0 and SkyReels V2. Press **Start** to run one.
+  - **Apps**, cloned into `~/Bowers Apps` and set up there: MiroFish, RAGFlow, Huly, Doable, Hyperswitch, QuantDinger, ArcReel, AutoClip, OpenMontage, OpenHouse 3D, RealEstateOS, the AI real-estate stager, SpaceAI and the AI interior restyler, God's Eye View, three-editor, StemStudio, Vibra Code, Interpreter Workstation, Emoji Maker, Soup, Edge0, SkyReels V2 and Open Higgsfield. Press **Start** to run one.
+  - **Open Higgsfield** is one studio for 38 image and video models (Kling 3, Seedance, Wan, LTX, MiniMax and more). It opens at `http://localhost:3010` and asks for your Higgsfield Cloud key (`id:secret`, a paid service) the first time; the key stays in the studio and never goes to Bowers. Uploading a start frame also needs a Vercel Blob token in its `.env.local`.
   - **Templates**, which become new projects: the Next.js SaaS Starter, Your Next Store, Banking and Claude Animation Base.
   - **Libraries** for the open project: PlayCanvas, JSXGraph, nerdamer and Emote Resizer.
   - **Links** for the reading lists, plus React Bits and Magic UI, whose components are added per project.
