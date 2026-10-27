@@ -1,7 +1,7 @@
 # Install Bowers on Windows and add it to the Start menu and desktop.
 # Run in PowerShell:  irm https://raw.githubusercontent.com/JBWeb1/Bowie/HEAD/install.ps1 | iex
 # (or, from a copy of this repo:  powershell -ExecutionPolicy Bypass -File install.ps1)
-param([string]$Source = "git+https://github.com/JBWeb1/Bowie", [switch]$NoLaunch)
+param([string]$Source = "git+https://github.com/JBWeb1/Bowie", [switch]$NoLaunch, [switch]$WithIntegrations)
 $ErrorActionPreference = "Stop"
 
 function Find-Python {
@@ -32,6 +32,10 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue) -and $Source -like "git
 Write-Host "Installing Bowers..." -ForegroundColor Cyan
 & $py[0] $py[1..9] -m pip install --user --upgrade "docks[browser,labs] @ $Source"
 & $py[0] $py[1..9] -m docks install-app
+if ($WithIntegrations) {
+    Write-Host "Installing the integrations (plugins, skill packs, tools and apps)..." -ForegroundColor Cyan
+    & $py[0] $py[1..9] -m docks integrations install --all --with-prereqs -y
+}
 
 Write-Host ""
 Write-Host "Bowers is installed. Open it from the Start menu or the desktop icon." -ForegroundColor Green

@@ -215,8 +215,23 @@ def build_system_prompt(root: Path, ext: Extensions | None = None, style=None) -
         prompt += "\nSkills (load the matching one with load_skill before doing a task it covers):\n" + "\n".join(
             f"- {s.name}: {s.description}" for s in ext.skills.values()) + "\n"
     if ext and ext.agents:
+        own = [a for a in ext.agents.values() if not a.source.startswith("plugin:")]
+        packs = {}
+        for a in ext.agents.values():
+            if a.source.startswith("plugin:"):
+                packs.setdefault(a.source[7:], []).append(a)
         prompt += "\nSpecialized helper types for delegate's agent parameter:\n" + "\n".join(
-            f"- {a.name}: {a.description}" for a in ext.agents.values()) + "\n"
+            f"- {a.name}: {a.description[:300]}" for a in own) + "\n"
+        for pack, agents in packs.items():  # installed packs can hold hundreds: names only
+            names = ", ".join(a.name for a in agents[:120])
+            more = f" (+{len(agents) - 120} more)" if len(agents) > 120 else ""
+            prompt += f"From the {pack} pack: {names}{more}\n" if len(agents) > 8 else "".join(
+                f"- {a.name}: {a.description[:200]}\n" for a in agents)
+    try:
+        from . import integrations
+        prompt += integrations.system_note()
+    except Exception:  # never let a broken integration state stop Bowers
+        pass
     if style is not None:
         prompt += f"\nOutput style ({style.name}): follow it in everything you write to the user.\n{style.prompt}\n"
     return prompt

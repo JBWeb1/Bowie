@@ -914,6 +914,108 @@ def care_main(argv) -> int:
     return 0
 
 
+def integrations_main(argv) -> int:
+    from . import integrations as I
+    parser = argparse.ArgumentParser(prog="bowers integrations", description="Install the open-source projects Bowers "
+                                     "works with (plugins, skill packs, tools, apps, templates) on this computer.")
+    parser.add_argument("cmd", nargs="?", default="list", choices=["list", "install", "remove", "run", "stop", "skills", "enable-hooks"])
+    parser.add_argument("ids", nargs="*")
+    parser.add_argument("--kind", help="with install: every integration of this kind (plugin, tool, app, template, system)")
+    parser.add_argument("-y", "--yes", action="store_true", help="don't ask before running the install steps")
+    parser.add_argument("--with-prereqs", action="store_true", help="also install missing pnpm, bun or uv (and git/node on Windows)")
+    parser.add_argument("-C", "--dir", default=".", help="the project, for libraries")
+    parser.add_argument("--skills", default="", help="with a skill collection: comma-separated skill names")
+    parser.add_argument("--all", action="store_true", help="with install: everything this computer can install")
+    parser.add_argument("--include-large", action="store_true", help="with --all: also the very large and GPU-only apps")
+    args = parser.parse_args(argv)
+    if args.cmd == "list":
+        current = None
+        for row in sorted(I.listing(), key=lambda r: ["plugin", "collection", "tool", "system", "app", "template", "library", "link"].index(r["kind"])):
+            if row["kind"] != current:
+                current = row["kind"]
+                print(ui.bold({"plugin": "Plugins and skill packs", "collection": "Skill collections", "tool": "Tools", "system": "Programs",
+                               "app": "Apps", "template": "Templates", "library": "Libraries", "link": "Links"}[current]))
+            mark = ui.green("● installed") if row["status"] == "installed" else ""
+            need = ui.yellow(" needs " + ", ".join(m["name"] for m in row["missing"])) if row["missing"] and row["status"] != "installed" else ""
+            print(f"  {row['id']:<24} {row['name'][:34]:<34} {mark}{need}")
+        print(ui.dim("install with: bowers integrations install ID [ID...]   (or --kind plugin)"))
+        return 0
+    if args.cmd == "skills":
+        e = I.find(args.ids[0] if args.ids else "awesome-claude-skills")
+        for s_ in I.collection_skills(e):
+            print(f"  {s_['name']:<36} {ui.dim(s_['description'][:90])}")
+        print(ui.dim(f"install some with: bowers integrations install {e['id']} --skills NAME,NAME (in the browser: Labs > Integrations)"))
+        return 0
+    ids = list(args.ids) or ([e["id"] for e in I.E if e["kind"] == args.kind] if args.kind else [])
+    if args.all:
+        ids = [e["id"] for e in I.E if e["kind"] not in ("link", "collection", "library") and I.status(e) != "installed"
+               and (args.include_large or (e["size"] != "large" and "gpu" not in e["needs"]))
+               and not any(m["name"] in ("docker",) for m in I.missing_prereqs(e))]
+        skipped = [e["id"] for e in I.E if e["kind"] not in ("link", "collection", "library") and e["id"] not in ids and I.status(e) != "installed"]
+        print(ui.bold(f"installing {len(ids)} integrations") + (ui.dim(f"  (skipping {len(skipped)}: large, GPU-only or needs Docker: {', '.join(skipped)})") if skipped else ""))
+    if not ids:
+        ui.error("name what to install, e.g. bowers integrations install superpowers graphify")
+        return 1
+    if args.cmd == "enable-hooks":
+        for id_ in ids:
+            hooks = I.held_hooks(id_)
+            if not hooks:
+                print(ui.dim(f"{id_} has no switched-off hooks"))
+                continue
+            print(ui.bold(f"{id_} hooks run these commands:"))
+            for h_ in hooks:
+                print(ui.dim(f"  [{h_['plugin']}] {h_['event']} {h_['matcher']}: {h_['command']}"))
+            if args.yes or (sys.stdin.isatty() and input("  turn them on? [y/N] ").strip().lower() in ("y", "yes")):
+                I.enable_hooks(id_)
+                print(ui.green("hooks on"))
+        return 0
+    if args.cmd in ("remove", "run", "stop"):
+        for id_ in ids:
+            try:
+                if args.cmd == "remove":
+                    print(ui.dim("removed") if I.remove(id_) else ui.dim(f"{id_} isn't installed"))
+                elif args.cmd == "run":
+                    info = I.run(id_)
+                    print(ui.green(f"started {id_}") + ui.dim(f"  (log: {info['log']})" + (f"  open {info['open']}" if info["open"] else "")))
+                    if info["open"]:
+                        print(ui.dim("  it runs in the background; stop it with Ctrl+C here or by closing the app"))
+                    I.RUNNING[id_].wait()
+                else:
+                    I.stop(id_)
+            except I.InstallError as e:
+                ui.error(str(e))
+                return 1
+        return 0
+    failed = 0
+    for id_ in ids:
+        e = I.find(id_)
+        if e is None:
+            ui.error(f"no integration called {id_!r}")
+            failed += 1
+            continue
+        if e["kind"] == "link":
+            print(f"{e['name']}: {e['url']}")
+            continue
+        print(ui.bold(f"{e['name']}") + ui.dim(f"  ({e['kind']}, {e['license'] or 'see its license'})"))
+        for line in I.plan(e):
+            print(ui.dim(f"  • {line}"))
+        if not args.yes:
+            if not sys.stdin.isatty():
+                print(ui.dim("  skipped: run with -y to install without a terminal prompt"))
+                continue
+            if input("  install? [y/N] ").strip().lower() not in ("y", "yes"):
+                continue
+        try:
+            I.install(id_, lambda t: print(ui.dim("    " + t[:200])), install_prereqs=args.with_prereqs,
+                      project=Path(args.dir).expanduser().resolve(), skills=[x.strip() for x in args.skills.split(",") if x.strip()])
+            if e["keys"]:
+                print(ui.yellow("  needs keys: " + ", ".join(e["keys"])))
+        except I.InstallError as ex:
+            ui.error(str(ex))
+            failed += 1
+    return 1 if failed else 0
+
+
 def models_main(argv) -> int:
     from . import models
     parser = argparse.ArgumentParser(prog="bowers models", description="The models Bowers uses for each short name.")
@@ -1189,6 +1291,8 @@ def main(argv=None) -> int:
         return context_main(argv[1:])
     if argv[:1] in (["image"], ["images"]):
         return image_main(argv[1:])
+    if argv[:1] in (["integrations"], ["integration"], ["int"]):
+        return integrations_main(argv[1:])
     if argv[:1] == ["app"]:
         return web_main([*argv[1:], "--app"])
     if argv[:1] == ["install-app"]:

@@ -513,25 +513,68 @@ def find_plugins(folder: Path) -> list[Path]:
     """Plugin folders inside a checkout: the folder itself, plugins listed in a marketplace.json, or any
     folder that has .claude-plugin/plugin.json."""
     found = []
-    market = folder / ".claude-plugin" / "marketplace.json"
-    if market.is_file():
-        try:
-            for entry in json.loads(market.read_text()).get("plugins", []):
-                src = entry.get("source")
-                if isinstance(src, str) and (folder / src).is_dir():
-                    found.append((folder / src).resolve())
-        except json.JSONDecodeError:
-            pass
+    for entry in _market_entries(folder):
+        src = entry.get("source")
+        if isinstance(src, str) and (folder / src).is_dir() and (folder / src / ".claude-plugin" / "plugin.json").is_file():
+            found.append((folder / src).resolve())
     for manifest in folder.rglob(".claude-plugin/plugin.json"):
-        if ".git" not in manifest.parts:
+        if ".git" not in manifest.parts and "node_modules" not in manifest.parts:
             found.append(manifest.parent.parent.resolve())
     return sorted(set(found))
 
 
-def install(source: str, only: str | None = None) -> list[str]:
-    """Install plugins from owner/repo, a git URL or a local folder. Returns the installed names."""
+def _market_entries(folder: Path) -> list[dict]:
+    market = folder / ".claude-plugin" / "marketplace.json"
+    if not market.is_file():
+        return []
+    try:
+        return [e for e in json.loads(market.read_text()).get("plugins", []) if isinstance(e, dict)]
+    except json.JSONDecodeError:
+        return []
+
+
+SKIP_PARTS = {".git", "node_modules", "test", "tests", "__pycache__", "dist", "build", ".venv", "venv"}
+
+
+def _skill_dirs(folder: Path) -> list[Path]:
+    return sorted({f.parent for f in folder.rglob("SKILL.md") if not (SKIP_PARTS & set(f.relative_to(folder).parts))})
+
+
+def _write_plugin(dest: Path, name: str, description: str, skills=(), agents=(), commands=(), extra: dict | None = None) -> None:
+    """Make a Bowers plugin folder from loose skills, agents and commands."""
+    if dest.exists():
+        shutil.rmtree(dest)
+    (dest / ".claude-plugin").mkdir(parents=True)
+    (dest / ".claude-plugin" / "plugin.json").write_text(json.dumps({"name": name, "description": description, **(extra or {})}, indent=2))
+    used = set()
+    for sk in skills:
+        target = re.sub(r"[^\w.-]", "-", sk.name)
+        while target in used:
+            target += "-2"
+        used.add(target)
+        shutil.copytree(sk, dest / "skills" / target, ignore=shutil.ignore_patterns(".git", "node_modules"))
+    for kind, files in (("agents", agents), ("commands", commands)):
+        for f in files:
+            (dest / kind).mkdir(exist_ok=True)
+            shutil.copy2(f, dest / kind / f.name)
+
+
+def _looks_like_agent(f: Path) -> bool:
+    try:
+        head = f.read_text(errors="replace")[:600]
+    except OSError:
+        return False
+    return head.startswith("---") and "description:" in head and ("name:" in head or "tools:" in head)
+
+
+def install(source: str, only: str | list | None = None) -> list[str]:
+    """Install plugins from owner/repo, a git URL or a local folder. Returns the installed names.
+
+    Works with Claude Code plugins and marketplaces, and with repos that are just folders of skills
+    (SKILL.md) or agent files: those become one plugin named after the repo."""
     from . import github
     local = Path(source).expanduser()
+    repo = None
     if local.is_dir():
         checkout = local.resolve()
     else:
@@ -545,24 +588,51 @@ def install(source: str, only: str | None = None) -> list[str]:
         else:
             checkout.parent.mkdir(parents=True, exist_ok=True)
             proc = subprocess.run(["git", "clone", "-q", "--depth", "1", url, str(checkout)], capture_output=True,
-                                  text=True, timeout=600)
+                                  text=True, timeout=900)
             if proc.returncode != 0:
                 raise ValueError(f"couldn't download {source}: {proc.stderr.strip()}")
+    wanted = None if only is None else ({only} if isinstance(only, str) else set(only))
     installed = []
+
+    def take(name: str) -> bool:
+        return wanted is None or name in wanted
     for folder in find_plugins(checkout):
         try:
             name = json.loads((folder / ".claude-plugin" / "plugin.json").read_text()).get("name") or folder.name
         except json.JSONDecodeError:
             name = folder.name
-        if only and name != only:
+        if not take(name) or name in installed:
             continue
         dest = plugins_dir() / re.sub(r"[^\w.-]", "-", name)
         if dest.exists():
             shutil.rmtree(dest)
-        shutil.copytree(folder, dest, ignore=shutil.ignore_patterns(".git"))
+        shutil.copytree(folder, dest, ignore=shutil.ignore_patterns(".git", "node_modules"))
         installed.append(dest.name)
+    for entry in _market_entries(checkout):  # marketplace entries that describe the plugin themselves
+        name, src = entry.get("name"), entry.get("source")
+        if not name or not isinstance(src, str) or name in installed or not take(name):
+            continue
+        base = (checkout / src).resolve()
+        if not base.is_dir() or not base.is_relative_to(checkout) or (base / ".claude-plugin" / "plugin.json").is_file():
+            continue
+        skills = [(base / s).resolve() for s in entry.get("skills", []) if (base / s).is_dir()] or _skill_dirs(base)
+        agents = [(base / a) for a in entry.get("agents", []) if (base / a).is_file()] or sorted((base / "agents").glob("*.md"))
+        commands = [(base / c) for c in entry.get("commands", []) if (base / c).is_file()] or sorted((base / "commands").glob("*.md"))
+        dest = plugins_dir() / re.sub(r"[^\w.-]", "-", name)
+        _write_plugin(dest, name, entry.get("description", ""), skills, agents, commands)
+        installed.append(dest.name)
+    if not installed:  # a plain repo of skills and/or agents
+        name = re.sub(r"[^\w.-]", "-", (repo or checkout.name).split("/")[-1]).lower()
+        if take(name):
+            skills = _skill_dirs(checkout)
+            agents = [f for f in sorted(checkout.rglob("*.md")) if not (SKIP_PARTS & set(f.relative_to(checkout).parts))
+                      and f.name.lower() not in ("readme.md", "skill.md", "license.md", "contributing.md", "changelog.md")
+                      and _looks_like_agent(f) and not any(f.is_relative_to(s) for s in skills)]
+            if skills or agents:
+                _write_plugin(plugins_dir() / name, name, f"Skills and agents from {repo or checkout.name}", skills, agents)
+                installed.append(name)
     if not installed:
-        raise ValueError(f"no plugins found in {source}" + (f" named {only}" if only else ""))
+        raise ValueError(f"no plugins, skills or agents found in {source}" + (f" named {only}" if only else ""))
     return installed
 
 

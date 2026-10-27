@@ -397,6 +397,16 @@ The browser app has one section per job, each with its own page in the sidebar (
   | learning-guide | free-for-dev, awesome-selfhosted, free-programming-books |
 
   These agents follow each project's approach; they don't include its code. Add your own as `agents/<name>.md` in `~/.docks` or your project.
+- **Integrations** (sidebar → Integrations, or `bowers integrations`): installs the real projects from the list on your computer, each the way its own docs say. Each one shows its exact steps first and keeps a log, and you can remove it later.
+  - **Plugins and skill packs**, added to Bowers: Understand Anything, Claude SEO, Hallmark, Ponytail, Superpowers, UI/UX Pro Max, Ruflo (core, swarm, workflows, goals), Knowledge Work Plugins, Commerce Agents, Lemo Opuscar, onetake, The Agency, Emote Forge, MiniMax H3, REA and AutoClip. Awesome Claude Skills has over 800 skills, so you pick the ones you want. Third-party hooks stay **off** until you review and turn them on (`bowers integrations enable-hooks ID`).
+  - **Tools**: Graphify, TradingAgents, LiteLLM, OmniRoute, promptfoo, Lighthouse, Clinic.js, Firecrawl, LangGraph, SymPy, OpenHands, Hermes Agent and BLADE.
+  - **Programs**: act and Blender, through winget, brew or snap.
+  - **Apps**, cloned into `~/Bowers Apps` and set up there: MiroFish, RAGFlow, Huly, Doable, Hyperswitch, QuantDinger, ArcReel, AutoClip, OpenMontage, OpenHouse 3D, RealEstateOS, the AI real-estate stager, SpaceAI and the AI interior restyler, God's Eye View, three-editor, StemStudio, Vibra Code, Interpreter Workstation, Emoji Maker, Soup, Edge0 and SkyReels V2. Press **Start** to run one.
+  - **Templates**, which become new projects: the Next.js SaaS Starter, Your Next Store, Banking and Claude Animation Base.
+  - **Libraries** for the open project: PlayCanvas, JSXGraph, nerdamer and Emote Resizer.
+  - **Links** for the reading lists, plus React Bits and Magic UI, whose components are added per project.
+
+  `bowers integrations install --all` installs everything this computer can. It skips the very large or GPU-only apps unless you add `--include-large`. It also skips apps that need Docker when Docker isn't installed. On Windows: `.\install.ps1 -WithIntegrations`. Installed integrations are listed in Bowie's instructions, so the matching agent uses the real tool. `system_prompts_leaks` isn't included (leaked private prompts).
 - **Bowers Aether** (choose the Aether model): a voice assistant. Talk to Bowie with the mic, or turn on hands-free and say "Hey Bowie…". It answers out loud, shows each step it takes, and gives briefings ("Brief me"). Aether learns as it works: preferences it notices are saved to your memory file, and it uses them from then on. It only shows the **Knowledge Graph**, a map of how your projects, files, memories, tools, goals, creations and history connect, plus a **code map** of which files import which.
 - **Bowie's voice**: Settings → Voice. The built-in voice is free; tune its pitch and speed. Or add `ELEVENLABS_API_KEY` and pick an ElevenLabs voice. You can design one in ElevenLabs Voice Design (for example "a small, cheerful, fluffy orange mascot with a warm, playful voice").
 

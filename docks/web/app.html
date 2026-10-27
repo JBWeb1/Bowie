@@ -916,6 +916,24 @@ canvas.plot { width: 100%; height: 320px; border-radius: 14px; border: 1px solid
 .kg-code .tip { position: absolute; left: 14px; bottom: 12px; color: #b8aca3; font-size: 12px; }
 .kg-foot { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; margin-top: 14px; padding: 12px 16px; border-radius: 18px; border: 1px solid var(--line); background: var(--surface); }
 .kg-foot img { width: 46px; height: 46px; } .kg-foot b { display: block; } .kg-foot small { color: var(--muted); }
+/* integrations */
+.int-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+.int { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); min-width: 0; }
+.int .int-top { display: flex; align-items: center; gap: 8px; } .int b { font-size: 14.5px; }
+.int .kind { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--surface-2); color: var(--muted); }
+.int .pill { margin-left: auto; font-size: 11px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+.int .pill.installed { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+.int .pill.installing { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
+.int p { margin: 0; color: var(--muted); font-size: 12.8px; flex: 1; }
+.int .meta { font-size: 11.5px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
+.int .meta a { color: var(--muted); } .int .need { font-size: 12px; color: var(--warn); }
+.int .need code { font-size: 11px; }
+.int .acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; } .int .acts .btn { height: 30px; font-size: 12.5px; padding: 0 10px; }
+.int pre.log { margin: 4px 0 0; max-height: 150px; overflow: auto; font: 11px/1.45 var(--mono); background: #0a0c10; color: #cfd6df; border-radius: 8px; padding: 8px; white-space: pre-wrap; }
+.int-plan { margin: 10px 0; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); font: 12.5px/1.6 var(--mono); white-space: pre-wrap; }
+.skill-pick { max-height: 46dvh; overflow: auto; display: flex; flex-direction: column; gap: 4px; margin: 10px 0; }
+.skill-pick label { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; padding: 4px 6px; border-radius: 8px; } .skill-pick label:hover { background: var(--surface-2); }
+.skill-pick small { color: var(--muted); display: block; }
 /* command palette */
 .cmdk { position: fixed; inset: 0; z-index: 70; background: rgba(8,6,5,.55); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: flex-start; padding: 12vh 16px 16px; }
 .cmdk-box { width: min(620px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow-lg); overflow: hidden; }
@@ -985,6 +1003,7 @@ canvas.plot { width: 100%; height: 320px; border-radius: 14px; border: 1px solid
     <button data-page="care"><img src="/assets/nav/support.webp" alt="">Bowers Care</button>
     <button data-page="graph" class="aether-only"><img src="/assets/aether/discovering.webp" alt="" style="background:#1b0f09">Knowledge Graph</button>
     <button data-page="labs"><img src="/assets/nav/trading.webp" alt="">Labs</button>
+    <button data-page="integrations"><img src="/assets/bowie/uploading.webp" alt="" style="background:#1b0f09">Integrations</button>
     <button data-page="projects"><img src="/assets/nav/projects.webp" alt="">Projects</button>
     <button data-page="tasks"><img src="/assets/nav/premium.webp" alt="">Tasks</button>
     <button data-page="library"><img src="/assets/nav/library.webp" alt="">Library</button>
@@ -1191,6 +1210,14 @@ canvas.plot { width: 100%; height: 320px; border-radius: 14px; border: 1px solid
   <div class="sec-title"><h3>Agent Team</h3><span class="muted" style="font-size:12.5px">Specialist helpers Bowie can hand work to. Pick one and describe the job.</span></div>
   <div class="labs-grid" id="agents-grid"></div>
 </section>
+<section class="page hidden" id="page-integrations">
+  <div class="page-head"><img src="/assets/bowie/uploading.webp" alt="" style="width:46px;height:46px"><div><h2>Integrations</h2><small class="muted" id="int-sub">Install the open-source projects Bowers works with, right on this computer.</small></div><span class="spacer"></span>
+    <button class="btn" id="int-all-plugins">Install all plugins</button></div>
+  <div class="filters" id="int-filters"></div>
+  <div class="page-search"><span data-icon="search"></span><input class="input" id="int-search" placeholder="Search integrations…"></div>
+  <div class="int-grid" id="int-grid"></div>
+  <p class="muted" id="int-skipped" style="font-size:12.5px;margin-top:18px"></p>
+</section>
 <section class="page hidden" id="page-graph">
   <div class="page-head"><img src="/assets/art/aether-icon.webp" alt="" style="width:44px;height:44px;border-radius:10px"><div><h2>Knowledge Graph</h2><small class="muted">Your ideas. Connected. Powered by Bowie.</small></div><span class="spacer"></span>
     <div class="kg-tabs tseg" id="kg-tabs"><button class="on" data-v="map">Overview</button><button data-v="code">Code map</button></div></div>
@@ -1285,6 +1312,7 @@ canvas.plot { width: 100%; height: 320px; border-radius: 14px; border: 1px solid
     <button data-m="projects"><span data-icon="folder"></span>Projects</button>
     <button data-m="library"><span data-icon="library"></span>Library</button>
     <button data-m="labs"><span data-icon="zap"></span>Labs</button>
+    <button data-m="integrations"><span data-icon="plug"></span>Integrations</button>
     <button data-m="tasks"><span data-icon="check"></span>Tasks</button>
     <button data-m="explore"><span data-icon="compass"></span>Explore</button>
     <button data-m="history"><span data-icon="history"></span>History</button>
@@ -2689,12 +2717,12 @@ $('anim').onchange = () => { store.set('docks-anim', $('anim').checked ? 'on' : 
 // ---------------------------------------------------------------- start
 // ================================================================ Bowers: pages, home, Bowie, models
 let page = 'home', profileName = '';
-const PAGES = ['projects', 'tasks', 'library', 'motion', 'forge', 'care', 'labs', 'graph', 'explore', 'settings'];
+const PAGES = ['projects', 'tasks', 'library', 'motion', 'forge', 'care', 'labs', 'integrations', 'graph', 'explore', 'settings'];
 function showPage(name) {
   if (name === 'studio') name = 'motion';
   if (name === 'graph' && !isAether()) { toast('The Knowledge Graph is part of Bowers Aether. Switch models to use it.'); name = 'home'; }
   page = name;
-  const brand = { motion: 'Motion', forge: 'Forge', care: 'Care', graph: 'Aether', labs: 'Labs' }[name];
+  const brand = { motion: 'Motion', forge: 'Forge', care: 'Care', graph: 'Aether', labs: 'Labs', integrations: 'Labs' }[name];
   $('side-sub').textContent = brand ? ' ' + brand : '';
   const home = name === 'home';
   $('app').classList.toggle('hidden', !home);
@@ -2702,7 +2730,7 @@ function showPage(name) {
   document.querySelectorAll('.side-nav button').forEach(b => b.classList.toggle('on', b.dataset.page === name));
   document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.toggle('on', home ? b.dataset.m === 'chat' : b.dataset.m === name));
   $('more-sheet').classList.add('hidden');
-  ({ projects: loadProjects, tasks: loadTasks, library: loadLibrary, motion: renderMotion, forge: renderForgePage, care: renderCare, labs: renderLabs, graph: renderGraph, explore: renderExplore, settings: openSettings })[name]?.();
+  ({ projects: loadProjects, tasks: loadTasks, library: loadLibrary, motion: renderMotion, forge: renderForgePage, care: renderCare, labs: renderLabs, integrations: renderIntegrations, graph: renderGraph, explore: renderExplore, settings: openSettings })[name]?.();
   if (home) { $('app').classList.remove('show-panel'); }
 }
 document.querySelectorAll('.side-nav button').forEach(b => b.onclick = () => showPage(b.dataset.page));
@@ -3176,6 +3204,7 @@ handle = ev => {
   }
   if (ev.type === 'idle') document.querySelectorAll('img.bowie-live').forEach(i => { i.src = STICKER('celebrating'); setTimeout(() => { i.src = BOWIE('happy'); }, 3500); });
   if (ev.type === 'motion') onMotionJob(ev);
+  if (ev.type === 'integration') onIntegrationEvent(ev);
   hudEvent(ev);
 };
 
@@ -3660,6 +3689,7 @@ function cmdkActions() {
     ['planning', 'New project', 'Projects', () => $('new-project').click()],
     ['reading', 'Go to library', 'Library', () => showPage('library')],
     ['inspire', 'Open Labs', 'Labs', () => showPage('labs')],
+    ['uploading', 'Install integrations', 'Integrations', () => showPage('integrations')],
     ['hello', 'New chat', 'Chat', () => { showPage('home'); newChat(); }],
     ['listening', 'Talk to Bowers Aether', 'Aether', () => openHud()],
     ['discovering', 'Knowledge Graph', 'Aether', () => { if (!isAether()) return toast('Switch to Bowers Aether to use the Knowledge Graph'); showPage('graph'); }],
@@ -3813,6 +3843,102 @@ $('side-aether').onclick = () => openHud(); $('top-aether').onclick = () => open
 addEventListener('load', () => { const want = location.hash.slice(1); if (['motion', 'forge', 'care', 'labs'].includes(want)) setTimeout(() => showPage(want), 400); });
 if ('serviceWorker' in navigator && location.protocol === 'http:' && /^(127\.0\.0\.1|localhost)$/.test(location.hostname)) navigator.serviceWorker.register('/sw.js').catch(() => {});
 
+
+const syncState = () => api('/api/state').then(r => r.json()).then(applyState).catch(() => {});
+// ---------------------------------------------------------------- Integrations: install the linked open-source projects
+const INT_KINDS = [['all', 'All'], ['plugin', 'Plugins & skills'], ['tool', 'Tools'], ['app', 'Apps'], ['template', 'Templates'], ['system', 'Programs'], ['library', 'Libraries'], ['link', 'Links']];
+const INT_LABEL = { plugin: 'Plugin', collection: 'Skill collection', tool: 'Tool', app: 'App', template: 'Template', system: 'Program', library: 'Library', link: 'Link' };
+let INT = { items: [], filter: 'all', logs: {}, installing: {} };
+async function renderIntegrations() {
+  const r = await api('/api/integrations'); if (!r.ok) return; const d = await r.json();
+  INT.items = d.items; INT.installing = Object.fromEntries(Object.entries(d.installing).map(([k, v]) => [k, true]));
+  for (const [k, v] of Object.entries(d.installing)) INT.logs[k] = v;
+  $('int-skipped').textContent = Object.entries(d.skipped).map(([k, v]) => `Not included: ${k}. ${v}`).join(' ');
+  const f = $('int-filters'); if (!f.children.length) for (const [k, label] of INT_KINDS) { const b = h('button', k === INT.filter ? 'on' : null, esc(label)); b.onclick = () => { INT.filter = k; f.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); paintIntegrations(); }; f.appendChild(b); }
+  paintIntegrations();
+}
+function paintIntegrations() {
+  const q = ($('int-search').value || '').toLowerCase(), grid = $('int-grid'); grid.innerHTML = '';
+  const inst = INT.items.filter(i => i.status === 'installed').length;
+  $('int-sub').textContent = `${inst} of ${INT.items.filter(i => i.kind !== 'link').length} installed on this computer. Each one installs the way its own project says.`;
+  for (const it of INT.items) {
+    const kind = it.kind === 'collection' ? 'plugin' : it.kind;
+    if (INT.filter !== 'all' && kind !== INT.filter) continue;
+    if (q && !(it.name + ' ' + it.id + ' ' + (it.notes || '') + ' ' + (it.agent || '')).toLowerCase().includes(q)) continue;
+    const busy = INT.installing[it.id];
+    const c = h('div', 'int', `<div class="int-top"><b></b><span class="kind">${INT_LABEL[it.kind]}</span>${busy ? '<span class="pill installing">Installing…</span>' : it.status === 'installed' ? '<span class="pill installed">Installed</span>' : ''}</div><p></p><div class="meta"></div><div class="acts"></div>`);
+    c.querySelector('b').textContent = it.name; c.querySelector('p').textContent = it.notes || '';
+    const meta = c.querySelector('.meta');
+    if (it.agent) meta.appendChild(h('span', null, `Used by ${esc(agentTitle(it.agent))}`));
+    if (it.license) meta.appendChild(h('span', null, esc(it.license)));
+    if (it.url) { const a = h('a', null, 'Source'); a.href = it.url; a.target = '_blank'; a.rel = 'noopener'; meta.appendChild(a); }
+    if (it.keys?.length) c.appendChild(h('div', 'need', `Needs: ${esc(it.keys.join(', '))}`));
+    if (it.missing?.length && it.status !== 'installed') c.appendChild(h('div', 'need', 'First install ' + it.missing.map(m => `<b>${esc(m.name)}</b>: <code>${esc(m.how)}</code>`).join(' · ')));
+    const acts = c.querySelector('.acts'), btn = (label, primary, fn) => { const b = h('button', 'btn' + (primary ? ' primary' : ''), esc(label)); b.onclick = fn; acts.appendChild(b); };
+    if (it.kind === 'link') btn('Open', true, () => window.open(it.url, '_blank', 'noopener'));
+    else if (busy) btn('Show log', false, () => c.querySelector('pre.log')?.scrollIntoView({ block: 'nearest' }));
+    else if (it.kind === 'collection') btn(it.status === 'installed' ? 'Add more skills' : 'Pick skills', true, () => pickSkills(it));
+    else if (it.status !== 'installed') btn('Install', true, () => confirmInstall(it));
+    if (it.status === 'installed' && it.runnable) btn('Start', true, async () => { const r = await api('/api/integrations/run', { id: it.id }); const d = await r.json(); if (!r.ok) return toast(d.error); toast(`${it.name} is starting`); if (d.open) setTimeout(() => window.open(d.open, '_blank', 'noopener'), 4000); });
+    if (it.status === 'installed' && it.hooks_held?.length) btn('Review hooks', false, () => reviewHooks(it));
+    if (it.status === 'installed' && it.agent) btn('Use', false, () => { const ag = (state.extensions?.agents || []).find(a => a.name === it.agent); if (ag) useAgent(ag); });
+    if (it.status === 'installed' && it.kind !== 'link') btn('Remove', false, async () => { if (!confirm(`Remove ${it.name}?`)) return; const r = await api('/api/integrations/remove', { id: it.id }); if (r.ok) { INT.items = (await r.json()).items; paintIntegrations(); syncState(); } });
+    if (INT.logs[it.id]?.length) { const pre = h('pre', 'log'); pre.textContent = INT.logs[it.id].slice(-60).join('\n'); c.appendChild(pre); setTimeout(() => { pre.scrollTop = 1e9; }, 0); }
+    grid.appendChild(c);
+  }
+  if (!grid.children.length) grid.appendChild(h('div', 'empty-page', `<img src="${STICKER('searching')}" alt=""><b>Nothing matches</b>Try another search.`));
+}
+$('int-search').addEventListener('input', paintIntegrations);
+function confirmInstall(it, then) {
+  const modal = h('div', 'modal', `<div class="modal-box" style="width:min(620px,100%)"><div class="page-head"><h2></h2><span class="spacer"></span><button class="btn ghost icon-only" aria-label="Close">✕</button></div><p class="muted" style="margin:-6px 0 0"></p><div class="int-plan"></div>${it.missing?.some(m => m.auto) ? '<label class="img-check"><input type="checkbox" id="int-prereq" checked> Also install ' + it.missing.filter(m => m.auto).map(m => esc(m.name)).join(', ') + '</label>' : ''}<div class="row" style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button class="btn ghost" data-x>Cancel</button><button class="btn primary" data-go>Install</button></div></div>`);
+  modal.querySelector('h2').textContent = 'Install ' + it.name;
+  modal.querySelector('p').textContent = 'These steps run on your computer:';
+  modal.querySelector('.int-plan').textContent = it.plan.map(l => '• ' + l).join('\n');
+  modal.querySelector('[data-go]').onclick = async () => { const prereqs = !!modal.querySelector('#int-prereq')?.checked; modal.remove(); await startInstall(it, prereqs); then?.(); };
+  modal.onclick = e => { if (e.target === modal || e.target.closest('.icon-only') || e.target.closest('[data-x]')) modal.remove(); };
+  document.body.appendChild(modal);
+}
+async function startInstall(it, prereqs, skills) {
+  INT.logs[it.id] = []; INT.installing[it.id] = true; paintIntegrations();
+  const r = await api('/api/integrations/install', { id: it.id, prereqs, skills });
+  if (!r.ok) { INT.installing[it.id] = false; toast((await r.json()).error); paintIntegrations(); }
+}
+async function pickSkills(it) {
+  const modal = h('div', 'modal', `<div class="modal-box" style="width:min(680px,100%)"><div class="page-head"><h2></h2><span class="spacer"></span><button class="btn ghost icon-only" aria-label="Close">✕</button></div><input class="input" placeholder="Filter skills…" style="width:100%"><div class="skill-pick"><div class="muted">Loading the collection…</div></div><div style="display:flex;justify-content:flex-end;gap:8px"><span class="muted" data-count style="margin-right:auto;align-self:center"></span><button class="btn primary" data-go>Install selected</button></div></div>`);
+  modal.querySelector('h2').textContent = it.name;
+  modal.onclick = e => { if (e.target === modal || e.target.closest('.icon-only')) modal.remove(); };
+  document.body.appendChild(modal);
+  const r = await api('/api/integrations/skills?id=' + encodeURIComponent(it.id)); const d = await r.json();
+  const box = modal.querySelector('.skill-pick'), chosen = new Set();
+  const paint = () => { const q = modal.querySelector('input').value.toLowerCase(); box.innerHTML = '';
+    for (const sk of d.skills || []) { if (q && !(sk.name + sk.description).toLowerCase().includes(q)) continue;
+      const l = h('label', null, `<input type="checkbox"><span><b></b><small></small></span>`); l.querySelector('b').textContent = sk.name; l.querySelector('small').textContent = sk.description;
+      const cb = l.querySelector('input'); cb.checked = chosen.has(sk.path); cb.onchange = () => { cb.checked ? chosen.add(sk.path) : chosen.delete(sk.path); modal.querySelector('[data-count]').textContent = `${chosen.size} selected`; };
+      box.appendChild(l); } };
+  modal.querySelector('input').oninput = paint; paint();
+  modal.querySelector('[data-go]').onclick = () => { if (!chosen.size) return toast('Pick at least one skill'); modal.remove(); startInstall(it, false, [...chosen]); };
+}
+async function reviewHooks(it) {
+  const r = await api('/api/integrations/hooks', { id: it.id }); const d = await r.json();
+  const modal = h('div', 'modal', `<div class="modal-box" style="width:min(720px,100%)"><div class="page-head"><h2></h2><span class="spacer"></span><button class="btn ghost icon-only" aria-label="Close">✕</button></div><p class="muted" style="margin:-6px 0 0">Hooks run these commands automatically on your computer when Bowers works. They are off until you turn them on.</p><div class="int-plan"></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn ghost" data-x>Keep them off</button><button class="btn primary" data-go>Turn hooks on</button></div></div>`);
+  modal.querySelector('h2').textContent = it.name + ' hooks';
+  modal.querySelector('.int-plan').textContent = (d.hooks || []).map(x => `[${x.event}${x.matcher ? ' ' + x.matcher : ''}] ${x.command}`).join('\n\n') || 'No hooks.';
+  modal.querySelector('[data-go]').onclick = async () => { const rr = await api('/api/integrations/enable-hooks', { id: it.id }); modal.remove(); if (rr.ok) { INT.items = (await rr.json()).items; paintIntegrations(); syncState(); toast('Hooks on'); } };
+  modal.onclick = e => { if (e.target === modal || e.target.closest('.icon-only') || e.target.closest('[data-x]')) modal.remove(); };
+  document.body.appendChild(modal);
+}
+$('int-all-plugins').onclick = async () => {
+  const todo = INT.items.filter(i => i.kind === 'plugin' && i.status !== 'installed');
+  if (!todo.length) return toast('Every plugin is already installed');
+  if (!confirm(`Install ${todo.length} plugins and skill packs?\n\n${todo.map(i => '• ' + i.name).join('\n')}`)) return;
+  for (const it of todo) { await startInstall(it, false); while (INT.installing[it.id]) await new Promise(r => setTimeout(r, 500)); }
+};
+function onIntegrationEvent(ev) {
+  if (ev.line != null) { (INT.logs[ev.id] ||= []).push(ev.line); const card = [...document.querySelectorAll('#int-grid .int')].find(c => c.querySelector('b')?.textContent === INT.items.find(i => i.id === ev.id)?.name);
+    let pre = card?.querySelector('pre.log'); if (card && !pre) { pre = h('pre', 'log'); card.appendChild(pre); } if (pre) { pre.textContent = INT.logs[ev.id].slice(-60).join('\n'); pre.scrollTop = 1e9; } }
+  if (ev.done) { INT.installing[ev.id] = false; const name = INT.items.find(i => i.id === ev.id)?.name || ev.id;
+    toast(ev.error ? `${name}: ${ev.error}` : `${name} is installed`); if (!ev.error) syncState(); if (page === 'integrations') renderIntegrations(); }
+}
 function panelTerminal() { const box = $('panel-term'); if (box.children.length) return; ideTab('term'); box.replaceChildren(...$('ide-pane').childNodes); }
 </script>
 </body>

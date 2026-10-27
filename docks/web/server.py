@@ -61,6 +61,7 @@ class Session:
         self.github_login = {}  # a sign-in through GitHub in progress
         self.mcp_logins = {}  # app sign-ins in progress, by server name
         self.motion_jobs = {}  # Bowers Motion videos being made, by job id
+        self.installing = {}   # integrations being installed: id -> recent log lines
         from ..pr_watch import Watcher
         self.pr_watcher = Watcher(lambda u: self.publish({"type": "pr_update", "text": "; ".join(u["changes"]),
                                                            "url": u["url"], "title": u["title"]}))
@@ -167,6 +168,30 @@ class Session:
             self.publish({"type": "motion", **job})
         threading.Thread(target=work, daemon=True).start()
         return job
+
+    def reload_extensions(self) -> None:
+        """Pick up plugins, skills and agents that were just installed or removed."""
+        from ..plugins import Extensions
+        a = self.agent
+        a.ext = Extensions.load(a.root)
+        a.refresh_tools()
+        a.reload_instructions()
+
+    def install_integration(self, id_: str, prereqs: bool = False, skills: list | None = None) -> None:
+        from .. import integrations
+        self.installing[id_] = []
+
+        def line(text):
+            self.installing[id_].append(text)
+            del self.installing[id_][:-200]
+            self.publish({"type": "integration", "id": id_, "line": text[:400]})
+
+        def done(error):
+            self.installing.pop(id_, None)
+            if not error:
+                self.reload_extensions()
+            self.publish({"type": "integration", "id": id_, "done": True, "error": error})
+        integrations.install_in_background(id_, line, done, install_prereqs=prereqs, project=self.agent.root, skills=skills)
 
     def _mcp_manager(self):
         from ..mcp import MCPManager
@@ -622,6 +647,17 @@ def make_handler(session: Session, token: str, preview: dict):
             if path == "/api/arena":
                 from .. import labs
                 return self._json(200, {"board": labs.leaderboard()})
+            if path == "/api/integrations":
+                from .. import integrations
+                return self._json(200, {"items": integrations.listing(), "installing": session.installing,
+                                        "skipped": integrations.NOT_INSTALLED})
+            if path == "/api/integrations/skills":
+                from urllib.parse import parse_qs
+                from .. import integrations
+                e = integrations.find(parse_qs(query).get("id", ["awesome-claude-skills"])[0])
+                if not e or e["kind"] != "collection":
+                    return self._json(404, {"error": "not a skill collection"})
+                return self._json(200, {"skills": integrations.collection_skills(e)})
             if path == "/api/motion":
                 from .. import motion
                 return self._json(200, {"available": motion.available(), "videos": motion.gallery(root),
@@ -869,6 +905,34 @@ def make_handler(session: Session, token: str, preview: dict):
                     return self._json(400, {"error": str(e)})
                 except Exception as e:  # e.g. a plugin repo that won't clone
                     return self._json(400, {"error": f"{type(e).__name__}: {e}"})
+            if path.startswith("/api/integrations/"):
+                from .. import integrations
+                action, id_ = path.rsplit("/", 1)[1], str(body.get("id", ""))
+                if integrations.find(id_) is None:
+                    return self._json(404, {"error": "no such integration"})
+                try:
+                    if action == "install":
+                        if id_ in session.installing:
+                            return self._json(409, {"error": "already installing"})
+                        session.install_integration(id_, bool(body.get("prereqs")), [str(x) for x in body.get("skills") or []])
+                        return self._json(202, {"ok": True})
+                    if action == "remove":
+                        integrations.remove(id_, lambda t: None)
+                        session.reload_extensions()
+                        return self._json(200, {"items": integrations.listing()})
+                    if action == "run":
+                        return self._json(200, integrations.run(id_))
+                    if action == "hooks":
+                        return self._json(200, {"hooks": integrations.held_hooks(id_)})
+                    if action == "enable-hooks":
+                        integrations.enable_hooks(id_)
+                        session.reload_extensions()
+                        return self._json(200, {"items": integrations.listing()})
+                    if action == "stop":
+                        return self._json(200, {"stopped": integrations.stop(id_)})
+                except integrations.InstallError as e:
+                    return self._json(400, {"error": str(e)})
+                return self._json(404, {"error": "not found"})
             if path == "/api/voice/speak":
                 from .. import voice
                 try:
