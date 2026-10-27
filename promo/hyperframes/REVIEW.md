@@ -29,6 +29,8 @@
 
 ## Weakest shot, and with more time
 - The Labs and Agents passes are camera moves over grids of cards; with more time each would isolate one card and let it act.
-- No music bed: no music source here (no HeyGen sign-in, MusicGen can't be downloaded). To add one: `heygen auth login --oauth`, then
-  `npx hyperframes media-use resolve --type bgm --intent "warm upbeat acoustic, 100 bpm"`, and place it at 0.14 volume under the voice.
+- Music: an original score (compose.py), performed with real sampled instruments (FluidSynth + the FluidR3 GM soundfont) because no
+  music library was reachable here. It follows the day (morning, working groove, evening strings, the hire, the end chord on the mark)
+  and ducks 9-15 dB under Bowie's voice; the mix is -15 LUFS. Measured, not heard. A human-made track would beat it: with a HeyGen
+  sign-in, `npx hyperframes media-use resolve --type bgm --intent "warm upbeat acoustic, 100 bpm"`, then mix.sh with that file.
 - Bowie is played by 384 px sticker art; a rigged character (separate eyes and mouth) would let him lip-sync.

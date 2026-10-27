@@ -11,6 +11,7 @@ python narrate.py ~/.docks/voices/kokoro                                        
 python build.py                                                                               # index.html + compositions/*.html
 hyperframes check && hyperframes preview                                                      # look and edit
 hyperframes render -o Bowers-The-Interview.mp4
+./mix.sh                                                                                       # the score, ducked under the voice
 ```
 
 The words are in script.json; the shots (screens, camera, cursor, Bowie's poses) are in shots.py.
