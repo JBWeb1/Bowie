@@ -8,7 +8,7 @@ from PyInstaller.utils.hooks import collect_all, collect_data_files, collect_sub
 ROOT = os.path.abspath(os.path.join(SPECPATH, ".."))
 sys.path.insert(0, ROOT)  # build from this checkout, not some other installed copy
 
-datas = collect_data_files("docks", includes=["data/*.json", "web/*.html", "web/app/*", "web/assets/*", "web/assets/*/*",
+datas = collect_data_files("docks", includes=["data/*.json", "data/*.json.gz", "web/*.html", "web/app/*", "web/assets/*", "web/assets/*/*",
                                               "builtin/*/*.md", "router/*"])
 datas += copy_metadata("anthropic")  # `bowers doctor` reads its version
 hidden = collect_submodules("docks") + collect_submodules("anthropic") + ["sympy", "PIL"]

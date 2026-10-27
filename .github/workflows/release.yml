@@ -37,6 +37,8 @@ jobs:
           .\dist\Bowers\bowers-cli.exe voices say "Hi, I'm Bowie." -o "$env:RUNNER_TEMP\bowie.wav"
           if ((Get-Item "$env:RUNNER_TEMP\bowie.wav").Length -lt 10000) { throw "the offline voice made no audio" }
           .\dist\Bowers\bowers-cli.exe integrations list | Select-Object -First 5
+          $found = .\dist\Bowers\bowers-cli.exe resources password manager | Out-String
+          if ($found -notmatch "Bitwarden") { throw "free resources are missing from the build" }
       - name: Build the installer
         shell: pwsh
         run: |
