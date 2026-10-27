@@ -34,7 +34,7 @@ def search(query: str, source: str = "", limit: int = 60) -> list[dict]:
             continue
         if not all(w in name or w in cat or w in desc for w in words):
             continue
-        score = sum(6 if w in name else 3 if w in cat else 1 for w in words) + (5 if " ".join(words) == name else 0)
+        score = sum((6 if w in name else 0) + (4 if w in cat else 0) + (1 if w in desc else 0) for w in words) + (5 if " ".join(words) == name else 0)
         scored.append((score, r))
     scored.sort(key=lambda x: -x[0])
     return [{"name": r["n"], "url": r["u"], "description": r["d"].lstrip("⚠ -").strip(), "category": r["c"], "source": r["s"]}
