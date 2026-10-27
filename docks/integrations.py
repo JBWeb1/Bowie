@@ -86,6 +86,11 @@ add("knowledge-work-plugins", "Knowledge Work Plugins", "plugin", None, "anthrop
 add("commerce-agents", "Commerce Agents", "plugin", "commerce-builder", "anthropics/commerce-agents", license="Apache-2.0")
 add("lemo-opuscar", "Lemo Opuscar film styles", "plugin", "launch-film-director", "lemomo-ai/lemo-opuscar", license="MIT", notes="59 film styles made in code.")
 add("onetake", "onetake", "plugin", "launch-film-director", "feitangyuan/onetake", notes="Launch films as one continuous motion-graphics take.")
+add("hyperframes-skills", "HyperFrames skills", "plugin", "launch-film-director", "heygen-com/hyperframes", license="Apache-2.0",
+    notes="HeyGen's video-making skills: story and storylines, launch films, explainers, captions, 450 ready-made blocks, media and sound. "
+          "Pair with the HyperFrames CLI to render.")
+add("remotion-skills", "Remotion skills", "plugin", "video-producer", "remotion-dev/skills",
+    notes="Best practices for making videos in React with Remotion.")
 add("agency-agents", "The Agency (agents)", "plugin", None, "msitarzewski/agency-agents", license="MIT", notes="Hundreds of specialist agent roles across engineering, design, marketing, testing, product and more.")
 add("emote-forge", "Emote Forge", "plugin", "emote-artist", "holy-templar/emote-forge", license="GPL-3.0")
 add("minimax-h3", "MiniMax H3 skills", "plugin", "video-producer", "MiniMax-AI/MiniMax-H3", keys=["MINIMAX_API_KEY"], notes="Prompt-writing and generation skills for MiniMax H3 video (hosted API).")
@@ -110,6 +115,9 @@ add("clinic", "Clinic.js", "tool", "performance-auditor", "clinicjs/node-clinic"
 add("firecrawl", "Firecrawl CLI and SDK", "tool", "rag-engineer", "firecrawl/firecrawl", license="AGPL-3.0", check="firecrawl", needs=["node"],
     steps=["npm install -g firecrawl-cli", f"{PY} firecrawl"], keys=["FIRECRAWL_API_KEY"], notes="Hosted API by default; self-hosting is in its SELF_HOST.md.")
 add("langgraph", "LangGraph", "tool", "workflow-architect", "langchain-ai/langgraph", license="MIT", steps=[f"{PY} langgraph"], check="py:langgraph")
+add("hyperframes", "HyperFrames CLI", "tool", "launch-film-director", "heygen-com/hyperframes", license="Apache-2.0", check="hyperframes", needs=["node"],
+    steps=["npm install -g hyperframes", "hyperframes browser ensure"],
+    notes="Write HTML, render MP4: frame-exact videos from code, with a live preview studio (hyperframes preview, render, check). Needs Node 22+ and FFmpeg.")
 add("sympy", "SymPy", "tool", "math-tutor", "sympy/sympy", license="BSD", steps=[f"{PY} sympy"], check="py:sympy")
 add("kokoro-voice", "Kokoro voice", "tool", None, "thewh1teagle/kokoro-onnx", license="Apache-2.0 (model by hexgrad)", size="115 MB",
     check="call:docks.voice:local_available",
@@ -197,6 +205,10 @@ add("banking", "Banking app", "template", "commerce-builder", "adrianhajdin/bank
     steps=["npm install"], run="npm run dev", keys=["Appwrite, Plaid and Dwolla sandbox keys"])
 add("claude-animation-base", "Claude Animation Base", "template", "launch-film-director", "JohnHeibel/ClaudeAnimationBase", license="MIT", needs=["git", "node"],
     steps=["npm install"], run="node render.mjs --clip --out=out/video.mp4", notes="Hand-painted cartoon starter (p5.js); render to MP4.")
+add("remotion", "Remotion starter", "template", "video-producer", "remotion-dev/template-helloworld", needs=["git", "node"],
+    url="https://github.com/remotion-dev/template-helloworld", steps=["npm install"], run="npx remotion studio", open_url="http://localhost:3000",
+    license="Remotion License (free for individuals and companies of up to 3 people; larger companies need a company license)",
+    notes="Make videos in React: a new project with Remotion Studio. Render with `npx remotion render`. Source: github.com/remotion-dev/remotion.")
 
 # ---------------------------------------------------------------- libraries for the open project
 add("jsxgraph", "JSXGraph", "library", "math-tutor", "jsxgraph/jsxgraph", steps=["npm install jsxgraph"])
