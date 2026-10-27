@@ -267,3 +267,14 @@ def test_local_voice_and_transcription(tmp_path, monkeypatch):
         voice.transcribe("data:text/html;base64,PGI+")
     with pytest.raises(voice.VoiceError):
         voice.speak_local("hi", "../x")
+
+
+def test_free_resources_search(tmp_path):
+    from docks import resources
+    assert resources.count() > 4000
+    hits = resources.search("password manager", "awesome-selfhosted")
+    assert hits and all(h["source"] == "awesome-selfhosted" for h in hits) and any("Bitwarden" in h["name"] for h in hits)
+    assert resources.search("rust", "free-programming-books")[0]["url"].startswith("http")
+    session, url = start(tmp_path, [])
+    d = call(url + "/api/resources?q=email%20api&s=free-for-dev")
+    assert d["total"] > 4000 and d["items"] and d["items"][0]["source"] == "free-for-dev"

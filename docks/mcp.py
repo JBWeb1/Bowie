@@ -19,6 +19,7 @@ import re
 import subprocess
 import threading
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -276,6 +277,96 @@ class HttpClient:
         pass
 
 
+class SseClient(HttpClient):
+    """The older HTTP+SSE transport: a GET event stream names an endpoint to POST to, and replies come back on the stream."""
+
+    def __init__(self, spec: dict, cwd: Path):
+        super().__init__(spec, cwd)
+        self.endpoint, self.closed, self.replies = None, False, {}
+        self.cv = threading.Condition()
+        req = urllib.request.Request(self.url, headers={"accept": "text/event-stream", **self.headers}, method="GET")
+        try:
+            self.stream = urllib.request.urlopen(req, timeout=TIMEOUT)
+        except urllib.error.HTTPError as e:
+            if e.code == 401:
+                raise MCPAuthRequired(self.url, e.headers.get("www-authenticate", ""))
+            raise MCPError(f"HTTP {e.code}: {e.read().decode(errors='replace')[:300]}")
+        except urllib.error.URLError as e:
+            raise MCPError(f"could not reach {self.url}: {e.reason}")
+        threading.Thread(target=self._read, daemon=True).start()
+        with self.cv:
+            self.cv.wait_for(lambda: self.endpoint or self.closed, timeout=TIMEOUT)
+        if not self.endpoint:
+            raise MCPError(f"{self.url} never said where to send messages")
+
+    def _read(self) -> None:
+        event, data = "message", []
+        try:
+            for raw in self.stream:
+                line = raw.decode(errors="replace").rstrip("\r\n")
+                if line.startswith("event:"):
+                    event = line[6:].strip()
+                elif line.startswith("data:"):
+                    data.append(line[5:].lstrip())
+                elif not line and data:
+                    payload, data = "\n".join(data), []
+                    with self.cv:
+                        if event == "endpoint":
+                            self.endpoint = urllib.parse.urljoin(self.url, payload.strip())
+                        else:
+                            try:
+                                msg = json.loads(payload)
+                            except ValueError:
+                                msg = None
+                            if isinstance(msg, dict) and "id" in msg and ("result" in msg or "error" in msg):
+                                self.replies[msg["id"]] = msg
+                        self.cv.notify_all()
+                    event = "message"
+        except (OSError, ValueError, AttributeError):  # the stream was closed under us
+            pass
+        finally:
+            with self.cv:
+                self.closed = True
+                self.cv.notify_all()
+
+    def _send(self, msg: dict) -> None:
+        req = urllib.request.Request(self.endpoint, data=json.dumps(msg).encode(),
+                                     headers={"content-type": "application/json", **self.headers}, method="POST")
+        try:
+            urllib.request.urlopen(req, timeout=TIMEOUT).close()
+        except urllib.error.HTTPError as e:
+            if e.code == 401:
+                raise MCPAuthRequired(self.url, e.headers.get("www-authenticate", ""))
+            raise MCPError(f"HTTP {e.code}: {e.read().decode(errors='replace')[:300]}")
+        except urllib.error.URLError as e:
+            raise MCPError(f"could not reach {self.endpoint}: {e.reason}")
+
+    def request(self, method: str, params: dict | None = None, timeout: float = TIMEOUT) -> dict:
+        msg_id = next(self.ids)
+        self._send({"jsonrpc": "2.0", "id": msg_id, "method": method, "params": params or {}})
+        with self.cv:
+            self.cv.wait_for(lambda: msg_id in self.replies or self.closed, timeout=timeout)
+            reply = self.replies.pop(msg_id, None)
+        if reply is None:
+            raise MCPError(f"no reply to {method}")
+        if "error" in reply:
+            raise MCPError(reply["error"].get("message", str(reply["error"])))
+        return reply["result"]
+
+    def notify(self, method: str, params: dict | None = None) -> None:
+        self._send({"jsonrpc": "2.0", "method": method, "params": params or {}})
+
+    def close(self) -> None:
+        import socket
+        sock = getattr(getattr(getattr(self.stream, "fp", None), "raw", None), "_sock", None)
+        try:
+            if sock is not None:
+                sock.shutdown(socket.SHUT_RDWR)  # wakes the reader thread at once
+            self.stream.close()
+        except OSError:
+            pass
+
+
 # --------------------------------------------------------------- servers
 
 
@@ -295,8 +386,8 @@ class Server:
 
     def start(self, cwd: Path) -> None:
         try:
-            kind = self.spec.get("type") or ("http" if "url" in self.spec else "stdio")
-            self.client = (HttpClient if kind in ("http", "streamable-http") else StdioClient)(self.spec, cwd)
+            kind = self.spec.get("type") or (("sse" if self.spec["url"].rstrip("/").endswith("/sse") else "http") if "url" in self.spec else "stdio")
+            self.client = {"http": HttpClient, "streamable-http": HttpClient, "sse": SseClient}.get(kind, StdioClient)(self.spec, cwd)
             init = self.client.request("initialize", {
                 "protocolVersion": PROTOCOL_VERSION, "capabilities": {},
                 "clientInfo": {"name": "bowers", "version": __version__}}, timeout=30)

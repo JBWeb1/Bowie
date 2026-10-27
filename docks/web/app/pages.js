@@ -353,6 +353,20 @@ async function renderAppCatalog(box) {
   appsBoxes.add(box);
   const r = await api('/api/mcp/apps'); if (!r.ok) { box.innerHTML = '<div class="muted">Could not load apps</div>'; return; }
   const { apps, logins } = await r.json(); box.innerHTML = '';
+  // 150+ apps: search and a category filter keep it usable
+  const prev = box.dataset.q || '', prevCat = box.dataset.cat || '';
+  const cats = [...new Set(apps.map(a => a.category))];
+  const bar = h('div', 'apps-bar', `<input class="input" type="search" placeholder="Search ${apps.length} apps…" aria-label="Search apps"><select class="input" aria-label="Category"><option value="">All categories</option>${cats.map(c => `<option>${esc(c)}</option>`).join('')}</select><small class="muted"></small>`);
+  const [q, sel, count] = bar.children; q.value = prev; sel.value = prevCat;
+  box.appendChild(bar);
+  const grid = h('div', 'apps-grid'); box.appendChild(grid);
+  const filter = () => {
+    box.dataset.q = q.value; box.dataset.cat = sel.value;
+    const t = q.value.trim().toLowerCase(); let n = 0;
+    for (const c of grid.children) { const show = (!t || c.dataset.text.includes(t)) && (!sel.value || c.dataset.cat === sel.value); c.classList.toggle('hidden', !show); n += show; }
+    count.textContent = `${n} shown`;
+  };
+  q.oninput = filter; sel.onchange = filter;
   for (const a of apps) {
     const st = logins[a.id]?.status === 'waiting' && a.status !== 'running' ? 'waiting' : a.status;
     const card = h('div', 'app-card', `<div class="app-top"><span class="logo">${esc(a.name[0])}</span><span><b>${esc(a.name)}</b><small>${esc(a.category)}</small></span>${APP_STATUS[st] ? `<span class="pill ${st}">${APP_STATUS[st]}</span>` : ''}</div><p>${esc(a.description)}</p><div class="acts"></div>`);
@@ -366,8 +380,15 @@ async function renderAppCatalog(box) {
       if (a.status === 'running' && a.auth === 'oauth') btn('Sign out', false, () => appAction('logout', a.id));
       btn('Remove', false, () => { if (confirm(`Disconnect ${a.name}?`)) appAction('remove', a.id); });
     }
-    box.appendChild(card);
+    card.dataset.text = `${a.name} ${a.category} ${a.description}`.toLowerCase(); card.dataset.cat = a.category;
+    if (a.source === 'community') {
+      const tag = h('small', 'muted app-src', 'Community list' + (a.home ? ' · ' : ''));
+      if (a.home) { const l = h('a', null, 'website'); l.href = a.home; l.target = '_blank'; l.rel = 'noopener'; tag.appendChild(l); }
+      card.appendChild(tag);
+    }
+    grid.appendChild(card);
   }
+  filter();
 }
 function refreshAppCatalog() { for (const b of appsBoxes) if (b.offsetParent) renderAppCatalog(b); }
 async function appAction(action, name, extra = {}) {

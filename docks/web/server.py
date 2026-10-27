@@ -221,7 +221,7 @@ class Session:
                 raise ValueError(f"no app named {name!r} in the catalog")
             missing = mcp_catalog.missing_tool(app)
             if missing:
-                raise ValueError(f"{app['name']} needs {missing} installed first")
+                raise ValueError(f"{app['name']} needs {missing}" + ("" if missing.endswith("environment") else " installed first"))
             values = body.get("values") if isinstance(body.get("values"), dict) else {}
             mgr.add(app["id"], mcp_catalog.build_spec(app, values))
         elif action == "login":
@@ -703,6 +703,12 @@ def make_handler(session: Session, token: str, preview: dict, allowed_hosts: set
                 from .. import graph
                 from . import profile as prof
                 return self._json(200, graph.overview(root, session.agent, prof.load().get("name", "")))
+            if path == "/api/resources":
+                from urllib.parse import parse_qs
+                from .. import resources
+                q = parse_qs(query)
+                return self._json(200, {"total": resources.count(), "sources": resources.SOURCES,
+                                        "items": resources.search(q.get("q", [""])[0][:200], q.get("s", [""])[0])})
             if path == "/api/voice":
                 from .. import voice
                 local = {"local": voice.local_available(), "local_voices": voice.local_voices(), "stt": voice.stt_available()}

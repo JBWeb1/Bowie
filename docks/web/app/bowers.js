@@ -382,12 +382,25 @@ const LAB_UI = {
     b.querySelector('#sk-go').onclick = () => { const v = b.querySelector('#sk-src').value.trim(); if (v) install(v); };
   },
   resources(b) {
-    const links = [['free-for-dev', 'https://github.com/ripienaar/free-for-dev', 'Free tiers of services for developers'], ['awesome-selfhosted', 'https://github.com/awesome-selfhosted/awesome-selfhosted', 'Apps you can host yourself'],
-      ['free-programming-books', 'https://github.com/EbookFoundation/free-programming-books', 'Free books and courses for every language'], ['React Bits', 'https://github.com/DavidHDev/react-bits', 'Animated React components'],
-      ['Magic UI', 'https://github.com/magicuidesign/magicui', 'Beautiful UI components'], ['LiteLLM', 'https://github.com/BerriAI/litellm', 'One API for 100+ models (Bowers Router does this for Bowers)']];
-    b.innerHTML = links.map(([n, u, d]) => `<div class="mcp-row"><a href="${u}" target="_blank" rel="noopener"><b>${esc(n)}</b></a><small>${esc(d)}</small></div>`).join('') +
-      `<div class="row"><button class="btn" id="rs-ask">Ask Bowie to find a free tool for…</button></div>`;
-    b.querySelector('#rs-ask').onclick = () => prefill('Using free-for-dev and awesome-selfhosted, find me a free or self-hosted tool for ');
+    b.innerHTML = `<p class="muted">Thousands of free things, from three community lists: free tiers for developers (free-for-dev), apps you can host yourself (awesome-selfhosted), and free programming books and courses (free-programming-books). Searchable offline.</p>
+      <div class="row"><input class="input" id="rs-q" type="search" placeholder="e.g. email API, password manager, rust book, postgres hosting" style="flex:1"><select class="input" id="rs-s" style="max-width:240px"><option value="">All lists</option></select></div>
+      <div id="rs-out" class="rs-out"></div><div class="row"><button class="btn" id="rs-ask">Ask Bowie to pick the best one for…</button></div>`;
+    let timer = null;
+    const run = async () => {
+      const r = await api('/api/resources?q=' + encodeURIComponent(b.querySelector('#rs-q').value) + '&s=' + encodeURIComponent(b.querySelector('#rs-s').value));
+      const d = await r.json(); const out = b.querySelector('#rs-out'); out.innerHTML = '';
+      const sel = b.querySelector('#rs-s'); if (sel.options.length === 1) for (const [k, v] of Object.entries(d.sources)) sel.appendChild(new Option(v, k));
+      if (!d.items.length) { out.appendChild(h('div', 'muted', 'Nothing matched. Try fewer words.')); return; }
+      for (const it of d.items) {
+        const row = h('div', 'mcp-row rs-row', `<a target="_blank" rel="noopener"><b></b></a><small></small>`);
+        const a = row.querySelector('a'); a.href = it.url; a.querySelector('b').textContent = it.name;
+        row.querySelector('small').textContent = [it.category, it.description].filter(Boolean).join(' · ');
+        out.appendChild(row);
+      }
+    };
+    b.querySelector('#rs-q').oninput = () => { clearTimeout(timer); timer = setTimeout(run, 180); };
+    b.querySelector('#rs-s').onchange = run; run();
+    b.querySelector('#rs-ask').onclick = () => prefill('Search the free resources (run `bowers resources <words>`) and recommend the best free or self-hosted option for ');
   },
 };
 function simpleLab(b, placeholder, make, optional = false) {

@@ -222,6 +222,8 @@ add("react-bits", "React Bits", "link", "ui-designer", "DavidHDev/react-bits", l
 add("magicui", "Magic UI", "link", "ui-designer", "magicuidesign/magicui", license="MIT", notes="Add components with: npx shadcn@latest add @magicui/<component>.")
 
 # ---------------------------------------------------------------- reading lists and sites
+add("awesome-remote-mcp-servers", "Awesome Remote MCP Servers", "link", None, "ovladon/awesome-remote-mcp-servers", license="CC0",
+    notes="All 141 servers from this list are built into Explore > Connect apps (search them there), next to the featured apps.")
 for id_, name, repo in [("free-for-dev", "free-for-dev", "ripienaar/free-for-dev"), ("awesome-selfhosted", "awesome-selfhosted", "awesome-selfhosted/awesome-selfhosted"),
                         ("free-programming-books", "free-programming-books", "EbookFoundation/free-programming-books")]:
     add(id_, name, "link", "learning-guide", repo)

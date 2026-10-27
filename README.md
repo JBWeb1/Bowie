@@ -6,6 +6,10 @@
 
 (Bowers was called Docks. The `docks` command, `DOCKS_*` settings and the `~/.docks` folder still work.)
 
+### More connected apps and free resources
+- **Connect apps** (Explore or Settings → Tools & safety) now lists 155 MCP apps: the featured ones plus all 141 remote servers from the community list [awesome-remote-mcp-servers](https://github.com/ovladon/awesome-remote-mcp-servers), with search and a category filter. Sign-in apps open a browser window; API-key apps read their key from an environment variable (the card names it, for example `PLAID_API_KEY`). Older SSE-transport servers work too.
+- **Labs → Free Resources** searches 5,000+ entries offline: free tiers for developers (free-for-dev), apps to host yourself (awesome-selfhosted), and free programming books and courses (free-programming-books). From the terminal: `bowers resources password manager`.
+
 ## Bowers models
 
 | Model | Best for | Runs on |

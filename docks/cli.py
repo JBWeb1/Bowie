@@ -164,7 +164,8 @@ def _mcp_apps(args, root: Path) -> int:
             ui.error(f"no app called {args.app!r}; see bowers mcp apps")
             return 1
         if mcp_catalog.missing_tool(app):
-            ui.error(f"{app['name']} needs {mcp_catalog.missing_tool(app)} installed first")
+            need = mcp_catalog.missing_tool(app)
+            ui.error(f"{app['name']} needs {need}" + ("" if need.endswith("environment") else " installed first"))
             return 1
         values = {"path": args.path} if args.path else {}
         for item in app.get("inputs", []):
@@ -1325,6 +1326,16 @@ def main(argv=None) -> int:
         return image_main(argv[1:])
     if argv[:1] in (["voices"], ["voice"]):
         return voices_main(argv[1:])
+    if argv[:1] == ["resources"]:
+        from . import resources
+        words = [a for a in argv[1:] if not a.startswith("--")]
+        src = next((a.split("=", 1)[1] for a in argv[1:] if a.startswith("--source=")), "")
+        hits = resources.search(" ".join(words), src, limit=25)
+        for h in hits:
+            print(ui.bold(h["name"]) + ui.dim(f"  [{h['source']} · {h['category']}]") + f"\n  {h['url']}" + (f"\n  {h['description']}" if h["description"] else ""))
+        if not hits:
+            print(f"Nothing matched. Try fewer words. ({resources.count()} free resources: " + ", ".join(resources.SOURCES) + ")")
+        return 0
     if argv[:1] == ["update"]:
         from . import updater
         info = updater.check(force=True)

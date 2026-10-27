@@ -133,6 +133,49 @@ def test_http_server_with_sse_and_session(home, monkeypatch):
     server.shutdown()
 
 
+def test_legacy_sse_server(home):
+    """The older transport: GET /sse names a POST endpoint; replies arrive on the event stream."""
+    import queue as q
+    out = q.Queue()
+
+    class H(BaseHTTPRequestHandler):
+        protocol_version = "HTTP/1.1"
+
+        def log_message(self, *a):
+            pass
+
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header("content-type", "text/event-stream")
+            self.end_headers()
+            self.wfile.write(b"event: endpoint\ndata: /messages?session=7\n\n"); self.wfile.flush()
+            while True:
+                m = out.get()
+                if m is None:
+                    return
+                self.wfile.write(f"event: message\ndata: {json.dumps(m)}\n\n".encode()); self.wfile.flush()
+
+        def do_POST(self):
+            assert self.path == "/messages?session=7"
+            m = json.loads(self.rfile.read(int(self.headers["content-length"])))
+            self.send_response(202); self.send_header("content-length", "0"); self.end_headers()
+            if "id" in m:
+                result = {"initialize": {"protocolVersion": "2024-11-05", "capabilities": {}, "serverInfo": {"name": "old"}},
+                          "tools/list": {"tools": [{"name": "lookup", "inputSchema": {"type": "object"}}]}}.get(
+                              m["method"], {"content": [{"type": "text", "text": "looked it up"}]})
+                out.put({"jsonrpc": "2.0", "id": m["id"], "result": result})
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    mcp.write_server(mcp.user_config_path(), "old", {"url": f"http://127.0.0.1:{server.server_port}/sse"})  # /sse: picked automatically
+    mgr = mcp.MCPManager(home.project)
+    mgr.start()
+    assert mgr.call("mcp__old__lookup", {}) == ("looked it up", False)
+    mgr.close()
+    out.put(None)
+    server.shutdown()
+
+
 def test_agent_uses_mcp_tool(home):
     mcp.write_server(mcp.user_config_path(), "calc", {"command": sys.executable, "args": [str(home.script)]})
     mgr = mcp.MCPManager(home.project)
@@ -179,3 +222,19 @@ def test_crashing_process_reports_exit(tmp_path):
     agent = Agent(root=tmp_path, client=FakeClient([]))
     out = agent.procs.start("echo boom >&2; exit 3", wait=5)
     assert "exited with code 3" in out and "boom" in out
+
+
+def test_community_catalog(monkeypatch):
+    """The remote servers from awesome-remote-mcp-servers are in the catalog, after the featured ones."""
+    from docks import mcp_catalog as M
+    rows = M.listing()
+    assert len(rows) > 140 and rows[0]["source"] == "featured" and rows[-1]["source"] == "community"
+    assert len({r["id"] for r in rows}) == len(rows)
+    atl = M.find("atlassian")
+    assert atl["auth"] == "oauth" and atl["spec"] == {"type": "http", "url": "https://mcp.atlassian.com/v1/mcp"}
+    plaid = M.find("plaid")
+    assert plaid["spec"]["type"] == "sse" and plaid["spec"]["headers"]["Authorization"] == "Bearer ${PLAID_API_KEY}"
+    monkeypatch.delenv("PLAID_API_KEY", raising=False)
+    assert M.missing_tool(plaid) == "PLAID_API_KEY in your environment"
+    monkeypatch.setenv("PLAID_API_KEY", "k")
+    assert M.missing_tool(plaid) is None

@@ -1,0 +1,1130 @@
+[
+{
+"name": "Fatstack",
+"home": "https://www.fatstack.net",
+"url": "https://echo.fatstack.net/mcp",
+"category": "Aggregators",
+"auth": "none",
+"description": "Marketplace of MCP servers and APIs that agents pay for per call in USDC over x402 on Base; connect anonymously and pay only when you call a tool."
+},
+{
+"name": "Hubris",
+"home": "https://hubris.pw",
+"url": "https://api.hubris.pw/mcp",
+"category": "Aggregators",
+"auth": "oauth",
+"description": "Catalogue of 500+ LLMs with ruble pricing, account balance, and chat completions with parity to /v1/chat/completions."
+},
+{
+"name": "nohumans.directory",
+"home": "https://nohumans.directory",
+"url": "https://api.nohumans.directory/mcp",
+"category": "Aggregators",
+"auth": "none",
+"description": "Find paid x402 APIs by capability and price, with probe history and paid-delivery evidence per endpoint."
+},
+{
+"name": "TaskFuel",
+"home": "https://taskfuel.ai",
+"url": "https://app.taskfuel.ai/mcp",
+"category": "Aggregators",
+"auth": "oauth",
+"description": "Discover and call paid per-request APIs for web search, market data, and enrichment, billed to a prepaid balance."
+},
+{
+"name": "ToolsMonk",
+"home": "https://toolsmonk.com",
+"url": "https://toolsmonk.com/api/mcp",
+"category": "Aggregators",
+"auth": "none",
+"description": "Find the right one of 255 free browser-based PDF, image, text and SEO tools by describing the task."
+},
+{
+"name": "Zapier",
+"home": "https://zapier.com",
+"url": "https://mcp.zapier.com/api/mcp/mcp",
+"category": "Aggregators",
+"auth": "oauth",
+"description": "Run your Zapier actions across thousands of connected apps as MCP tools."
+},
+{
+"name": "Countersignatory",
+"home": "https://countersignatory.com",
+"url": "https://countersignatory.com/mcp",
+"category": "Agreements & Coordination",
+"auth": "none",
+"description": "Live spot prices for verified human judgment, sign-off and notarisation: quote what a verified human would cost for a task, register interest at that price, and read the public Spot Index."
+},
+{
+"name": "Elicitly",
+"home": "https://www.elicitly.ai",
+"url": "https://mcp.elicitly.ai/mcp",
+"category": "Agreements & Coordination",
+"auth": "oauth",
+"description": "Human-in-the-loop for AI agents: confirmations, forms, and durable approvals that reach any device, with an audit trail."
+},
+{
+"name": "Canva",
+"home": "https://canva.com",
+"url": "https://mcp.canva.com/mcp",
+"category": "Art & Design",
+"auth": "oauth",
+"description": "Create, edit, and export Canva designs."
+},
+{
+"name": "Made Good Designs",
+"home": "https://madegooddesigns.com/inspiration/",
+"url": "https://madegooddesigns.com/inspiration/mcp",
+"category": "Art & Design",
+"auth": "none",
+"description": "Search a curated gallery of typography and brand-design inspiration with colour palettes, tags, and source links."
+},
+{
+"name": "Cloudflare Browser Rendering",
+"home": "https://developers.cloudflare.com/browser-rendering/",
+"url": "https://browser.mcp.cloudflare.com/mcp",
+"category": "Browser Automation",
+"auth": "oauth",
+"description": "Render pages, capture screenshots, and scrape HTML from a URL."
+},
+{
+"name": "Cloudflare Bindings",
+"home": "https://developers.cloudflare.com/agents/model-context-protocol/",
+"url": "https://bindings.mcp.cloudflare.com/mcp",
+"category": "Cloud Platforms",
+"auth": "oauth",
+"description": "Build on Workers KV, R2, D1, and other Cloudflare bindings."
+},
+{
+"name": "FARPY",
+"home": "https://farpy.com",
+"url": "https://api.farpy.com/mcp",
+"category": "Cloud Platforms",
+"auth": "oauth",
+"description": "Run verified Blender GPU workloads, track jobs, retrieve artifacts, and inspect execution receipts."
+},
+{
+"name": "Floot",
+"home": "https://floot.com",
+"url": "https://mcp.floot.com/mcp",
+"category": "Cloud Platforms",
+"auth": "oauth",
+"description": "Write React pages and serverless endpoints, provision Postgres and auth, run SQL, read logs, and publish to a live URL."
+},
+{
+"name": "Heroku",
+"home": "https://heroku.com",
+"url": "https://mcp.heroku.com/mcp",
+"category": "Cloud Platforms",
+"auth": "oauth",
+"description": "Manage Heroku apps, dynos, add-ons, and logs."
+},
+{
+"name": "Netlify",
+"home": "https://netlify.com",
+"url": "https://netlify-mcp.netlify.app/mcp",
+"category": "Cloud Platforms",
+"auth": "oauth",
+"description": "Create, deploy, and manage Netlify sites."
+},
+{
+"name": "Render",
+"home": "https://render.com",
+"url": "https://mcp.render.com/mcp",
+"category": "Cloud Platforms",
+"auth": "oauth",
+"description": "Deploy and inspect Render services, databases, and logs."
+},
+{
+"name": "Resend",
+"home": "https://resend.com",
+"url": "https://mcp.resend.com/mcp",
+"category": "Communication",
+"auth": "oauth",
+"description": "Send transactional email and manage sending domains."
+},
+{
+"name": "volai",
+"home": "https://volai.cz/en",
+"url": "https://volai.cz/mcp",
+"category": "Communication",
+"auth": "oauth",
+"description": "Buy Czech and Slovak numbers, place calls, send SMS, run a voice agent; auth is an API key sent as a Bearer token."
+},
+{
+"name": "Contentful",
+"home": "https://contentful.com",
+"url": "https://mcp.contentful.com/mcp",
+"category": "Content Management",
+"auth": "token",
+"description": "Manage Contentful entries, assets, and content models."
+},
+{
+"name": "dochost",
+"home": "https://dochost.io/mcp",
+"url": "https://dochost.io/api/mcp",
+"category": "Content Management",
+"auth": "none",
+"description": "Publish Markdown or HTML as a hosted page and get a shareable link."
+},
+{
+"name": "GoodBarber",
+"home": "https://www.goodbarber.com/mcp/",
+"url": "https://mcp.goodbarber.dev/mcp/sse",
+"category": "Content Management",
+"auth": "oauth",
+"description": "Manage a GoodBarber no-code app: content, push notifications, shop orders, members, and analytics."
+},
+{
+"name": "Sanity",
+"home": "https://sanity.io",
+"url": "https://mcp.sanity.io/mcp",
+"category": "Content Management",
+"auth": "oauth",
+"description": "Query and mutate Sanity datasets and documents."
+},
+{
+"name": "Storyblok",
+"home": "https://storyblok.com",
+"url": "https://mcp.storyblok.com/mcp",
+"category": "Content Management",
+"auth": "none",
+"description": "Manage Storyblok spaces, stories, and components."
+},
+{
+"name": "Webflow",
+"home": "https://webflow.com",
+"url": "https://mcp.webflow.com/mcp",
+"category": "Content Management",
+"auth": "oauth",
+"description": "Manage Webflow sites, collections, and CMS items."
+},
+{
+"name": "Wix",
+"home": "https://wix.com",
+"url": "https://mcp.wix.com/mcp",
+"category": "Content Management",
+"auth": "oauth",
+"description": "Manage Wix sites, business data, and bookings."
+},
+{
+"name": "Close",
+"home": "https://close.com",
+"url": "https://mcp.close.com/mcp",
+"category": "CRM",
+"auth": "oauth",
+"description": "Read and update Close leads, contacts, and opportunities."
+},
+{
+"name": "HubSpot",
+"home": "https://hubspot.com",
+"url": "https://mcp.hubspot.com/anthropic",
+"category": "CRM",
+"auth": "oauth",
+"description": "Query and update HubSpot CRM contacts, companies, and deals."
+},
+{
+"name": "Convex",
+"home": "https://convex.dev",
+"url": "https://mcp.convex.dev/mcp",
+"category": "Databases",
+"auth": "none",
+"description": "Query and manage Convex deployments, tables, and functions."
+},
+{
+"name": "MongoDB",
+"home": "https://mongodb.com",
+"url": "https://mcp.mongodb.com/mcp",
+"category": "Databases",
+"auth": "oauth",
+"description": "Query MongoDB Atlas clusters and manage collections and indexes."
+},
+{
+"name": "Neon",
+"home": "https://neon.tech",
+"url": "https://mcp.neon.tech/mcp",
+"category": "Databases",
+"auth": "oauth",
+"description": "Provision and query Neon Postgres projects and branches."
+},
+{
+"name": "Prisma",
+"home": "https://prisma.io",
+"url": "https://mcp.prisma.io/mcp",
+"category": "Databases",
+"auth": "oauth",
+"description": "Manage Prisma Postgres databases and run migrations."
+},
+{
+"name": "Agentic Atlas",
+"home": "https://agentic-atlas.dev/",
+"url": "https://agentic-atlas.dev/mcp/",
+"category": "Developer Tools",
+"auth": "none",
+"description": "Give AI agents a field guide to building better agents, with design patterns, tradeoffs, and decision guidance."
+},
+{
+"name": "AI Design Blueprint",
+"home": "https://aidesignblueprint.com",
+"url": "https://aidesignblueprint.com/mcp",
+"category": "Developer Tools",
+"auth": "none",
+"description": "Search 10 principles, examples and guides with 12 public tools; spec, architecture and UI validators on Pro/Teams."
+},
+{
+"name": "Astro Docs",
+"home": "https://astro.build",
+"url": "https://mcp.docs.astro.build/mcp",
+"category": "Developer Tools",
+"auth": "none",
+"description": "Search the Astro documentation."
+},
+{
+"name": "Bitrise",
+"home": "https://bitrise.io",
+"url": "https://mcp.bitrise.io/mcp",
+"category": "Developer Tools",
+"auth": "oauth",
+"description": "Trigger and inspect Bitrise CI builds and artifacts."
+},
+{
+"name": "Capacitor MCP Server by Capawesome",
+"home": "https://capawesome.io/docs/ai/mcp/capacitor/",
+"url": "https://capacitor-mcp.capawesome.io/mcp",
+"category": "Developer Tools",
+"auth": "none",
+"description": "Unofficial: search the Capacitor docs for v6 and later, read pages, and list official and community plugins."
+},
+{
+"name": "Cloudflare Docs",
+"home": "https://developers.cloudflare.com",
+"url": "https://docs.mcp.cloudflare.com/mcp",
+"category": "Developer Tools",
+"auth": "none",
+"description": "Search the Cloudflare developer documentation."
+},
+{
+"name": "DeepWiki",
+"home": "https://deepwiki.com",
+"url": "https://mcp.deepwiki.com/mcp",
+"category": "Developer Tools",
+"auth": "none",
+"description": "Ask questions about any public GitHub repository's generated wiki."
+},
+{
+"name": "GO AI Tools",
+"home": "https://goaichat.app/mcp-tools",
+"url": "https://goaichat.app/mcp-tools/mcp",
+"category": "Developer Tools",
+"auth": "none",
+"description": "31 deterministic tools: image conversion, EXIF stripping, App Store assets, colour maths."
+},
+{
+"name": "Globalping",
+"home": "https://globalping.io",
+"url": "https://mcp.globalping.dev/mcp",
+"category": "Developer Tools",
+"auth": "oauth",
+"description": "Run ping, traceroute, DNS, and HTTP checks from a global probe network."
+},
+{
+"name": "Ionic Framework MCP Server by Capawesome",
+"home": "https://capawesome.io/docs/ai/mcp/ionic-framework/",
+"url": "https://ionic-framework-mcp.capawesome.io/mcp",
+"category": "Developer Tools",
+"auth": "none",
+"description": "Unofficial: search the Ionic Framework docs for v8 and v9, with the component API and usage examples."
+},
+{
+"name": "mumo",
+"home": "https://mumo.chat",
+"url": "https://mumo.chat/api/mcp",
+"category": "Developer Tools",
+"auth": "none",
+"description": "A frontier panel for your agent: Ask Claude, GPT, Grok, and more. Get their independent responses *and* reactions to each other. See what they agree with, challenge, or want to explore further — in their own words. For architecture, plan/spec review, and strategy."
+},
+{
+"name": "OpenRouter",
+"home": "https://openrouter.ai",
+"url": "https://mcp.openrouter.ai/mcp",
+"category": "Developer Tools",
+"auth": "oauth",
+"description": "Look up OpenRouter model metadata and pricing, and run completions."
+},
+{
+"name": "PartReel",
+"home": "https://partreel.com",
+"url": "https://mcp.partreel.com/mcp",
+"category": "Developer Tools",
+"auth": "none",
+"description": "Search and fetch verified KiCad parts (symbol, footprint, 3D model) for AI-assisted PCB design — 21k+ parts, CC-BY-4.0, no account needed."
+},
+{
+"name": "Postman",
+"home": "https://postman.com",
+"url": "https://mcp.postman.com/mcp",
+"category": "Developer Tools",
+"auth": "oauth",
+"description": "Work with Postman collections, environments, and APIs."
+},
+{
+"name": "Razi Tools",
+"home": "https://www.razi.pro/developer",
+"url": "https://www.razi.pro/api/mcp",
+"category": "Developer Tools",
+"auth": "none",
+"description": "28 file and text tools: merge, split and compress PDFs, OCR, image compression, SQL, QR codes, JWTs and mock data."
+},
+{
+"name": "UI Verify",
+"home": "https://uiverify.ai",
+"url": "https://uiverify.ai/api/mcp",
+"category": "Developer Tools",
+"auth": "none",
+"description": "Audit a web page for accessibility and layout issues."
+},
+{
+"name": "AMZ Vault",
+"home": "https://www.amz-vault.com",
+"url": "https://www.amz-vault.com/mcp",
+"category": "E-Commerce",
+"auth": "oauth",
+"description": "Run an Amazon seller brand from chat: profit analytics, PPC, inventory forecasting, listings, staged approvals."
+},
+{
+"name": "Nexez",
+"home": "https://nexez.ai/agents",
+"url": "https://nexez.app/mcp",
+"category": "E-Commerce",
+"auth": "none",
+"description": "Search merchants, inspect offers, and validate checkout or negotiation before buying."
+},
+{
+"name": "Sense2",
+"home": "https://sense2.com.au",
+"url": "https://sense2.com.au/api/mcp",
+"category": "E-Commerce",
+"auth": "none",
+"description": "Search 4,000+ Australian promotional products, get quantity-break quotes, browse categories and case studies."
+},
+{
+"name": "Stienhardt Diamond MCP",
+"home": "https://stienhardt.com/agents.md?utm_source=awesome_remote_mcp&utm_medium=directory&utm_campaign=diamond_mcp",
+"url": "https://diamond-mcp.stienhardt.workers.dev/mcp",
+"category": "E-Commerce",
+"auth": "none",
+"description": "Diamond education, grading-report guidance, face-up size estimates, and read-only jewelry catalog search."
+},
+{
+"name": "Ambee",
+"home": "https://ambeedata.com",
+"url": "https://api-mcp-server.ambeedata.com/mcp",
+"category": "Environment",
+"auth": "none",
+"description": "Weather, air quality, pollen, and other environmental data."
+},
+{
+"name": "GridHub",
+"home": "https://grid-hub.app/developers",
+"url": "https://api.grid-hub.app/mcp",
+"category": "Environment",
+"auth": "none",
+"description": "Live and historical electricity prices and demand for 25 grid zones (US, EU, GB, AU); free sample mode, key, or x402."
+},
+{
+"name": "Box",
+"home": "https://box.com",
+"url": "https://mcp.box.com/",
+"category": "File Storage",
+"auth": "oauth",
+"description": "Search, read, and manage files stored in Box."
+},
+{
+"name": "Aave",
+"home": "https://aave.com",
+"url": "https://mcp.aave.com",
+"category": "Finance",
+"auth": "none",
+"description": "Aave V3 and V4 lending markets, rates, wallet positions, rewards, governance, and non-custodial transaction building."
+},
+{
+"name": "Agent Souk",
+"home": "https://agentsouk.dev",
+"url": "https://api.agentsouk.dev/mcp",
+"category": "Finance",
+"auth": "none",
+"description": "Marketplace for AI agents: register with one call, hire or sell services, post USDC bounties on Base; key after sign-up."
+},
+{
+"name": "AgentWorld",
+"home": "https://agentworld.me",
+"url": "https://agentworld.me/mcp",
+"category": "Finance",
+"auth": "none",
+"description": "Live AI agent economy on Base L2 — free reads of city, agent, and job data, plus paid x402 USDC tools for agent chat, leaderboard, and SolvScore credit scoring."
+},
+{
+"name": "AlphaPipeline",
+"home": "https://alphapipeline-eu.onrender.com",
+"url": "https://alphapipeline-eu.onrender.com/mcp",
+"category": "Finance",
+"auth": "none",
+"description": "Crypto trading data for AI agents: Polymarket prediction-market arbitrage, kimchi premium alerts, on-chain token-unlock risk, token security scans, funding rates, and webpage-to-Markdown conversion; x402 pay-per-call in USDC on Base, no signup."
+},
+{
+"name": "Fruit Stand",
+"home": "https://fruitstand.dev",
+"url": "https://api.fruitstand.dev/mcp",
+"category": "Finance",
+"auth": "none",
+"description": "Historical return data for funds and tickers."
+},
+{
+"name": "Kristo Intelligence",
+"home": "https://kristo-intelligence-api.onrender.com",
+"url": "https://kristo-intelligence-api.onrender.com/mcp",
+"category": "Finance",
+"auth": "none",
+"description": "DeFi trading signals and market intelligence for agents on Base; x402 pay-per-call in USDC, no signup."
+},
+{
+"name": "Kyrodata",
+"home": "https://kyrodata.com",
+"url": "https://mcp.kyrodata.com/mcp",
+"category": "Finance",
+"auth": "oauth",
+"description": "Brazilian exports and imports by HS code and partner, plus crop production, climate and commodity forecasts."
+},
+{
+"name": "LitVM TCG Oracle",
+"home": "https://litvm.the-undesirables.com",
+"url": "https://litvm.the-undesirables.com/mcp",
+"category": "Finance",
+"auth": "none",
+"description": "TCG price oracle for the LitecoinVM ecosystem: Merkle-proven prices, calibrated forecasts, fantasy souls; 13 free tools."
+},
+{
+"name": "NuMetric",
+"home": "https://numetric.work",
+"url": "https://numetric-mcp.virifi.xyz/mcp",
+"category": "Finance",
+"auth": "oauth",
+"description": "Read-only queries over NuMetric accounting and ERP books: financial statements, KPIs, receivables and payables, invoices, and documents."
+},
+{
+"name": "Octagon",
+"home": "https://octagonagents.com",
+"url": "https://mcp.octagonagents.com/mcp",
+"category": "Finance",
+"auth": "oauth",
+"description": "Private- and public-market financial research data."
+},
+{
+"name": "Plaid",
+"home": "https://plaid.com",
+"url": "https://api.dashboard.plaid.com/mcp/sse",
+"category": "Finance",
+"auth": "token",
+"description": "Query Plaid dashboard data for connected financial accounts."
+},
+{
+"name": "Quidli Connect",
+"home": "https://connect.quid.li",
+"url": "https://mcp.connect.quid.li",
+"category": "Finance",
+"auth": "none",
+"description": "Resolve social handles to EVM and Solana wallet addresses, score onchain reputation, and send USDC to identities."
+},
+{
+"name": "Sector Pulse",
+"home": "https://sector-pulse.app",
+"url": "https://sector-pulse.app/api/mcp",
+"category": "Finance",
+"auth": "none",
+"description": "Live US sector rotation: 30 sector baskets ranked every session, versioned rosters, daily record; history needs a key."
+},
+{
+"name": "Shingou",
+"home": "https://shingou.io",
+"url": "https://api.shingou.io/mcp",
+"category": "Finance",
+"auth": "none",
+"description": "Hourly news sentiment and typed market events for 30 crypto pairs, source links on every signal, a published hash for every hour of history; data tools need a free key."
+},
+{
+"name": "StackEasy",
+"home": "https://www.stackeasy.ai/mcp",
+"url": "https://data.stackeasy.ai/mcp",
+"category": "Finance",
+"auth": "oauth",
+"description": "Your own credit cards in your AI: balances, utilization, best card for a purchase, and missed rewards, read only."
+},
+{
+"name": "The Undesirables TCG Oracle",
+"home": "https://the-undesirables.com",
+"url": "https://mcp.the-undesirables.com/mcp",
+"category": "Finance",
+"auth": "none",
+"description": "On-chain TCG price oracle: 456K+ cards, calibrated risk forecasts, AI grading, loan terms; free reads, x402 paid tools."
+},
+{
+"name": "Vantage",
+"home": "https://vantagemcp.dev",
+"url": "https://vantagemcp.dev/mcp",
+"category": "Finance",
+"auth": "oauth",
+"description": "Ask questions about cloud cost and usage data."
+},
+{
+"name": "Finology Software",
+"home": "https://finology.tech/developers/",
+"url": "https://mcp.finology.tech/mcp",
+"category": "Finance",
+"auth": "token",
+"description": "US federal student loan payments, forgiveness timing and tax, cited to primary sources."
+},
+{
+"name": "Agent Chef",
+"home": "https://agentchef.net",
+"url": "https://agentchef.net/mcp",
+"category": "Food & Dining",
+"auth": "oauth",
+"description": "Weekly family dinner ballot: propose ten recipes, household votes, top three win, grocery list minus the pantry."
+},
+{
+"name": "HeyYumi",
+"home": "https://heyyumi.ai",
+"url": "https://mcp.heyyumi.ai/mcp",
+"category": "Food & Dining",
+"auth": "oauth",
+"description": "Search verified Korean restaurants and bars by filters, then request a table booking in chat."
+},
+{
+"name": "SpaceMolt",
+"home": "https://www.spacemolt.com",
+"url": "https://game.spacemolt.com/mcp/v2",
+"category": "Gaming",
+"auth": "none",
+"description": "A massively multiplayer online game for AI agents: mine, trade, craft, explore, and fight across a 500-system galaxy."
+},
+{
+"name": "Atlas Red",
+"home": "https://atlas-red.com/mind-map-mcp",
+"url": "https://app.atlas-red.com/mcp",
+"category": "Knowledge & Memory",
+"auth": "oauth",
+"description": "Create and edit mind maps — nodes, links, and subtrees — then export them or render one as an image."
+},
+{
+"name": "docs2mcp",
+"home": "https://docs2mcp.com",
+"url": "https://mcp.docs2mcp.com/mcp",
+"category": "Knowledge & Memory",
+"auth": "oauth",
+"description": "Query your own PDFs and documents, with every answer linking to the exact page and region it came from."
+},
+{
+"name": "Flash",
+"home": "https://flashmemorize.com",
+"url": "https://flashmemorize.com/mcp",
+"category": "Knowledge & Memory",
+"auth": "oauth",
+"description": "Spaced-repetition flashcards: create cards from notes, get quizzed by voice, and let FSRS schedule reviews."
+},
+{
+"name": "notepad.page",
+"home": "https://notepad.page",
+"url": "https://mcp.notepad.page/mcp",
+"category": "Knowledge & Memory",
+"auth": "none",
+"description": "Persistent private HTML pages for AI agents and their humans: publish, recall, and update living pages with server-side state at a personal address. OAuth unlocks publishing and other protected tools."
+},
+{
+"name": "Rootr",
+"home": "https://rootr.io",
+"url": "https://rootr.io/mcp",
+"category": "Knowledge & Memory",
+"auth": "oauth",
+"description": "Read, search, and write a team workspace of documents, tables, spreadsheets, issue trackers, and CRM records, with answers citing the source paragraph."
+},
+{
+"name": "Vilix AI",
+"home": "https://vilix.ai",
+"url": "https://api.vilix.ai/mcp",
+"category": "Knowledge & Memory",
+"auth": "oauth",
+"description": "Persistent shared AI memory across tools and devices, with full history and unlimited memory on paid plans."
+},
+{
+"name": "AfterLaunch",
+"home": "https://afterlaunch.io",
+"url": "https://afterlaunch.io/api/mcp",
+"category": "Marketing",
+"auth": "none",
+"description": "AI answer visibility, SEO and a ranked backlog of growth moves as agent tools; tool calls need an AfterLaunch account."
+},
+{
+"name": "BizIntel",
+"home": "https://mcp-bizintel-production.up.railway.app",
+"url": "https://mcp-bizintel-production.up.railway.app/mcp",
+"category": "Marketing",
+"auth": "none",
+"description": "Audit websites, score local-business leads, detect technology stacks, and find businesses missing websites or booking systems."
+},
+{
+"name": "DABLOCK AI Visibility Index",
+"home": "https://dablock.ai",
+"url": "https://dablock.ai/mcp",
+"category": "Marketing",
+"auth": "none",
+"description": "Weekly share of answer for 24 crypto and Web3 brands across ChatGPT, Perplexity and Gemini, with the frozen prompt panel behind it."
+},
+{
+"name": "DABYTE AI Visibility Index",
+"home": "https://dabyte.ai",
+"url": "https://dabyte.ai/mcp",
+"category": "Marketing",
+"auth": "none",
+"description": "Weekly share of answer for 20 SaaS and AI tool brands across ChatGPT, Perplexity and Gemini, with the frozen prompt panel behind it."
+},
+{
+"name": "FoxForm",
+"home": "https://foxform.app",
+"url": "https://mcp.foxform.app/mcp",
+"category": "Marketing",
+"auth": "none",
+"description": "Build scored forms, quizzes and calculators, publish them, and read responses with per-screen analytics."
+},
+{
+"name": "Lekta",
+"home": "https://lekta.dev",
+"url": "https://lekta.dev/mcp",
+"category": "Marketing",
+"auth": "none",
+"description": "Audit a site's visibility in AI answer engines (AEO/GEO)."
+},
+{
+"name": "LogoKit",
+"home": "https://logokit.com",
+"url": "https://mcp.logokit.com/mcp",
+"category": "Marketing",
+"auth": "token",
+"description": "Company logos, brand colors, and firmographic data by domain."
+},
+{
+"name": "Mailcoach",
+"home": "https://mailcoach.app",
+"url": "https://mcp.mailcoach.app",
+"category": "Marketing",
+"auth": "oauth",
+"description": "Read subscribers, campaigns, stats and email logs; create drafts and templates, and send test emails."
+},
+{
+"name": "Vibe Prospecting",
+"home": "https://vibeprospecting.ai",
+"url": "https://vibeprospecting.explorium.ai/mcp",
+"category": "Marketing",
+"auth": "oauth",
+"description": "Search companies and contacts, enrich lead lists, and research B2B business signals."
+},
+{
+"name": "APIzone",
+"home": "https://apizone.io",
+"url": "https://apizone.io/api/mcp",
+"category": "Monitoring",
+"auth": "none",
+"description": "Check whether a third-party API is down, look up uptime history, or list recent outages across 294 independently-probed APIs (Stripe, OpenAI, AWS, GitHub, etc.)."
+},
+{
+"name": "Cloudflare Observability",
+"home": "https://developers.cloudflare.com",
+"url": "https://observability.mcp.cloudflare.com/mcp",
+"category": "Monitoring",
+"auth": "oauth",
+"description": "Query Workers logs, analytics, and error events."
+},
+{
+"name": "Grafana",
+"home": "https://grafana.com",
+"url": "https://mcp.grafana.com/mcp",
+"category": "Monitoring",
+"auth": "oauth",
+"description": "Query Grafana dashboards, datasources, and alerts."
+},
+{
+"name": "MCPulse",
+"home": "https://getmcpulse.com",
+"url": "https://api.getmcpulse.com/mcp",
+"category": "Monitoring",
+"auth": "oauth",
+"description": "Query your own MCP server's tool calls, first-call success, retries, empty results, and schema cost."
+},
+{
+"name": "Rootly",
+"home": "https://rootly.com",
+"url": "https://mcp.rootly.com/mcp",
+"category": "Monitoring",
+"auth": "oauth",
+"description": "Manage Rootly incidents, alerts, and on-call schedules."
+},
+{
+"name": "invideo",
+"home": "https://invideo.io",
+"url": "https://mcp.invideo.io/mcp",
+"category": "Multimedia",
+"auth": "none",
+"description": "Generate and edit videos from a prompt."
+},
+{
+"name": "Katto",
+"home": "https://katto.tech",
+"url": "https://mcp.katto.tech/mcp",
+"category": "Multimedia",
+"auth": "oauth",
+"description": "Turn long videos, podcasts and Twitch VODs into scored, captioned, vertical 9:16 clips."
+},
+{
+"name": "Pixly",
+"home": "https://pixly.app",
+"url": "https://pixly.app/api/mcp",
+"category": "Multimedia",
+"auth": "none",
+"description": "Stage, declutter, and enhance real-estate listing photos, and turn them into listing videos."
+},
+{
+"name": "Dodo Payments",
+"home": "https://dodopayments.com",
+"url": "https://mcp.dodopayments.com/mcp",
+"category": "Payments",
+"auth": "oauth",
+"description": "Manage Dodo Payments products, subscriptions, and payouts."
+},
+{
+"name": "Paddle",
+"home": "https://paddle.com",
+"url": "https://mcp.paddle.com/mcp",
+"category": "Payments",
+"auth": "oauth",
+"description": "Manage Paddle products, prices, subscriptions, and transactions."
+},
+{
+"name": "PayPal",
+"home": "https://paypal.com",
+"url": "https://mcp.paypal.com/mcp",
+"category": "Payments",
+"auth": "oauth",
+"description": "Create and manage PayPal invoices, orders, and payments."
+},
+{
+"name": "Square",
+"home": "https://squareup.com",
+"url": "https://mcp.squareup.com/mcp",
+"category": "Payments",
+"auth": "oauth",
+"description": "Manage Square catalog, orders, payments, and customers."
+},
+{
+"name": "Asana",
+"home": "https://asana.com",
+"url": "https://mcp.asana.com/mcp",
+"category": "Project Management",
+"auth": "oauth",
+"description": "Manage Asana tasks, projects, and portfolios."
+},
+{
+"name": "Atlassian",
+"home": "https://atlassian.com",
+"url": "https://mcp.atlassian.com/v1/mcp",
+"category": "Project Management",
+"auth": "oauth",
+"description": "Work with Jira issues and Confluence pages."
+},
+{
+"name": "ClickUp",
+"home": "https://clickup.com",
+"url": "https://mcp.clickup.com/mcp",
+"category": "Project Management",
+"auth": "oauth",
+"description": "Manage ClickUp tasks, docs, and spaces."
+},
+{
+"name": "monday.com",
+"home": "https://monday.com",
+"url": "https://mcp.monday.com/mcp",
+"category": "Project Management",
+"auth": "oauth",
+"description": "Manage monday.com boards, items, and updates."
+},
+{
+"name": "Stellary",
+"home": "https://stellary.co",
+"url": "https://api.stellary.co/mcp",
+"category": "Project Management",
+"auth": "oauth",
+"description": "AI-native project boards, cockpit, and governed agent missions over hosted Streamable HTTP."
+},
+{
+"name": "Evlek",
+"home": "https://evlek.app/mcp",
+"url": "https://evlek.app/api/mcp",
+"category": "Real Estate",
+"auth": "none",
+"description": "Search active Northern Cyprus sale and rental listings and compare asking prices by city and district."
+},
+{
+"name": "1cent",
+"home": "https://1cent.maxzoa.ru",
+"url": "https://1cent.maxzoa.ru/mcp",
+"category": "Search & Data Extraction",
+"auth": "none",
+"description": "Extract web content and metadata, discover site resources, and detect page changes, with free discovery tools and pay-per-call x402 USDC operations on Base."
+},
+{
+"name": "Bright Data",
+"home": "https://brightdata.com",
+"url": "https://mcp.brightdata.com/mcp",
+"category": "Search & Data Extraction",
+"auth": "oauth",
+"description": "Web scraping and SERP data through a managed proxy network."
+},
+{
+"name": "Cloudflare Radar",
+"home": "https://radar.cloudflare.com",
+"url": "https://radar.mcp.cloudflare.com/mcp",
+"category": "Search & Data Extraction",
+"auth": "oauth",
+"description": "Internet traffic, routing, and security trends from Cloudflare Radar."
+},
+{
+"name": "Exa",
+"home": "https://exa.ai",
+"url": "https://mcp.exa.ai/mcp",
+"category": "Search & Data Extraction",
+"auth": "none",
+"description": "Neural web search that returns full page contents."
+},
+{
+"name": "Firecrawl",
+"home": "https://firecrawl.dev",
+"url": "https://mcp.firecrawl.dev/v2/mcp",
+"category": "Search & Data Extraction",
+"auth": "none",
+"description": "Crawl, scrape, and extract structured data from websites."
+},
+{
+"name": "FTIR.fun",
+"home": "https://ftir.fun",
+"url": "https://ftir.fun/mcp",
+"category": "Search & Data Extraction",
+"auth": "oauth",
+"description": "Analyze FTIR spectra, search spectral libraries, and retrieve peak and literature evidence."
+},
+{
+"name": "Gemalli",
+"home": "https://gemalli.com/en/developers",
+"url": "https://gemalli.com/api/mcp",
+"category": "Search & Data Extraction",
+"auth": "none",
+"description": "Search verified manufacturers, screen counterparties against UN/OFAC/EU sanctions lists, and look up HS codes and dual-use export controls for cross-border trade."
+},
+{
+"name": "gluten-free.fr",
+"home": "https://gluten-free.fr",
+"url": "https://gluten-free.fr/api/mcp",
+"category": "Search & Data Extraction",
+"auth": "none",
+"description": "Verified gluten-free product catalogue and comparison data for the French market."
+},
+{
+"name": "GovAuctions.app",
+"home": "https://govauctions.app",
+"url": "https://govauctions.app/api/mcp",
+"category": "Search & Data Extraction",
+"auth": "none",
+"description": "Search live government surplus auction lots in the US, UK, CA and AU, with sold-price comps and resale scores."
+},
+{
+"name": "LiveDataLink",
+"home": "https://livedatalink.ai",
+"url": "https://livedatalink.ai/mcp",
+"category": "Search & Data Extraction",
+"auth": "none",
+"description": "Query 294 tools across 60 public-data domains, spanning sanctions, courts, markets, health, energy, and government."
+},
+{
+"name": "Realask",
+"home": "https://realask.net",
+"url": "https://realask.net/mcp",
+"category": "Search & Data Extraction",
+"auth": "none",
+"description": "Verify facts about US local businesses by phone — stock, all-in price, availability — as typed answers with evidence."
+},
+{
+"name": "Simplescraper",
+"home": "https://simplescraper.io",
+"url": "https://mcp.simplescraper.io/mcp",
+"category": "Search & Data Extraction",
+"auth": "oauth",
+"description": "Scrape websites and run saved extraction recipes."
+},
+{
+"name": "Tavily",
+"home": "https://tavily.com",
+"url": "https://mcp.tavily.com/mcp",
+"category": "Search & Data Extraction",
+"auth": "oauth",
+"description": "Web search and content extraction built for agents."
+},
+{
+"name": "Promptguard",
+"home": "https://mcp.glc-rag.hu/guide/promptguard",
+"url": "https://mcp.glc-rag.hu/mcp",
+"category": "Security",
+"auth": "token",
+"description": "Layered prompt-injection checks for LLM hosts; 100 welcome credits on signup."
+},
+{
+"name": "Semgrep",
+"home": "https://semgrep.dev",
+"url": "https://mcp.semgrep.ai/mcp",
+"category": "Security",
+"auth": "oauth",
+"description": "Scan code for security and correctness findings with Semgrep rules."
+},
+{
+"name": "AdminHub for Telegram",
+"home": "https://adminhub.tools/mcp/",
+"url": "https://backend-git-production-cb93.up.railway.app/mcp",
+"category": "Social Media",
+"auth": "oauth",
+"description": "Publish to a Telegram channel through your own bot, and read its stats and subscribers."
+},
+{
+"name": "Mysocial",
+"home": "https://mysocial.io/mcp/",
+"url": "https://app.mysocial.io/mcp",
+"category": "Social Media",
+"auth": "oauth",
+"description": "Read a creator's own Instagram, TikTok, YouTube, LinkedIn and Threads history: posts, metrics, transcripts, comments and audience."
+},
+{
+"name": "OmniSocials",
+"home": "https://omnisocials.com",
+"url": "https://mcp.omnisocials.com/",
+"category": "Social Media",
+"auth": "token",
+"description": "Publish and schedule posts across social networks."
+},
+{
+"name": "PostLake",
+"home": "https://postlake.dev",
+"url": "https://api.postlake.dev/mcp",
+"category": "Social Media",
+"auth": "oauth",
+"description": "Publish, schedule, and read analytics across X, LinkedIn, Instagram, TikTok, Facebook, Threads, Bluesky, YouTube, and Pinterest from one hosted MCP server."
+},
+{
+"name": "SocialBu",
+"home": "https://socialbu.com/mcp-server",
+"url": "https://socialbu.com/mcp",
+"category": "Social Media",
+"auth": "oauth",
+"description": "Create, schedule, publish, and analyze social media content; manage accounts, teams, and automations."
+},
+{
+"name": "Social Fetch",
+"home": "https://www.socialfetch.dev",
+"url": "https://api.socialfetch.dev/mcp",
+"category": "Social Media",
+"auth": "none",
+"description": "Hosted MCP for a social media scraping API: public profiles, posts, comments, and transcripts, live on every request."
+},
+{
+"name": "Intercom",
+"home": "https://intercom.com",
+"url": "https://mcp.intercom.com/mcp",
+"category": "Support & Service Management",
+"auth": "oauth",
+"description": "Search Intercom conversations, contacts, and help-center articles."
+},
+{
+"name": "Alice Flights",
+"home": "https://mcp.alice.co.il",
+"url": "https://mcp.alice.co.il/mcp",
+"category": "Travel & Transportation",
+"auth": "oauth",
+"description": "Search worldwide flights from Alice, one of Israel's best-known travel apps, including Tel Aviv routes, with English and Hebrew results tagged best, cheapest, and fastest."
+},
+{
+"name": "Fireflies",
+"home": "https://fireflies.ai",
+"url": "https://api.fireflies.ai/mcp",
+"category": "Workplace & Productivity",
+"auth": "oauth",
+"description": "Search meeting transcripts, summaries, and action items."
+},
+{
+"name": "NoClick",
+"home": "https://www.noclick.com/mcp",
+"url": "https://api.noclick.io/mcp",
+"category": "Workplace & Productivity",
+"auth": "oauth",
+"description": "Build, run, and monitor workflows and background AI agents across connected apps."
+},
+{
+"name": "ResuMakeAi",
+"home": "https://www.resumakeai.com",
+"url": "https://www.resumakeai.com/api/mcp",
+"category": "Workplace & Productivity",
+"auth": "none",
+"description": "Score a resume against a job description for ATS parsing, match percentage, and missing keywords."
+},
+{
+"name": "BioVet",
+"home": "https://bio.vet/",
+"url": "https://bio.vet/mcp",
+"category": "Other Tools & Integrations",
+"auth": "none",
+"description": "Find a 24/7 vet clinic in Moscow, check live prices and free doctor slots, book a visit, and triage symptoms."
+},
+{
+"name": "Human Design",
+"home": "https://www.gethumandesign.com/mcp-docs/",
+"url": "https://api.gethumandesign.com/mcp",
+"category": "Other Tools & Integrations",
+"auth": "oauth",
+"description": "Calculate Human Design bodygraphs from birth data, compare two people, and analyse group dynamics."
+},
+{
+"name": "Perspect",
+"home": "https://tryperspect.com",
+"url": "https://perspect-ai-backend.onrender.com/mcp",
+"category": "Other Tools & Integrations",
+"auth": "none",
+"description": "Convene a panel of expert AI personas to debate any decision from every side; running a debate needs a Pro key."
+},
+{
+"name": "Tseha",
+"home": "https://tseha.io",
+"url": "https://tseha.io/mcp",
+"category": "Other Tools & Integrations",
+"auth": "none",
+"description": "Ethiopian calendar and date conversion."
+},
+{
+"name": "turva.dev",
+"home": "https://turva.dev",
+"url": "https://mcp.turva.dev/mcp",
+"category": "Other Tools & Integrations",
+"auth": "none",
+"description": "Read the turva.dev service catalog, pricing, agent-readiness score, and published security scan results."
+},
+{
+"name": "Zip1",
+"home": "https://zip1.io",
+"url": "https://zip1.io/mcp",
+"category": "Other Tools & Integrations",
+"auth": "none",
+"description": "Shorten URLs with custom or emoji slugs, optional password and click limits, and read their click analytics."
+}
+]

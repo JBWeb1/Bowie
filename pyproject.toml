@@ -25,4 +25,4 @@ include = ["docks*"]
 
 [tool.setuptools.package-data]
 "docks.web" = ["*.html", "app/*", "assets/*", "assets/*/*"]
-"docks" = ["builtin/commands/*.md", "builtin/output-styles/*.md", "builtin/agents/*.md"]
+"docks" = ["builtin/commands/*.md", "builtin/output-styles/*.md", "builtin/agents/*.md", "data/*.json"]

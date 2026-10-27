@@ -184,8 +184,9 @@ def test_catalog_specs_and_listing(tmp_path, monkeypatch):
     assert mcp_catalog.build_spec(fs)["args"][-1] == os.path.expanduser("~/Documents")
     monkeypatch.setattr(mcp_catalog.shutil, "which", lambda name: None)
     assert "Node.js" in mcp_catalog.missing_tool(fs) and mcp_catalog.missing_tool(mcp_catalog.find("notion")) is None
-    cats = [a["category"] for a in mcp_catalog.listing()]
-    assert all(c == cats[i - 1] or c not in cats[:i] for i, c in enumerate(cats))  # grouped
+    for source in ("featured", "community"):  # featured apps first, then the community list; each grouped by category
+        cats = [a["category"] for a in mcp_catalog.listing() if a["source"] == source]
+        assert all(c == cats[i - 1] or c not in cats[:i] for i, c in enumerate(cats))
     assert {a["status"] for a in mcp_catalog.listing()} == {"not-connected"}
 
 

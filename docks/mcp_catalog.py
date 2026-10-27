@@ -5,8 +5,11 @@ Addresses come from each vendor's published MCP server. If an app moves its serv
 ~/.docks/mcp.json (or remove and connect it again).
 """
 
+import json
 import os
+import re
 import shutil
+from pathlib import Path
 
 # auth: "oauth" (sign in through your browser), "github" (uses your connected GitHub account),
 #       "token" (an API key from an environment variable), or "none".
@@ -61,12 +64,44 @@ APPS = [
 ]
 
 
+def _slug(name: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+
+
+def _community() -> list[dict]:
+    """Remote servers from the community list awesome-remote-mcp-servers (each answered an MCP handshake when it was listed)."""
+    path = Path(__file__).parent / "data" / "remote_mcp.json"
+    try:
+        rows = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return []
+    taken, out = {a["id"] for a in APPS}, []
+    for r in rows:
+        sid = _slug(r["name"])
+        if sid in taken:
+            sid += "-mcp"
+        taken.add(sid)
+        spec = {"type": "sse" if r["url"].rstrip("/").endswith("/sse") else "http", "url": r["url"]}
+        app = {"id": sid, "name": r["name"], "category": r["category"], "auth": r["auth"], "description": r["description"],
+               "home": r.get("home", ""), "source": "community", "spec": spec}
+        if r["auth"] == "token":
+            app["env"] = sid.upper().replace("-", "_") + "_API_KEY"
+            spec["headers"] = {"Authorization": "Bearer ${" + app["env"] + "}"}
+        out.append(app)
+    return out
+
+
+APPS += _community()
+
+
 def find(app_id: str) -> dict | None:
     return next((a for a in APPS if a["id"] == app_id.lower()), None)
 
 
 def missing_tool(app: dict) -> str | None:
     """The program a local app needs that isn't installed, if any."""
+    if app.get("env") and not os.environ.get(app["env"]):
+        return f"{app['env']} in your environment"
     needs = app.get("needs")
     if needs and not shutil.which(needs):
         return {"npx": "Node.js (for npx)", "uvx": "uv (for uvx): https://docs.astral.sh/uv/"}.get(needs, needs)
@@ -87,9 +122,10 @@ def build_spec(app: dict, values: dict | None = None) -> dict:
 def listing(manager=None) -> list[dict]:
     """The catalog, marked with what's connected and what needs a sign-in."""
     out, order = [], list(dict.fromkeys(a["category"] for a in APPS))
-    for app in sorted(APPS, key=lambda a: order.index(a["category"])):
+    for app in sorted(APPS, key=lambda a: (a.get("source") == "community", order.index(a["category"]))):
         server = manager.servers.get(app["id"]) if manager else None
         out.append({**{k: app[k] for k in ("id", "name", "category", "description", "auth")},
+                    "source": app.get("source", "featured"), "home": app.get("home", ""),
                     "inputs": app.get("inputs", []), "missing": missing_tool(app),
                     "status": server.status if server else "not-connected"})
     return out
