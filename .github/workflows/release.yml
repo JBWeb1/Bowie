@@ -1,0 +1,52 @@
+name: Windows app
+# Builds Bowers.exe and Bowers-Setup-<version>.exe on Windows. Push a tag like v1.0.0 to publish a release
+# (the app's updater offers it to everyone); run it by hand to just build the installer as an artifact.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Bowers and PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[labs]" pyinstaller
+      - name: Version
+        id: v
+        shell: pwsh
+        run: |
+          $v = python -c "import docks; print(docks.__version__)"
+          "version=$v" >> $env:GITHUB_OUTPUT
+      - name: Build Bowers.exe
+        run: pyinstaller --noconfirm --distpath dist --workpath build packaging/bowers.spec
+      - name: Smoke test
+        shell: pwsh
+        run: |
+          .\dist\Bowers\bowers-cli.exe --version
+          .\dist\Bowers\bowers-cli.exe care overview
+          .\dist\Bowers\bowers-cli.exe integrations list | Select-Object -First 5
+      - name: Build the installer
+        shell: pwsh
+        run: |
+          if (-not (Get-Command iscc -ErrorAction SilentlyContinue)) { choco install innosetup -y --no-progress }
+          $iscc = (Get-Command iscc -ErrorAction SilentlyContinue).Source
+          if (-not $iscc) { $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
+          & $iscc /DAppVersion=${{ steps.v.outputs.version }} packaging\installer.iss
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Bowers-Setup-${{ steps.v.outputs.version }}
+          path: dist/Bowers-Setup-*.exe
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/Bowers-Setup-*.exe
+          generate_release_notes: true

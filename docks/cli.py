@@ -1291,6 +1291,24 @@ def main(argv=None) -> int:
         return context_main(argv[1:])
     if argv[:1] in (["image"], ["images"]):
         return image_main(argv[1:])
+    if argv[:1] == ["update"]:
+        from . import updater
+        info = updater.check(force=True)
+        if info.get("error"):
+            ui.error(info["error"])
+            return 1
+        if not info["newer"]:
+            print(ui.dim(f"Bowers {info['current']} is the newest version"))
+            return 0
+        print(ui.bold(f"Bowers {info['latest']} is out") + ui.dim(f" (you have {info['current']})"))
+        if "--check" in argv:
+            return 0
+        try:
+            print(ui.green(updater.apply(lambda t: print(ui.dim(t)))))
+        except RuntimeError as e:
+            ui.error(str(e))
+            return 1
+        return 0
     if argv[:1] in (["integrations"], ["integration"], ["int"]):
         return integrations_main(argv[1:])
     if argv[:1] == ["app"]:
@@ -1353,7 +1371,7 @@ def main(argv=None) -> int:
                         help="permission rule to allow without asking, e.g. 'Bash(npm test:*)' or Edit; repeatable")
     parser.add_argument("--deny", "--disallowedTools", dest="deny", action="append", default=[], metavar="RULE",
                         help="permission rule to always refuse; repeatable")
-    parser.add_argument("--version", action="version", version=f"docks {__version__}")
+    parser.add_argument("--version", action="version", version=f"Bowers {__version__}")
     args = parser.parse_args(argv)
     script_out = None
     if args.print:  # keep stdout for the answer alone; setup messages go to stderr

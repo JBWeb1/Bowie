@@ -100,3 +100,28 @@ def test_real_model_builds_and_runs_a_script(tmp_path):
     agent.run("Write add.py that prints the sum of 2 and 3, run it, and tell me the output.")
     assert (tmp_path / "add.py").is_file()
     assert "5" in agent.last_text()
+
+
+def test_update_check(monkeypatch, tmp_path):
+    from http.server import BaseHTTPRequestHandler
+    from docks import updater
+
+    class H(BaseHTTPRequestHandler):
+        def log_message(self, *a):
+            pass
+
+        def do_GET(self):
+            data = json.dumps({"tag_name": "v9.1.0", "body": "New things", "html_url": "https://x",
+                               "assets": [{"name": "Bowers-Setup-9.1.0.exe", "browser_download_url": "https://x/setup.exe"}]}).encode()
+            self.send_response(200)
+            self.send_header("content-length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    monkeypatch.setenv("BOWERS_UPDATE_API", f"http://127.0.0.1:{srv.server_port}/latest")
+    info = updater.check(force=True)
+    assert info["newer"] and info["latest"] == "9.1.0" and info["installer"].endswith("setup.exe")
+    assert updater.check()["newer"]  # cached for a day
+    monkeypatch.setenv("BOWERS_NO_UPDATE_CHECK", "1")
+    assert updater.check(force=True)["newer"] is False

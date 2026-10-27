@@ -1,3 +1,3 @@
-"""Bowers: an AI coding agent for your terminal."""
+"""Bowers: an AI agent that thinks, creates and builds with you."""
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"

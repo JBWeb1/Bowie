@@ -95,3 +95,15 @@ function onIntegrationEvent(ev) {
     toast(ev.error ? `${name}: ${ev.error}` : `${name} is installed`); if (!ev.error) syncState(); if (page === 'integrations') renderIntegrations(); }
 }
 function panelTerminal() { const box = $('panel-term'); if (box.children.length) return; ideTab('term'); box.replaceChildren(...$('ide-pane').childNodes); }
+
+// ---------------------------------------------------------------- updates
+async function checkUpdate() {
+  const r = await api('/api/update').catch(() => null); if (!r?.ok) return; const u = await r.json();
+  if (!u.newer) return;
+  $('side-update').classList.remove('hidden'); $('side-update-v').textContent = `Bowers ${u.latest} (you have ${u.current})`;
+  $('side-update').onclick = async () => {
+    if (!confirm(`Install Bowers ${u.latest}?\n\n${(u.notes || '').slice(0, 600)}`)) return;
+    toast('Updating…'); const rr = await api('/api/update', {}); const d = await rr.json(); toast(d.text || d.error);
+  };
+}
+setTimeout(checkUpdate, 4000);

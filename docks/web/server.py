@@ -712,6 +712,9 @@ def make_handler(session: Session, token: str, preview: dict, allowed_hosts: set
             if path == "/api/arena":
                 from .. import labs
                 return self._json(200, {"board": labs.leaderboard()})
+            if path == "/api/update":
+                from .. import updater
+                return self._json(200, updater.check())
             if path == "/api/integrations":
                 from .. import integrations
                 return self._json(200, {"items": integrations.listing(), "installing": session.installing,
@@ -1007,6 +1010,12 @@ def make_handler(session: Session, token: str, preview: dict, allowed_hosts: set
                 except integrations.InstallError as e:
                     return self._json(400, {"error": str(e)})
                 return self._json(404, {"error": "not found"})
+            if path == "/api/update":
+                from .. import updater
+                try:
+                    return self._json(200, {"text": updater.apply(lambda t: None)})
+                except Exception as e:
+                    return self._json(400, {"error": str(e)})
             if path == "/api/voice/speak":
                 from .. import voice
                 try:
@@ -1259,7 +1268,7 @@ def serve(agent: Agent, host: str = "127.0.0.1", port: int = 8788, open_browser:
         threading.Thread(target=server.serve_forever, daemon=True).start()
     url = f"http://{shown_host}:{port}/#token={token}"
     print(f"Bowers is running in your browser: {url}")
-    print(f"  project: {agent.root}")
+    print(f"  project: {agent.root}", flush=True)
     if host not in ("127.0.0.1", "localhost", "::1"):
         print("  warning: reachable from your network. Anyone with the link can run commands on this machine.")
     if open_browser and app:
@@ -1272,5 +1281,5 @@ def serve(agent: Agent, host: str = "127.0.0.1", port: int = 8788, open_browser:
     except KeyboardInterrupt:
         session.stop()
     finally:
-        app.shutdown()
+        main_server.shutdown()
         preview.shutdown()
