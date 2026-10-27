@@ -546,16 +546,23 @@ $('top-search').onclick = () => openCmdk();
 document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); $('cmdk').classList.contains('hidden') ? openCmdk() : closeCmdk(); } });
 
 // ---------------------------------------------------------------- Bowie's voice (voice studio)
-const VOICE = { get engine() { return store.get('bowie-voice-engine', 'browser'); }, get name() { return store.get('bowie-voice-name', ''); },
-  get pitch() { return +store.get('bowie-voice-pitch', '1.35'); }, get rate() { return +store.get('bowie-voice-rate', '1.05'); }, get eleven() { return store.get('bowie-voice-eleven', ''); } };
-let voiceAudio = null;
+const VOICE = { get engine() { return store.get('bowie-voice-engine', '') || (voiceInfo?.local ? 'local' : 'browser'); }, get name() { return store.get('bowie-voice-name', ''); },
+  get pitch() { return +store.get('bowie-voice-pitch', '1.35'); }, get rate() { return +store.get('bowie-voice-rate', '1.05'); }, get eleven() { return store.get('bowie-voice-eleven', ''); },
+  get local() { return store.get('bowie-voice-local', 'am_puck'); }, get localSpeed() { return +store.get('bowie-voice-local-speed', '1'); } };
+let voiceAudio = null, voiceInfo = null;
+async function loadVoiceInfo() { try { voiceInfo = await (await api('/api/voice')).json(); } catch (e) { voiceInfo = { available: false, voices: [] }; } return voiceInfo; }
+function playVoice(blob, onEnd) { voiceAudio = new Audio(URL.createObjectURL(blob)); voiceAudio.onended = () => onEnd?.(); voiceAudio.play().catch(() => onEnd?.()); }
 function speakable(text) { return text.replace(/```[\s\S]*?```/g, ' (code on screen) ').replace(/`([^`]+)`/g, '$1').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[#*_>|~-]{1,3}/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 1200); }
 async function speak(text, onEnd) {
   text = speakable(text); if (!text) { onEnd?.(); return; }
   stopSpeaking();
-  if (VOICE.engine === 'eleven' && VOICE.eleven) {
+  if (VOICE.engine === 'local') {
+    const r = await api('/api/voice/speak', { text, engine: 'local', voice: VOICE.local, speed: VOICE.localSpeed });
+    if (r.ok) return playVoice(await r.blob(), onEnd);
+    toast((await r.json()).error + ' (using the built-in voice)');
+  } else if (VOICE.engine === 'eleven' && VOICE.eleven) {
     const r = await api('/api/voice/speak', { text, voice: VOICE.eleven });
-    if (r.ok) { voiceAudio = new Audio(URL.createObjectURL(await r.blob())); voiceAudio.onended = () => onEnd?.(); voiceAudio.play().catch(() => onEnd?.()); return; }
+    if (r.ok) return playVoice(await r.blob(), onEnd);
     toast((await r.json()).error + ' (using the built-in voice)');
   }
   if (!('speechSynthesis' in window)) { onEnd?.(); return; }
@@ -570,25 +577,31 @@ function bowieDefaultVoice() {  // a bright, friendly voice in the page's langua
 async function renderVoiceStudio() {
   const p = document.querySelector('[data-sp="voice"]'); if (!p) return;
   const vs = ('speechSynthesis' in window) ? speechSynthesis.getVoices() : [];
-  const ev = await (await api('/api/voice')).json().catch(() => ({ available: false, voices: [] }));
+  const ev = await loadVoiceInfo();
   p.innerHTML = `<div class="set-card"><div class="voice-hero"><img src="${STICKER('listening')}" alt=""><div><b>Bowie's voice</b><br><small class="muted">Used by Bowers Aether voice mode and "Read aloud". Pick a voice that suits Bowie: small, warm and friendly.</small></div></div>
-    <label>Voice engine<select class="input" id="vs-engine"><option value="browser">Built-in (free, works offline)</option><option value="eleven" ${ev.available ? '' : 'disabled'}>ElevenLabs ${ev.available ? '' : '(add ELEVENLABS_API_KEY)'}</option></select></label>
+    <label>Voice engine<select class="input" id="vs-engine"><option value="browser">Built-in browser voice (free)</option><option value="local" ${ev.local ? '' : 'disabled'}>Kokoro on this computer (free, offline, natural)${ev.local ? '' : ' (install in Integrations)'}</option><option value="eleven" ${ev.available ? '' : 'disabled'}>ElevenLabs ${ev.available ? '' : '(add ELEVENLABS_API_KEY)'}</option></select></label>
+    <div id="vs-local" class="hidden"><label>Kokoro voice<select class="input" id="vs-lv">${(ev.local_voices || []).map(v => `<option value="${esc(v.id)}" ${v.id === VOICE.local ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}</select></label>
+      <div class="voice-row"><label>Speed <input type="range" id="vs-lspeed" min="0.7" max="1.4" step="0.05" value="${VOICE.localSpeed}"></label></div>
+      <small class="muted">Runs on your computer with the open Kokoro model. Nothing you say leaves this machine.</small></div>
     <div id="vs-browser"><label>Voice<select class="input" id="vs-name"><option value="">Bowie's pick</option>${vs.map(v => `<option ${v.name === VOICE.name ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}</select></label>
       <div class="voice-row"><label>Pitch <input type="range" id="vs-pitch" min="0.6" max="2" step="0.05" value="${VOICE.pitch}"></label><label>Speed <input type="range" id="vs-rate" min="0.6" max="1.6" step="0.05" value="${VOICE.rate}"></label></div></div>
     <div id="vs-eleven" class="hidden"><label>ElevenLabs voice<select class="input" id="vs-el">${(ev.voices || []).map(v => `<option value="${esc(v.id)}" ${v.id === VOICE.eleven ? 'selected' : ''}>${esc(v.name)}${v.category ? ' (' + esc(v.category) + ')' : ''}</option>`).join('') || '<option value="">No voices found</option>'}</select></label>
       <small class="muted">${ev.error ? esc(ev.error) : 'Tip: in ElevenLabs Voice Design, describe "a small, cheerful, fluffy orange mascot with a warm, slightly high, playful voice", save it, and pick it here.'}</small></div>
     <div class="voice-row"><button class="btn primary" id="vs-test">${icon('play', 13)} Hear Bowie</button><button class="btn ghost" id="vs-stop">Stop</button></div></div>`;
-  const engine = p.querySelector('#vs-engine'); engine.value = ev.available ? VOICE.engine : 'browser';
-  const sync = () => { p.querySelector('#vs-browser').classList.toggle('hidden', engine.value !== 'browser'); p.querySelector('#vs-eleven').classList.toggle('hidden', engine.value !== 'eleven'); };
+  const engine = p.querySelector('#vs-engine'); engine.value = (VOICE.engine === 'eleven' && !ev.available) || (VOICE.engine === 'local' && !ev.local) ? 'browser' : VOICE.engine;
+  const sync = () => { for (const k of ['browser', 'local', 'eleven']) p.querySelector('#vs-' + k).classList.toggle('hidden', engine.value !== k); };
   engine.onchange = () => { store.set('bowie-voice-engine', engine.value); sync(); }; sync();
   p.querySelector('#vs-name').onchange = e => store.set('bowie-voice-name', e.target.value);
   p.querySelector('#vs-pitch').oninput = e => store.set('bowie-voice-pitch', e.target.value);
   p.querySelector('#vs-rate').oninput = e => store.set('bowie-voice-rate', e.target.value);
   p.querySelector('#vs-el').onchange = e => store.set('bowie-voice-eleven', e.target.value);
+  p.querySelector('#vs-lv').onchange = e => store.set('bowie-voice-local', e.target.value);
+  p.querySelector('#vs-lspeed').oninput = e => store.set('bowie-voice-local-speed', e.target.value);
   if (ev.available && !VOICE.eleven && ev.voices?.[0]) store.set('bowie-voice-eleven', ev.voices[0].id);
   p.querySelector('#vs-test').onclick = () => speak(`Hi${profileName ? ' ' + profileName : ''}! I'm Bowie. I can build apps, make videos, fix your computer, and remember what matters to you.`);
   p.querySelector('#vs-stop').onclick = stopSpeaking;
 }
+loadVoiceInfo();
 if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => { if (document.querySelector('[data-sp="voice"]:not(.hidden)')) renderVoiceStudio(); };
 
 // ---------------------------------------------------------------- Bowers Aether: voice assistant (Jarvis-style)
@@ -597,6 +610,7 @@ function hudStatus(text) { $('hud-status').textContent = text; }
 function hudLine(text, cls = '') { const l = h('div', 'hl ' + cls); l.textContent = text; $('hud-log').appendChild(l); while ($('hud-log').children.length > 30) $('hud-log').firstChild.remove(); l.scrollIntoView({ block: 'end' }); return l; }
 async function openHud() {
   if (!isAether() && !(await pickModel('aether'))) return;
+  if (!voiceInfo) loadVoiceInfo();
   HUD.open = true; $('hud').classList.remove('hidden');
   $('hud-bowie').src = '/assets/art/aether-hero.webp';
   if (!$('hud-chips').children.length) for (const [label, prompt] of [["What's next?", 'Looking at this project and what we did recently, what should I do next? Give me the top three.'],
@@ -631,7 +645,7 @@ function hudEvent(ev) {
 }
 function startListening(handsFree = false) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { hudStatus('Voice input needs Chrome or Edge. You can still type.'); return; }
+  if (!SR) { if (voiceInfo?.stt && navigator.mediaDevices && window.MediaRecorder) return recordAndTranscribe(); hudStatus('Voice input needs Chrome or Edge, or the faster-whisper integration. You can still type.'); return; }
   stopSpeaking(); stopListening();
   const rec = new SR(); HUD.rec = rec; rec.lang = navigator.language || 'en-US'; rec.interimResults = true; rec.continuous = handsFree;
   let finalText = '';
@@ -645,6 +659,24 @@ function startListening(handsFree = false) {
   rec.onerror = e => { if (e.error !== 'no-speech' && e.error !== 'aborted') hudStatus('Microphone: ' + e.error); };
   rec.onend = () => { HUD.listening = false; $('hud').classList.remove('listening'); if (!handsFree && finalText.trim()) hudAsk(finalText.trim()); else if (handsFree && HUD.hands && !HUD.waiting) setTimeout(() => startListening(true), 300); };
   try { rec.start(); } catch (e) { hudStatus('Could not start the microphone'); }
+}
+async function recordAndTranscribe() {  // faster-whisper on this computer: tap the mic to start, tap again to send
+  stopSpeaking();
+  let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { hudStatus('Microphone: ' + e.message); return; }
+  const chunks = [], mr = new MediaRecorder(stream);
+  HUD.rec = { stop: () => mr.state !== 'inactive' && mr.stop() }; HUD.listening = true; $('hud').classList.add('listening'); hudStatus('Listening… tap the mic when you\'re done.');
+  const limit = setTimeout(() => HUD.rec?.stop(), 30000);
+  mr.ondataavailable = e => e.data.size && chunks.push(e.data);
+  mr.onstop = async () => {
+    clearTimeout(limit); stream.getTracks().forEach(t => t.stop()); HUD.listening = false; $('hud').classList.remove('listening');
+    if (!chunks.length || !HUD.open) return;
+    hudStatus('Understanding…');
+    const blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' });
+    const audio = await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(blob); });
+    const r = await api('/api/voice/transcribe', { audio }); const d = await r.json();
+    if (!r.ok) return hudStatus(d.error); if (d.text) hudAsk(d.text); else hudStatus("I didn't catch that. Try again?");
+  };
+  mr.start();
 }
 function stopListening() { if (HUD.rec) { const r = HUD.rec; HUD.rec = null; r.onend = null; try { r.stop(); } catch (e) {} } HUD.listening = false; $('hud').classList.remove('listening'); }
 $('hud-mic').onclick = () => HUD.listening ? stopListening() : startListening(false);

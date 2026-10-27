@@ -705,10 +705,11 @@ def make_handler(session: Session, token: str, preview: dict, allowed_hosts: set
                 return self._json(200, graph.overview(root, session.agent, prof.load().get("name", "")))
             if path == "/api/voice":
                 from .. import voice
+                local = {"local": voice.local_available(), "local_voices": voice.local_voices(), "stt": voice.stt_available()}
                 try:
-                    return self._json(200, {"available": voice.available(), "voices": voice.voices() if voice.available() else []})
+                    return self._json(200, {"available": voice.available(), "voices": voice.voices() if voice.available() else [], **local})
                 except voice.VoiceError as e:
-                    return self._json(200, {"available": True, "voices": [], "error": str(e)})
+                    return self._json(200, {"available": True, "voices": [], "error": str(e), **local})
             if path == "/api/arena":
                 from .. import labs
                 return self._json(200, {"board": labs.leaderboard()})
@@ -1018,15 +1019,25 @@ def make_handler(session: Session, token: str, preview: dict, allowed_hosts: set
                     return self._json(400, {"error": str(e)})
             if path == "/api/voice/speak":
                 from .. import voice
+                local = body.get("engine") == "local"
                 try:
-                    audio = voice.speak(str(body.get("text", "")), str(body.get("voice", "")))
-                except voice.VoiceError as e:
+                    audio = (voice.speak_local(str(body.get("text", "")), str(body.get("voice", "")), float(body.get("speed") or 1))
+                             if local else voice.speak(str(body.get("text", "")), str(body.get("voice", ""))))
+                except (voice.VoiceError, ValueError) as e:
                     return self._json(400, {"error": str(e)})
                 self.send_response(200)
-                self.send_header("content-type", "audio/mpeg")
+                self.send_header("content-type", "audio/wav" if local else "audio/mpeg")
                 self.send_header("content-length", str(len(audio)))
                 self.end_headers()
                 return self.wfile.write(audio)
+            if path == "/api/voice/transcribe":
+                from .. import voice
+                try:
+                    return self._json(200, {"text": voice.transcribe(str(body.get("audio", "")))})
+                except voice.VoiceError as e:
+                    return self._json(400, {"error": str(e)})
+                except Exception as e:  # a recording the decoder can't read
+                    return self._json(400, {"error": f"couldn't understand the recording: {e}"})
             if path == "/api/terminal":  # the Forge terminal: you typing a command yourself
                 from ..tools import ToolError, bash
                 command = str(body.get("command", "")).strip()

@@ -103,6 +103,18 @@ def test_templates_tools_prereqs_and_failures(catalog, monkeypatch):
     entry(id="fine", name="Fine", kind="tool", steps=[f'"{sys.executable}" -c "print(1)"'])
     I.install("fine", log=lambda t: None)
     assert I.status(I.find("fine")) == "installed"
+    called = []
+    monkeypatch.setattr(I, "_test_hook", lambda log: called.append(log("fetched")) , raising=False)
+    entry(id="model", name="Model", kind="tool", check="call:docks.integrations:_test_ready",
+          steps=[{"py": "json-already-there", "module": "json"}, {"call": "docks.integrations:_test_hook", "say": "fetch the model"}])
+    monkeypatch.setattr(I, "_test_ready", lambda: bool(called), raising=False)
+    assert I.status(I.find("model")) == "not-installed" and "fetch the model" in I.plan(I.find("model"))
+    lines = []
+    I.install("model", log=lines.append)
+    assert called and "json-already-there is already available" in lines and I.status(I.find("model")) == "installed"
+    monkeypatch.setattr(I, "_test_hook", lambda log: 1 / 0, raising=False)
+    with pytest.raises(I.InstallError, match="couldn't fetch the model"):
+        I.install("model", log=lambda t: None)
 
 
 def test_real_catalog_is_consistent():

@@ -846,6 +846,38 @@ def context_main(argv) -> int:
     return 0
 
 
+def voices_main(argv) -> int:
+    """bowers voices [list|install|say TEXT]: Bowie's local Kokoro voice."""
+    import argparse
+    from . import voice
+    parser = argparse.ArgumentParser(prog="bowers voices", description="Bowie's local voice (Kokoro, runs offline)")
+    parser.add_argument("cmd", nargs="?", choices=["list", "install", "say"], default="list")
+    parser.add_argument("text", nargs="*", help="what to say (for say)")
+    parser.add_argument("--voice", default=voice.DEFAULT_LOCAL)
+    parser.add_argument("--speed", type=float, default=1.0)
+    parser.add_argument("-o", "--out", default="bowie.wav", help="where to save the audio (for say)")
+    args = parser.parse_args(argv)
+    try:
+        if args.cmd == "install":
+            voice.install_local(lambda t: print(ui.dim(t)))
+            if not voice.local_available():
+                print("Now install the Python package: pip install kokoro-onnx")
+            return 0
+        if args.cmd == "say":
+            Path(args.out).write_bytes(voice.speak_local(" ".join(args.text) or "Hi! I'm Bowie.", args.voice, args.speed))
+            print(f"saved {args.out}")
+            return 0
+    except voice.VoiceError as e:
+        ui.error(str(e))
+        return 1
+    if not voice.local_available():
+        print("The local voice isn't installed. Run: bowers voices install  (and pip install kokoro-onnx)")
+        return 0
+    for v in voice.local_voices():
+        print(f"  {v['id']:<12} {v['name']}" + ui.dim("  (default)" if v["id"] == voice.DEFAULT_LOCAL else ""))
+    return 0
+
+
 def image_main(argv) -> int:
     from . import images
     parser = argparse.ArgumentParser(prog="bowers image", description="Make an image with OpenAI's image model.")
@@ -1291,6 +1323,8 @@ def main(argv=None) -> int:
         return context_main(argv[1:])
     if argv[:1] in (["image"], ["images"]):
         return image_main(argv[1:])
+    if argv[:1] in (["voices"], ["voice"]):
+        return voices_main(argv[1:])
     if argv[:1] == ["update"]:
         from . import updater
         info = updater.check(force=True)

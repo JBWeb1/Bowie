@@ -137,7 +137,8 @@ def test_web_routes_for_the_new_pages(tmp_path, monkeypatch):
     assert g["center"]["title"] == "Bowie" and ["main.py", "helper.py"] in g["code"]["edges"]
     assert "hello" in call(url + "/api/terminal", {"command": "echo hello"})["output"]
     assert call(url + "/api/care")["os"]
-    assert call(url + "/api/voice") == {"available": False, "voices": []}
+    v = call(url + "/api/voice")
+    assert v["available"] is False and v["voices"] == [] and v["local"] is False and "stt" in v
     made = call(url + "/api/emotes", {"image": png(), "name": "x.png"})
     assert len(made["sizes"]) == 8
     # installing as an app: the manifest and service worker are public, assets come from subfolders
@@ -209,3 +210,57 @@ def test_builtin_agent_team(tmp_path):
     agent.run("explain this repo")
     helper_system = client.requests[1]["system"]
     assert "You map codebases" in (helper_system if isinstance(helper_system, str) else json.dumps(helper_system))
+
+
+def test_local_voice_and_transcription(tmp_path, monkeypatch):
+    """Kokoro speaks on this computer; faster-whisper turns a recording into text (both faked: no model downloads)."""
+    import sys
+    import types
+    import numpy as np
+    from docks import integrations
+    calls = {}
+
+    class Kokoro:
+        def __init__(self, model, voices):
+            calls["files"] = (model, voices)
+
+        def create(self, text, voice, speed, lang):
+            calls["said"] = (text, voice, lang)
+            return np.zeros(2400, np.float32), 24000
+
+    class WhisperModel:
+        def __init__(self, *a, **kw):
+            pass
+
+        def transcribe(self, audio, vad_filter):
+            assert audio.read() == b"RIFFfake"
+            return [NS(text=" hey bowie"), NS(text=" what's next? ")], None
+    monkeypatch.setitem(sys.modules, "kokoro_onnx", types.SimpleNamespace(Kokoro=Kokoro, __spec__=NS(name="kokoro_onnx")))
+    monkeypatch.setitem(sys.modules, "faster_whisper", types.SimpleNamespace(WhisperModel=WhisperModel))
+    monkeypatch.setattr(voice, "_kokoro", None)
+    monkeypatch.setattr(voice, "_whisper", None)
+    import importlib.util
+    real_find = importlib.util.find_spec
+    monkeypatch.setattr(importlib.util, "find_spec", lambda n, *a: NS(name=n) if n in ("kokoro_onnx", "faster_whisper") else real_find(n, *a))
+    kdir = tmp_path / "kokoro"
+    monkeypatch.setenv("BOWERS_KOKORO_DIR", str(kdir))
+    assert not voice.local_available() and integrations.status(integrations.find("kokoro-voice")) == "not-installed"
+    kdir.mkdir()
+    (kdir / "kokoro-v1.0.int8.onnx").write_bytes(b"x")
+    (kdir / "voices-v1.0.bin").write_bytes(b"x")
+    assert voice.local_available() and integrations.status(integrations.find("kokoro-voice")) == "installed"
+    session, url = start(tmp_path / "proj", [])
+    info = call(url + "/api/voice")
+    assert info["local"] and info["stt"] and info["local_voices"][0]["id"] == "am_puck"
+    req = urllib.request.Request(url + "/api/voice/speak", data=json.dumps({"text": "Hello!", "engine": "local", "voice": "bm_george"}).encode(),
+                                 headers={"x-docks-token": "tok", "content-type": "application/json"})
+    with urllib.request.urlopen(req) as r:
+        assert r.headers["content-type"] == "audio/wav"
+        audio = r.read()
+    assert audio[:4] == b"RIFF" and calls["said"] == ("Hello!", "bm_george", "en-gb")
+    data = "data:audio/wav;base64," + base64.b64encode(b"RIFFfake").decode()
+    assert call(url + "/api/voice/transcribe", {"audio": data})["text"] == "hey bowie what's next?"
+    with pytest.raises(voice.VoiceError):
+        voice.transcribe("data:text/html;base64,PGI+")
+    with pytest.raises(voice.VoiceError):
+        voice.speak_local("hi", "../x")

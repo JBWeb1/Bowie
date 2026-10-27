@@ -111,6 +111,14 @@ add("firecrawl", "Firecrawl CLI and SDK", "tool", "rag-engineer", "firecrawl/fir
     steps=["npm install -g firecrawl-cli", f"{PY} firecrawl"], keys=["FIRECRAWL_API_KEY"], notes="Hosted API by default; self-hosting is in its SELF_HOST.md.")
 add("langgraph", "LangGraph", "tool", "workflow-architect", "langchain-ai/langgraph", license="MIT", steps=[f"{PY} langgraph"], check="py:langgraph")
 add("sympy", "SymPy", "tool", "math-tutor", "sympy/sympy", license="BSD", steps=[f"{PY} sympy"], check="py:sympy")
+add("kokoro-voice", "Kokoro voice", "tool", None, "thewh1teagle/kokoro-onnx", license="Apache-2.0 (model by hexgrad)", size="115 MB",
+    check="call:docks.voice:local_available",
+    steps=[{"py": "kokoro-onnx", "module": "kokoro_onnx"}, {"call": "docks.voice:install_local", "say": "download the Kokoro-82M model and voices"}],
+    notes="Gives Bowie a natural voice that runs on this computer: free, offline and private. Pick it in Settings > Voice.")
+add("faster-whisper", "faster-whisper", "tool", None, "SYSTRAN/faster-whisper", license="MIT", check="py:faster_whisper",
+    steps=[{"py": "faster-whisper", "module": "faster_whisper"}],
+    notes="Speech recognition on this computer, so talking to Aether works in every browser (Firefox, Safari) and offline. "
+          "The first use downloads a small Whisper model (about 150 MB).")
 add("openhands", "OpenHands", "tool", "autonomous-engineer", "All-Hands-AI/OpenHands", license="MIT", check="agent-canvas", needs=["node"],
     steps=["npm install -g @openhands/agent-canvas"], run="agent-canvas", open_url="http://localhost:8000")
 add("hermes", "Hermes Agent", "tool", "autonomous-engineer", "NousResearch/hermes-agent", license="MIT", check="hermes",
@@ -250,6 +258,10 @@ def status(e: dict) -> str:
     if e["kind"] == "library":
         return "installed" if st.get("done") else "not-installed"
     check = e.get("check")
+    if check and check.startswith("call:"):  # a Bowers function that says whether it's ready
+        import importlib
+        mod, _, fn = check[5:].partition(":")
+        return "installed" if getattr(importlib.import_module(mod), fn)() else "not-installed"
     if check and check.startswith("py:"):
         import importlib.util
         return "installed" if importlib.util.find_spec(check[3:]) else "not-installed"
@@ -318,6 +330,10 @@ def plan(e: dict) -> list[str]:
             lines.append(f"cd {step['cd']}")
         elif "plugin" in step:
             lines.append("add its skills to Bowers")
+        elif "py" in step:
+            lines.append(f"pip install --user {step['py']}")
+        elif "call" in step:
+            lines.append(step.get("say") or step["call"])
         else:
             cmd = _pick(step)
             lines.append(cmd or "(not available on this OS)")
@@ -439,6 +455,22 @@ def install(id_: str, log=print, install_prereqs: bool = False, project: Path | 
         for step in e["steps"]:
             if isinstance(step, str):
                 _run(step, Path.home(), log)
+            elif "py" in step:  # a Python package Bowers itself imports
+                import importlib.util
+                if importlib.util.find_spec(step["module"]):
+                    log(f"{step['py']} is already available")
+                elif getattr(sys, "frozen", False):
+                    raise InstallError(f"this build of Bowers doesn't include {step['py']}; install Bowers with pip to add it")
+                else:
+                    _run([sys.executable, "-m", "pip", "install", "--user", "--upgrade", step["py"]], Path.home(), log)
+                    importlib.invalidate_caches()
+            elif "call" in step:  # a function in Bowers, e.g. downloading model files
+                import importlib
+                mod, _, fn = step["call"].partition(":")
+                try:
+                    getattr(importlib.import_module(mod), fn)(log)
+                except Exception as err:
+                    raise InstallError(f"couldn't {step.get('say', fn)}: {err}")
             elif "uv" in step:
                 if _which("uv"):
                     _run(["uv", "tool", "install", "--force", step["uv"]], Path.home(), log)
@@ -648,7 +680,7 @@ def system_note() -> str:
         where = ""
         if e["kind"] == "app":
             where = f" at {app_dir(e)}" + (f" (start: `{e['run']}`" + (f", open {e['open']}" if e["open"] else "") + ")" if e["run"] else "")
-        elif e["kind"] in ("tool", "system") and e.get("check") and not e["check"].startswith("py:"):
+        elif e["kind"] in ("tool", "system") and e.get("check") and not e["check"].startswith(("py:", "call:")):
             where = f" (command `{e['check']}`)"
         elif e["kind"] in ("plugin", "collection"):
             where = " (its skills and agents are loaded)"
