@@ -35,9 +35,7 @@ applyState = s => {
 
 // ---------------------------------------------------------------- theme: dark / light
 function currentTheme() { const t = store.get('docks-theme', 'system'); return t === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : t; }
-function paintThemeBtn() { $('theme-btn').innerHTML = icon(currentTheme() === 'dark' ? 'sun' : 'moon', 17); $('theme-btn').title = currentTheme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'; }
-$('theme-btn').onclick = () => { const next = currentTheme() === 'dark' ? 'light' : 'dark'; store.set('docks-theme', next); applyTheme(next); $('theme').value = next; paintThemeBtn(); };
-$('theme').addEventListener('change', paintThemeBtn); paintThemeBtn();
+function toggleTheme() { const next = currentTheme() === 'dark' ? 'light' : 'dark'; store.set('docks-theme', next); applyTheme(next); $('theme').value = next; }
 
 // ---------------------------------------------------------------- Bowers Motion
 const MO = { mode: 'video', image: null, info: null, jobs: {} };
@@ -529,7 +527,7 @@ function cmdkActions() {
     ['hello', 'New chat', 'Chat', () => { showPage('home'); newChat(); }],
     ['listening', 'Talk to Bowers Aether', 'Aether', () => openHud()],
     ['discovering', 'Knowledge Graph', 'Aether', () => { if (!isAether()) return toast('Switch to Bowers Aether to use the Knowledge Graph'); showPage('graph'); }],
-    ['chilling', 'Toggle dark / light mode', 'Theme', () => $('theme-btn').click()],
+    ['chilling', 'Toggle dark / light mode', 'Theme', toggleTheme],
     ['analyzing', 'Choose a model', 'Model', () => openModelPicker()],
     ['helping', 'Settings', 'Settings', () => showPage('settings')],
   ];
@@ -560,7 +558,6 @@ $('cmdk-input').onkeydown = e => {
   else if (e.key === 'Escape') closeCmdk();
 };
 $('cmdk').onclick = e => { if (e.target.id === 'cmdk') closeCmdk(); };
-$('top-search').onclick = () => openCmdk();
 document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); $('cmdk').classList.contains('hidden') ? openCmdk() : closeCmdk(); } });
 
 // ---------------------------------------------------------------- Bowie's voice (voice studio)
@@ -705,7 +702,7 @@ $('hud-mute').onclick = () => { HUD.muted = !HUD.muted; store.set('hud-muted', H
 $('hud-hands').onchange = e => { HUD.hands = e.target.checked; if (HUD.hands) startListening(true); else stopListening(); };
 $('hud-brief').onclick = () => hudAsk("Give me a short spoken briefing: what's going on in this project (git status and recent work), any open pull requests, any computer health warnings (system_check overview), and what you suggest I do next.", 'Brief me');
 $('hud-graph').onclick = () => { closeHud(); showPage('graph'); };
-$('side-aether').onclick = () => openHud(); $('top-aether').onclick = () => openHud();
+$('top-aether').onclick = () => openHud();
 
 // deep links from the installed app's shortcuts (#motion, #forge, #care)
 addEventListener('load', () => { const want = location.hash.slice(1); if (['motion', 'forge', 'care', 'labs'].includes(want)) setTimeout(() => showPage(want), 400); });

@@ -39,8 +39,8 @@ const QUICK = [
 ];
 function welcome() {
   thread.innerHTML = '';
-  const w = h('div', 'welcome greet', `<img class="bowie-live" src="${BOWIE(mood)}" alt="Bowie"><h1></h1><p>What would you like to work on today?</p>`);
-  w.querySelector('h1').textContent = `${greetWord()}${profileName ? ', ' + profileName : ''}`;
+  const w = h('div', 'welcome greet', `<h1><img class="bowie-live" src="${BOWIE(mood)}" alt="Bowie"><span></span></h1>`);
+  w.querySelector('h1 span').textContent = `${greetWord()}${profileName ? ', ' + profileName : ''}`;
   thread.appendChild(w);
   setHome(true);
   $('chat').classList.remove('busy-convo');
@@ -488,7 +488,7 @@ const UI_COMMANDS = [
   { name: 'compact', description: 'Summarize the conversation to free up room', ui: () => compactChat() },
   { name: 'doctor', description: 'Check your setup', ui: () => showDoctor() },
   { name: 'memory', description: 'Instruction files in use (start a message with # to add a line)', ui: () => showMemory() },
-  { name: 'style', description: 'Choose an output style', ui: () => { $('open-settings').click(); $('style-select').focus(); } },
+  { name: 'style', description: 'Choose an output style', ui: () => { showPage('settings'); $('style-select').focus(); } },
 ];
 function sysCard(title, body) {
   const card = h('div', 'syscard', `<div class="syscard-head"><b></b><button class="btn ghost icon-only" aria-label="Close">✕</button></div><div class="syscard-body"></div>`);
@@ -675,7 +675,6 @@ async function openDrawer(tab) {
     }
   }
 }
-$('open-history').onclick = () => openDrawer('sessions');
 $('close-drawer').onclick = () => $('drawer').classList.add('hidden');
 document.querySelectorAll('[data-dtab]').forEach(t => t.onclick = () => openDrawer(t.dataset.dtab));
 document.addEventListener('keydown', e => { if (e.key === 'Escape') $('drawer').classList.add('hidden'); });
@@ -697,9 +696,7 @@ function renderMcp(list) {
 async function newChat() {
   const r = await api('/api/clear', {}); if (!r.ok) toast('Stop the current task first');
 }
-$('new-chat').onclick = () => { showPage('home'); newChat(); };
-$('open-settings').onclick = () => showPage('settings');
-$('toggle-panel').onclick = () => { const closed = $('app').classList.toggle('panel-closed'); store.set('docks-panel', closed ? 'closed' : 'open'); };
+$('toggle-panel').onclick = () => { if (matchMedia('(max-width: 920px)').matches) return mobile('more'); const closed = $('app').classList.toggle('panel-closed'); store.set('docks-panel', closed ? 'closed' : 'open'); };
 if (store.get('docks-panel', 'open') === 'closed') $('app').classList.add('panel-closed');
 $('gh-chip').onclick = () => { $('app').classList.remove('panel-closed'); showTab('github'); mobile('github'); };
 

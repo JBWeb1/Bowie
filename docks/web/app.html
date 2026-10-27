@@ -15,43 +15,38 @@
 
 <div class="shell">
 <nav class="side" id="side" aria-label="Bowers">
-  <div class="side-logo"><span class="bmark" data-mark></span><span><b>Bowers<span class="sub" id="side-sub"></span></b><small>AI AGENT</small></span></div>
-  <button class="side-new" id="side-new"><span data-icon="plus"></span>New chat</button>
+  <button class="side-logo" id="side-logo" title="Home"><span class="bmark" data-mark></span><b>Bowers<span class="sub" id="side-sub"></span></b></button>
   <div class="side-nav">
-    <button class="on" data-page="home"><img src="/assets/nav/home.webp" alt="">Home</button>
-    <button data-page="motion"><img src="/assets/nav/creation.webp" alt="">Bowers Motion</button>
-    <button data-page="forge"><img src="/assets/nav/coding.webp" alt="">Bowers Forge</button>
-    <button data-page="care"><img src="/assets/nav/support.webp" alt="">Bowers Care</button>
-    <button data-page="graph" class="aether-only"><img src="/assets/aether/discovering.webp" alt="" style="background:#1b0f09">Knowledge Graph</button>
-    <button data-page="labs"><img src="/assets/nav/trading.webp" alt="">Labs</button>
-    <button data-page="integrations"><img src="/assets/bowie/uploading.webp" alt="" style="background:#1b0f09">Integrations</button>
-    <button data-page="projects"><img src="/assets/nav/projects.webp" alt="">Projects</button>
-    <button data-page="tasks"><img src="/assets/nav/premium.webp" alt="">Tasks</button>
-    <button data-page="library"><img src="/assets/nav/library.webp" alt="">Library</button>
-    <button data-page="explore"><img src="/assets/nav/help.webp" alt="">Explore</button>
-    <button data-page="settings"><img src="/assets/nav/settings.webp" alt="">Settings</button>
+    <button class="side-new" id="side-new"><span data-icon="plus"></span>New chat</button>
+    <button id="side-search"><span data-icon="search"></span>Search<kbd class="hide-mobile">Ctrl K</kbd></button>
+    <button data-page="projects"><span data-icon="folder"></span>Projects</button>
+    <button data-page="motion"><span data-icon="play"></span>Motion</button>
+    <button data-page="forge"><span data-icon="code"></span>Forge</button>
+    <button data-page="care"><span data-icon="shield"></span>Care</button>
+    <details class="side-more" id="side-more"><summary><span data-icon="dots"></span>More</summary>
+      <button data-page="labs"><span data-icon="zap"></span>Labs</button>
+      <button data-page="integrations"><span data-icon="plug"></span>Integrations</button>
+      <button data-page="library"><span data-icon="library"></span>Library</button>
+      <button data-page="tasks"><span data-icon="check"></span>Tasks</button>
+      <button data-page="explore"><span data-icon="compass"></span>Explore</button>
+      <button data-page="graph" class="aether-only"><span data-icon="brain"></span>Knowledge Graph</button>
+    </details>
   </div>
   <div class="side-recent" id="side-recent"></div>
   <button class="side-update hidden" id="side-update" title="Install the new version"><span data-icon="refresh"></span><span><b>Update available</b><small id="side-update-v"></small></span></button>
-  <button class="side-aether" id="side-aether" title="Talk to Bowers Aether"><img src="/assets/aether/idle.webp" alt=""><span><b>Bowie</b><small><span class="dot"></span>Your AI companion</small></span></button>
-  <button class="side-me" id="side-me" title="Your settings"><img class="me-face" src="/assets/bowie-happy.webp" alt=""><span><b id="me-name">You</b><small id="me-model">Bowers</small></span><span data-icon="chevron"></span></button>
+  <button class="side-me" id="side-me" title="Settings"><img class="me-face" src="/assets/bowie-happy.webp" alt=""><span><b id="me-name">You</b><small id="me-model">Bowers</small></span><span data-icon="gear"></span></button>
 </nav>
+<div class="side-scrim" id="side-scrim"></div>
 <div class="main">
 <header class="top">
-  <div class="logo show-mobile"><span class="bmark" data-mark></span><span>Bowers</span></div>
+  <button class="btn ghost icon-only show-mobile" id="open-side" aria-label="Menu"><span data-icon="menu"></span></button>
   <div class="project"><span id="project-name"></span></div>
   <span class="branch" id="branch-chip"></span>
   <span class="status" id="status"><span class="dot"></span><span id="status-text">Ready</span></span>
   <span class="live-badge hidden" id="live-badge"><i></i>Live</span>
   <span class="spacer"></span>
-  <button class="top-search" id="top-search" title="Search (Ctrl+K)"><span data-icon="search"></span><span>Search tools, projects, files…</span><kbd class="hide-mobile">Ctrl K</kbd></button>
-  <button class="btn ghost icon-only" id="top-aether" title="Bowers Aether voice assistant" aria-label="Bowers Aether"><img src="/assets/art/aether-icon.webp" alt="" style="width:22px;height:22px;border-radius:6px"></button>
-  <button class="btn ghost icon-only theme-btn" id="theme-btn" aria-label="Switch dark or light mode"></button>
-  <button class="btn primary hide-mobile deploy-btn" id="deploy-top" title="Put this project online"><span data-icon="rocket"></span>Deploy</button>
-  <button class="btn ghost hide-mobile" id="new-chat"><span data-icon="plus"></span>New chat</button>
-  <button class="btn ghost icon-only hide-mobile" id="toggle-panel" title="Show or hide the side panel" aria-label="Toggle side panel"><span data-icon="panel"></span></button>
-  <button class="btn ghost icon-only" id="open-history" title="Conversations and bookmarks" aria-label="Conversations and bookmarks"><span data-icon="history"></span></button>
-  <button class="btn ghost icon-only" id="open-settings" title="Settings" aria-label="Settings"><span data-icon="gear"></span></button>
+  <button class="btn primary deploy-btn hidden" id="deploy-top" title="Put this project online"><span data-icon="rocket"></span><span class="hide-mobile">Deploy</span></button>
+  <button class="btn ghost icon-only" id="toggle-panel" title="Show or hide the preview and code" aria-label="Toggle preview and code"><span data-icon="panel"></span></button>
 </header>
 
 
@@ -71,16 +66,16 @@
         <div class="attachments" id="attachments"></div>
         <textarea id="input" rows="1" placeholder="Describe what you want to build or change…" aria-label="Message"></textarea>
         <div class="composer-row">
-          <button class="chip" id="attach" title="Attach a screenshot, mockup or design"><span data-icon="image"></span><span class="hide-mobile">Image</span></button>
+          <button class="chip icon-chip" id="attach" title="Add an image: a screenshot, mockup or design" aria-label="Add an image"><span data-icon="plus"></span></button>
           <input type="file" id="file-input" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
-          <button class="chip" id="gh-chip" title="GitHub actions"><span data-icon="github"></span>GitHub</button>
-          <button class="chip model-chip" id="model-chip" title="Choose a Bowers model"><img src="/assets/bowie-happy.webp" alt=""><span id="model-chip-text">Bowers</span><span data-icon="chevron-down"></span></button>
+          <button class="chip icon-chip" id="gh-chip" title="GitHub" aria-label="GitHub"><span data-icon="github"></span></button>
           <span class="mode-wrap"><button class="chip" id="mode-chip" title="How Bowers asks before changes"><span id="mode-icon"></span><span id="mode-text">Ask first</span></button><div class="mode-menu hidden" id="mode-menu" role="menu"></div></span>
           <span class="spacer"></span>
+          <button class="chip model-chip" id="model-chip" title="Choose a Bowers model"><img src="/assets/bowie-happy.webp" alt=""><span id="model-chip-text">Bowers</span><span data-icon="chevron-down"></span></button>
+          <button class="chip icon-chip" id="top-aether" title="Talk to Bowie (Bowers Aether)" aria-label="Talk to Bowie"><span data-icon="mic"></span></button>
           <button class="send" id="send" aria-label="Send"><span data-icon="arrow-up"></span></button>
         </div>
       </div>
-      <div class="hint hide-mobile">Enter to send · Shift + Enter for a new line</div>
       <div class="home-extra" id="home-extra"></div>
     </div>
   </section>
@@ -309,7 +304,7 @@
   <div class="set-panel hidden" data-sp="appearance">
     <div class="set-card">
       <label>Theme<select class="input" id="theme"><option value="system">Match system</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
-      <label class="set-row switch-row"><span class="set-ic" data-icon="sparkle"></span><div><b>Animated background</b><small>Code drifting behind the chat</small></div><span class="switch"><input type="checkbox" id="anim"><i></i></span></label>
+      <label class="set-row switch-row"><span class="set-ic" data-icon="sparkle"></span><div><b>Animated background</b><small>Code drifting behind the chat (off by default)</small></div><span class="switch"><input type="checkbox" id="anim"><i></i></span></label>
     </div>
   </div>
 </div>
@@ -317,35 +312,21 @@
 </div>
 </div>
 
-<nav class="mobile-nav">
-  <button class="btn ghost" data-m="chat"><span data-icon="home"></span>Home</button>
-  <button class="btn ghost" data-m="motion"><span data-icon="play"></span>Motion</button>
-  <button class="btn ghost" data-m="forge"><span data-icon="code"></span>Forge</button>
-  <button class="btn ghost" data-m="care"><span data-icon="shield"></span>Care</button>
-  <button class="btn ghost" data-m="more"><span data-icon="grid"></span>More</button>
-</nav>
 <div class="sheet hidden" id="more-sheet"><div class="sheet-inner">
   <div class="sheet-grip"></div>
   <div class="sheet-grid">
+    <button data-m="chat"><span data-icon="chat"></span>Chat</button>
     <button data-m="preview"><span data-icon="eye"></span>Preview</button>
     <button data-m="code"><span data-icon="code"></span>Code</button>
     <button data-m="github"><span data-icon="github"></span>GitHub</button>
     <button data-m="terminal"><span data-icon="terminal"></span>Terminal</button>
-    <button data-m="projects"><span data-icon="folder"></span>Projects</button>
-    <button data-m="library"><span data-icon="library"></span>Library</button>
-    <button data-m="labs"><span data-icon="zap"></span>Labs</button>
-    <button data-m="integrations"><span data-icon="plug"></span>Integrations</button>
-    <button data-m="tasks"><span data-icon="check"></span>Tasks</button>
-    <button data-m="explore"><span data-icon="compass"></span>Explore</button>
-    <button data-m="history"><span data-icon="history"></span>History</button>
-    <button data-m="settings"><span data-icon="gear"></span>Settings</button>
   </div>
 </div></div>
 
 <div class="splash hidden" id="splash">
   <div class="splash-art"><img src="/assets/bowie-hero.webp" alt="Bowie, the Bowers mascot"></div>
   <div class="splash-copy">
-    <div class="splash-logo"><span class="bmark" data-mark></span><span><b>Bowers</b><small>AI AGENT</small></span></div>
+    <div class="splash-logo"><span class="bmark" data-mark></span><span><b>Bowers</b></span></div>
     <h1>Your ideas<br>have a home here.</h1>
     <p>Think. Create. Build. Together.</p>
     <label class="splash-name">What should Bowie call you?<input class="input" id="splash-name" placeholder="Your name" autocomplete="name"></label>

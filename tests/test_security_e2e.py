@@ -90,6 +90,9 @@ def test_every_page_loads_in_a_real_browser(tmp_path):
         assert page.evaluate("md('> **Hi**\\n> there')") == "<blockquote><strong>Hi</strong><br>there</blockquote>"
         page.keyboard.press("Control+k")
         assert page.locator("#cmdk").is_visible()
+        page.keyboard.press("Escape")
+        page.click("#side-search")  # the simple sidebar: search opens the same palette
+        assert page.locator("#cmdk").is_visible()
         browser.close()
     assert errors == []
 

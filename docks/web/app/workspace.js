@@ -18,11 +18,9 @@ function mobile(which) {
   if (page !== 'home') showPage('home');
   $('app').classList.toggle('show-panel', which !== 'chat');
   if (which !== 'chat') { setHome(false); showTab(which); } else if (thread.querySelector('.welcome')) setHome(true);
-  document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.toggle('on', b.dataset.m === (which === 'chat' ? 'chat' : 'more')));
 }
-document.querySelectorAll('.mobile-nav button, .sheet-grid button').forEach(b => b.onclick = () => mobile(b.dataset.m));
+document.querySelectorAll('.sheet-grid button').forEach(b => b.onclick = () => mobile(b.dataset.m));
 $('more-sheet').onclick = e => { if (e.target.id === 'more-sheet') $('more-sheet').classList.add('hidden'); };
-document.querySelector('.mobile-nav [data-m="chat"]').classList.add('on');
 
 let files = [], changed = new Set(), previewPicked = false;
 function refreshAll() { loadFiles(); loadGit(); if (currentTab === 'preview') reloadPreview(); }
@@ -472,7 +470,7 @@ const Background = (() => {
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
   return { setEnabled };
 })();
-$('anim').checked = store.get('docks-anim', 'on') === 'on';
+$('anim').checked = store.get('docks-anim', 'off') === 'on';
 Background.setEnabled($('anim').checked);
 $('anim').onchange = () => { store.set('docks-anim', $('anim').checked ? 'on' : 'off'); Background.setEnabled($('anim').checked); };
 

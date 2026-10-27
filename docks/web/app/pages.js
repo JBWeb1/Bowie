@@ -13,15 +13,20 @@ function showPage(name) {
   const home = name === 'home';
   $('app').classList.toggle('hidden', !home);
   for (const p of PAGES) $('page-' + p).classList.toggle('hidden', p !== name);
-  document.querySelectorAll('.side-nav button').forEach(b => b.classList.toggle('on', b.dataset.page === name));
-  document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.toggle('on', home ? b.dataset.m === 'chat' : b.dataset.m === name));
+  document.querySelectorAll('.side-nav button[data-page]').forEach(b => b.classList.toggle('on', b.dataset.page === name));
+  if (document.querySelector(`.side-more [data-page="${name}"]`)) $('side-more').open = true;
   $('more-sheet').classList.add('hidden');
   ({ projects: loadProjects, tasks: loadTasks, library: loadLibrary, motion: renderMotion, forge: renderForgePage, care: renderCare, labs: renderLabs, integrations: renderIntegrations, graph: renderGraph, explore: renderExplore, settings: openSettings })[name]?.();
   if (home) { $('app').classList.remove('show-panel'); }
 }
-document.querySelectorAll('.side-nav button').forEach(b => b.onclick = () => showPage(b.dataset.page));
-$('side-new').onclick = () => { showPage('home'); newChat(); };
-$('side-me').onclick = () => showPage('settings');
+const closeSide = () => document.body.classList.remove('side-open');
+document.querySelectorAll('.side-nav button[data-page]').forEach(b => b.onclick = () => { showPage(b.dataset.page); closeSide(); });
+$('side-new').onclick = () => { showPage('home'); newChat(); closeSide(); };
+$('side-logo').onclick = () => { showPage('home'); closeSide(); };
+$('side-search').onclick = () => { closeSide(); openCmdk(); };
+$('side-me').onclick = () => { showPage('settings'); closeSide(); };
+$('open-side').onclick = () => document.body.classList.add('side-open');
+$('side-scrim').onclick = closeSide;
 
 // Bowie's moods follow what Bowers is doing
 let mood = 'happy', moodTimer = null, idleTimer = null;
@@ -40,28 +45,20 @@ function setHome(on) {
   $('chat').classList.toggle('home', on);
   $('app').classList.toggle('home-mode', on);
   $('deploy-top').classList.toggle('hidden', on);
+  $('toggle-panel').classList.toggle('hidden', on);
 }
 const HOME_CHIPS = [
   ['globe', 'Build a website', () => prefill('Build a website for ')],
   ['image', 'Create an image', () => openStudioTool('image')],
   ['code', 'Write code', () => prefill('Write code that ')],
-  ['chart', 'Analyze data', () => prefill('Analyze the data in @')],
   ['book', 'Plan a project', () => { setMode('plan'); prefill('Help me plan a project: '); }],
-];
-const HOME_CARDS = [
-  ['box', 'Build something', 'Apps, websites and tools', () => showPage('explore')],
-  ['file', 'Work with files', 'Documents and research', () => { prefill('@'); updatePalette(); }],
-  ['sparkle', 'Create designs', 'Videos, images and prototypes', () => showPage('motion')],
-  ['bulb', 'Explore ideas', 'Plan, analyse and improve', () => prefill('Help me explore ideas for ')],
 ];
 function prefill(text) { showPage('home'); const t = $('input'); t.value = text; autosize(); t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
 function renderHomeExtra() {
   const box = $('home-extra'); box.innerHTML = '';
   const chips = h('div', 'quick-chips');
   for (const [ic, label, fn] of HOME_CHIPS) { const b = h('button', 'chip', `${icon(ic, 14)}${esc(label)}`); b.onclick = fn; chips.appendChild(b); }
-  const cards = h('div', 'home-cards');
-  for (const [ic, title, sub, fn] of HOME_CARDS) { const b = h('button', 'hcard', `<span class="hc-ic">${icon(ic, 20)}</span><span><b>${esc(title)}</b><small>${esc(sub)}</small></span>`); b.onclick = fn; cards.appendChild(b); }
-  box.append(chips, cards, h('div', 'home-foot', `<img class="bowie-live" src="${BOWIE(mood)}" alt="">Bowie is here to help!`));
+  box.append(chips);
 }
 renderHomeExtra();
 
@@ -107,10 +104,11 @@ async function loadRecent() {
   const r = await api('/api/sessions'); if (!r.ok) return;
   const { sessions, current } = await r.json(), box = $('side-recent'); box.innerHTML = '';
   if (!sessions.length) return;
-  box.appendChild(h('div', 'side-h', 'Recent chats'));
+  const head = h('div', 'side-h', 'Recents<button class="link">All chats</button>'); head.querySelector('button').onclick = () => { closeSide(); openDrawer('sessions'); };
+  box.appendChild(head);
   for (const sn of sessions.slice(0, 12)) {
-    const b = h('button', sn.id === current ? 'on' : '', `${icon('chat', 14)}<span></span>`); b.querySelector('span').textContent = sn.name;
-    b.onclick = async () => { showPage('home'); if (sn.id === current) return; const rr = await api('/api/sessions/resume', { id: sn.id }); if (!rr.ok) toast((await rr.json()).error || 'Could not open it'); };
+    const b = h('button', sn.id === current ? 'on' : '', '<span></span>'); b.querySelector('span').textContent = sn.name;
+    b.onclick = async () => { showPage('home'); closeSide(); if (sn.id === current) return; const rr = await api('/api/sessions/resume', { id: sn.id }); if (!rr.ok) toast((await rr.json()).error || 'Could not open it'); };
     box.appendChild(b);
   }
 }
@@ -433,7 +431,7 @@ $('run-doctor').onclick = async () => {
 function setProfile(name) {
   profileName = name || '';
   $('me-name').textContent = profileName || 'You';
-  const g = thread.querySelector('.greet h1'); if (g) g.textContent = `${greetWord()}${profileName ? ', ' + profileName : ''}`;
+  const g = thread.querySelector('.greet h1 span'); if (g) g.textContent = `${greetWord()}${profileName ? ', ' + profileName : ''}`;
 }
 
 // Onboarding
