@@ -212,6 +212,11 @@ add("remotion", "Remotion starter", "template", "video-producer", "remotion-dev/
 
 # ---------------------------------------------------------------- libraries for the open project
 add("jsxgraph", "JSXGraph", "library", "math-tutor", "jsxgraph/jsxgraph", steps=["npm install jsxgraph"])
+add("sandcastle", "Sandcastle", "library", "autonomous-engineer", "mattpocock/sandcastle", license="MIT", needs=["node", "docker"],
+    steps=["npm install --save-dev @ai-hero/sandcastle", "npx @ai-hero/sandcastle init --agent claude-code --sandbox docker --template simple-loop --issue-tracker custom --install-template-deps false --build-image false"],
+    notes="Runs AI coding agents (Claude Code, Codex and others) in isolated Docker or Podman sandboxes, each on its own branch, then merges "
+          "their commits back. Good for several agents working in parallel. Then: npx @ai-hero/sandcastle docker build-image, edit .sandcastle/main.mts, "
+          "and run it with npx tsx .sandcastle/main.mts.")
 add("nerdamer", "nerdamer", "library", "math-tutor", "jiggzson/nerdamer", license="MIT", steps=["npm install nerdamer"])
 add("react-bits", "React Bits", "link", "ui-designer", "DavidHDev/react-bits", license="MIT", notes="Add components per project with the shadcn CLI: the ui-designer agent does it for you.")
 add("magicui", "Magic UI", "link", "ui-designer", "magicuidesign/magicui", license="MIT", notes="Add components with: npx shadcn@latest add @magicui/<component>.")
