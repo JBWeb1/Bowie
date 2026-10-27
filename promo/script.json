@@ -1,0 +1,146 @@
+[
+ {
+  "id": "01-intro",
+  "title": "Meet Bowie",
+  "sub": "Your AI companion inside Bowers",
+  "shot": null,
+  "sticker": "waving",
+  "text": "Hey there! I'm Bowie, the little orange helper who lives inside Bowers. You've probably used AI that chats. I do more than chat. I build things. I write code, run it, test it in a real browser, make videos and images, fix your computer, research the markets, and remember what you like. Over the next ten minutes I'm going to show you everything I can do. And I mean everything. So grab a drink, get comfy, and let's take a tour of Bowers."
+ },
+ {
+  "id": "02-home",
+  "title": "One place to start",
+  "sub": "Just say what you want",
+  "shot": "dark-home",
+  "sticker": "hello",
+  "text": "This is home. It's simple on purpose. You just tell me what you want, in plain words. Build a website. Analyze this spreadsheet. Plan my project. Make me a video. There are quick starts down here if you're not sure where to begin, and you can attach images, connect GitHub, or pick a specific model right from the box. No setup screens, no settings maze. You talk, I get to work."
+ },
+ {
+  "id": "03-chat",
+  "title": "I build, run and test",
+  "sub": "Real files. Real commands. Real browser.",
+  "shot": "dark-chat",
+  "sticker": "coding",
+  "text": "Watch what happens when you ask me to build a landing page. I read your project, write the files, start a local server, and then open the page in a real browser to make sure it actually works. Every step shows up right here, so you can see exactly what I did and expand any step for the details. The live preview sits on the right, with tabs for code, GitHub and a terminal. When it's ready, one click on Deploy puts it online. And if you don't like a change, hit undo on any message and I'll put your files back exactly the way they were."
+ },
+ {
+  "id": "04-safety",
+  "title": "You stay in control",
+  "sub": "Permission modes, sandboxing, approvals",
+  "shot": "dark-settings",
+  "sticker": "helping",
+  "text": "Now, an AI that can run commands on your computer has to be trustworthy. So you choose how much freedom I get. In ask mode I check with you before every change. In auto mode I handle the safe stuff and ask about anything risky. You can set allow and deny rules, run my commands in a sandbox, and plugin hooks from the internet stay switched off until you approve them. The app only answers to your own computer, and it blocks the tricks websites use to sneak in. Powerful, but polite."
+ },
+ {
+  "id": "05-models",
+  "title": "Three brains in one",
+  "sub": "Solace, Syntra and Aether",
+  "shot": "dark-cmdk",
+  "sticker": "thinking",
+  "text": "Inside Bowers I've got three modes of thinking. Solace is quick and friendly, perfect for everyday questions and fast edits. Syntra is the heavy hitter, for big builds, tricky bugs and long plans. And Aether is my Jarvis mode, which I'll show you in a moment. Press Control K anywhere and the command palette pops up, so you can jump to any page, tool or action without touching the mouse. Dark mode, light mode, or follow your system. It's your space, so make it yours."
+ },
+ {
+  "id": "06-aether",
+  "title": "Aether: talk to me",
+  "sub": "A Jarvis-style voice assistant",
+  "shot": "dark-hud",
+  "sticker": "listening",
+  "text": "This is Aether. Tap the microphone and just talk to me, like Jarvis. Ask what you should work on next, have me check your computer's health, summarize your week, or start a video. Turn on hands free and say Hey Bowie whenever you need me. I answer out loud in my own voice, and you can design that voice in the voice studio, with ElevenLabs or your browser's built-in voices. And here's the clever bit. Aether learns. When you tell me you prefer TypeScript, or you like short answers, I remember it, and I use it from the very next turn."
+ },
+ {
+  "id": "07-graph",
+  "title": "The Knowledge Graph",
+  "sub": "Everything connected",
+  "shot": "dark-graph",
+  "sticker": "analyzing",
+  "text": "With Aether you also get the Knowledge Graph. It's a live map of your world. Your projects, your files, your memories, your goals, your videos, your tools, all linked together with me in the middle. Switch to the code map and I'll draw how every file in your project imports every other file, so you can understand a strange codebase in seconds instead of hours. Click any node and ask me about it. It turns a pile of folders into something you can actually see."
+ },
+ {
+  "id": "08-motion",
+  "title": "Bowers Motion",
+  "sub": "Videos and photos from an idea",
+  "shot": "dark-motion",
+  "sticker": "create-video",
+  "text": "Let's get creative. This is Bowers Motion. Describe a scene, a red fox running through fresh snow at sunrise, slow dolly shot, birdsong, and I'll turn it into a video, with sound, in up to 4K, powered by LTX. Pick the aspect ratio for YouTube, TikTok or Instagram, choose the length, or start from your own image and bring it to life. There's a photo studio for still images, ready-made templates, and a clipper that turns a long video into short highlight clips with captions."
+ },
+ {
+  "id": "09-forge",
+  "title": "Bowers Forge",
+  "sub": "Images, designs and edits",
+  "shot": "light-forge",
+  "sticker": "create-image",
+  "text": "Then there's Forge, my workshop for images. Logos, posters, product shots, thumbnails, app icons. Describe it and I'll make it. Upload a picture and tell me what to change, and I'll edit it for you. Need a brand look? I'll design a set of matching pieces so everything you make looks like it belongs together. And everything I create gets saved to your library, so nothing ever gets lost."
+ },
+ {
+  "id": "10-care",
+  "title": "Bowers Care",
+  "sub": "Fix Windows, Mac and Linux",
+  "shot": "light-care",
+  "sticker": "fixing",
+  "text": "Is your computer acting up? That's what Bowers Care is for. I check your system, memory, disk space and uptime, and tell you in plain English what's wrong. Here I've spotted that the disk is almost full, with a fix button right next to it. Computer slow, no internet, apps crashing, updates that won't install, a weird error message? Pick the problem or paste the error, and I'll walk you through fixing it step by step, on Windows, Mac or Linux. Like having a patient friend who's good with computers."
+ },
+ {
+  "id": "11-labs",
+  "title": "Bowers Labs",
+  "sub": "Trading, math, arena, 3D and more",
+  "shot": "dark-lab-math",
+  "sticker": "solving",
+  "text": "Bowers Labs is where the extra superpowers live. The Math Lab solves equations, takes derivatives and integrals, and plots graphs, step by step, so you learn how, not just the answer. The Trading Desk sends a team of AI analysts to research a stock or a coin, from fundamentals and news to technicals, with a bull and bear debate. It's research only, and I never place trades. The Model Arena puts two AIs head to head on the same question and lets you vote. Plus a 3D studio, an emote maker for Twitch and Discord, an interior restyler for room photos, website audits, a web crawler, and local CI to test your GitHub Actions before you push."
+ },
+ {
+  "id": "12-agents",
+  "title": "The Agent Team",
+  "sub": "28 specialist helpers",
+  "shot": "dark-agents",
+  "sticker": "collaborating",
+  "text": "And I don't work alone. I've got a whole team, twenty-eight specialist helpers I can hand work to. A codebase cartographer that maps and explains any repo. An autonomous engineer that takes a big goal and works on it for hours. A launch film director, a growth marketer, a game builder, a math tutor, a performance auditor, a local model engineer, and a reality checker who keeps everyone honest. Pick one, describe the job, and I'll hand it off, check the work, and report back to you."
+ },
+ {
+  "id": "13-integrations",
+  "title": "Integrations",
+  "sub": "73 open-source projects, one click",
+  "shot": "dark-integrations",
+  "sticker": "uploading",
+  "text": "Want even more? The Integrations page connects me to seventy-three open-source projects. Skill packs and plugins, design systems, SEO toolkits, agent teams, local apps, starter templates for online stores and SaaS businesses, and libraries for math and 3D. Click install and I clone it, set it up, and load it, with no restart needed. If a project needs something like Docker or Node first, I tell you. And if it comes with hooks that run code, they stay off until you've had a look and said yes."
+ },
+ {
+  "id": "14-projects",
+  "title": "Projects, tasks and library",
+  "sub": "Organized automatically",
+  "shot": "light-projects",
+  "sticker": "planning",
+  "text": "Behind the scenes I keep everything tidy. Projects lists every folder we've worked on, with a preview, so you can jump back in anytime. Tasks lets me run jobs in the background while you keep chatting, and work in separate copies so nothing collides. The library holds every image, video and document we've made. And with memory, project instructions and bookmarks, I pick up right where we left off, every single time."
+ },
+ {
+  "id": "15-github",
+  "title": "Built for real developers",
+  "sub": "GitHub, MCP apps, code intelligence",
+  "shot": "light-explore",
+  "sticker": "build",
+  "text": "If you're a developer, you'll feel at home. I connect to GitHub to clone repos, make branches, open pull requests and track their checks. I understand your code with language servers, so I can jump to definitions and find every reference. I plug into MCP apps with secure sign-in, run scripts and hooks, and give you a full terminal. Explore shows you new tools and ideas, and Settings lets you tune everything, from output style to the status line."
+ },
+ {
+  "id": "16-windows",
+  "title": "Install it like a real app",
+  "sub": "Bowers-Setup.exe with auto-updates",
+  "shot": "dark-home",
+  "sticker": "save",
+  "text": "And Bowers installs like a real app. On Windows, just run Bowers Setup. You get a Start menu shortcut, a desktop icon, and Bowers opens in its own window. When there's a new version, a little banner appears, one click, and I update myself. On Mac and Linux it's a single command, and you can also install it straight from your browser as an app. Your keys stay on your machine, set as environment variables, never pasted into a chat."
+ },
+ {
+  "id": "17-why",
+  "title": "Why Bowie?",
+  "sub": "The best AI is the one that gets it done",
+  "shot": null,
+  "sticker": "excited",
+  "text": "So why am I the best AI for you? Because I don't just answer. I do. I build the app and test it. I make the video and the thumbnail. I fix the laptop and explain why it broke. I remember what you like, I tell you honestly what I can and can't do, and I always ask before doing anything risky. One friendly place for coding, creating, learning and fixing, instead of ten different tools and ten different logins."
+ },
+ {
+  "id": "18-outro",
+  "title": "Let's build something",
+  "sub": "Download Bowers today",
+  "shot": null,
+  "sticker": "celebrating",
+  "text": "That's the tour! Thanks for hanging out with me. Download Bowers, say hi, and tell me what you want to make. A website, a video, a game, a business plan, or just a faster computer. Whatever it is, I'm ready. I'm Bowie, and I can't wait to build something amazing with you. See you inside Bowers!"
+ }
+]

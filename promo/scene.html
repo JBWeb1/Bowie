@@ -1,0 +1,129 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Bowers promo scene</title>
+<style>
+  :root { --bg:#0b0d11; --surface:#13161c; --line:#242a34; --fg:#f2eee9; --fg2:#c9c4bd; --muted:#8b919c; --accent:#ff6b2c; --ink:#ff9a62; }
+  * { box-sizing:border-box; margin:0; }
+  html, body { width:1920px; height:1080px; overflow:hidden; background:var(--bg); font-family:Inter, sans-serif; color:var(--fg); }
+  #stage { position:absolute; inset:0; }
+  #glow { position:absolute; width:1400px; height:1400px; border-radius:50%; background:radial-gradient(circle, rgba(255,107,44,.22), rgba(255,107,44,0) 62%); }
+  #glow2 { position:absolute; width:1100px; height:1100px; border-radius:50%; background:radial-gradient(circle, rgba(156,180,172,.10), rgba(156,180,172,0) 60%); }
+  #grid { position:absolute; inset:0; background-image:linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px); background-size:60px 60px; }
+  #brand { position:absolute; left:64px; top:52px; display:flex; align-items:center; gap:14px; font-weight:800; font-size:30px; letter-spacing:-.5px; }
+  #brand img { width:46px; height:46px; }
+  #brand small { display:block; font-size:13px; letter-spacing:3px; color:var(--muted); font-weight:600; margin-top:2px; }
+  #count { position:absolute; right:64px; top:62px; font-size:20px; color:var(--muted); font-weight:600; letter-spacing:2px; }
+  #left { position:absolute; left:64px; top:170px; width:470px; }
+  .chip { display:inline-block; padding:8px 16px; border-radius:999px; background:rgba(255,107,44,.14); color:var(--ink); font-weight:700; font-size:18px; letter-spacing:1px; text-transform:uppercase; }
+  h1 { font-size:58px; line-height:1.04; letter-spacing:-2px; font-weight:800; margin-top:22px; }
+  h2 { font-size:26px; line-height:1.3; color:var(--fg2); font-weight:500; margin-top:18px; }
+  #points { margin-top:30px; display:flex; flex-direction:column; gap:12px; }
+  .pt { display:flex; align-items:center; gap:12px; font-size:22px; font-weight:600; color:var(--fg); background:var(--surface); border:1px solid var(--line); padding:12px 16px; border-radius:14px; }
+  .pt i { width:10px; height:10px; border-radius:50%; background:var(--accent); flex:none; box-shadow:0 0 12px var(--accent); }
+  #shot { position:absolute; left:580px; top:150px; width:1276px; height:760px; border-radius:20px; overflow:hidden; background:#000; border:1px solid #2c323d; box-shadow:0 40px 120px rgba(0,0,0,.6), 0 0 0 1px rgba(255,107,44,.08); }
+  #shot .bar { height:40px; background:#171a21; display:flex; align-items:center; gap:9px; padding:0 18px; border-bottom:1px solid #242a34; }
+  #shot .bar b { width:13px; height:13px; border-radius:50%; background:#3a404c; }
+  #shot .bar b:nth-child(1) { background:#ff5f57; } #shot .bar b:nth-child(2) { background:#febc2e; } #shot .bar b:nth-child(3) { background:#28c840; }
+  #shot .bar span { margin-left:16px; font-size:15px; color:var(--muted); background:#0f1217; padding:5px 16px; border-radius:8px; }
+  #shot .view { position:absolute; top:40px; left:0; right:0; bottom:0; overflow:hidden; }
+  #shot .view img { position:absolute; left:0; top:0; width:100%; transform-origin:50% 30%; }
+  #bowie { position:absolute; width:220px; height:220px; left:150px; top:790px; filter:drop-shadow(0 20px 40px rgba(255,107,44,.35)); }
+  #ring { position:absolute; width:262px; height:262px; border-radius:50%; border:3px solid var(--accent); left:129px; top:769px; }
+  #cap { position:absolute; left:1218px; bottom:34px; transform:translateX(-50%); width:max-content; max-width:1276px; text-align:center; font-size:33px; line-height:1.35; font-weight:600; padding:16px 30px; border-radius:16px; background:rgba(8,9,12,.82); border:1px solid rgba(255,255,255,.06); }
+  #cap:empty { display:none; }
+  /* hero scenes */
+  body.hero #left, body.hero #shot { display:none; }
+  body.hero #cap { left:50%; max-width:1500px; }
+  #hero { position:absolute; inset:0; display:none; }
+  body.hero #hero { display:block; }
+  #hero h1 { position:absolute; left:0; right:0; top:610px; text-align:center; font-size:96px; letter-spacing:-3px; }
+  #hero h2 { position:absolute; left:0; right:0; top:730px; text-align:center; font-size:34px; }
+  #orbit { position:absolute; left:960px; top:340px; }
+  .orb { position:absolute; white-space:nowrap; transform:translate(-50%,-50%); padding:12px 22px; border-radius:999px; background:var(--surface); border:1px solid var(--line); font-size:22px; font-weight:600; }
+  .orb::before { content:""; display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--accent); margin-right:10px; vertical-align:middle; }
+  #checks { position:absolute; left:1240px; top:250px; display:flex; flex-direction:column; gap:16px; }
+  #cta { position:absolute; left:50%; top:820px; transform:translateX(-50%); padding:20px 46px; border-radius:999px; background:var(--accent); color:#fff; font-size:32px; font-weight:800; box-shadow:0 20px 60px rgba(255,107,44,.45); display:none; }
+  #fade { position:absolute; inset:0; background:#000; pointer-events:none; }
+</style></head>
+<body>
+<div id="stage">
+  <div id="grid"></div><div id="glow"></div><div id="glow2"></div>
+  <div id="brand"><img src="assets/app-192.png" alt=""><div>Bowers<small>AI AGENT</small></div></div>
+  <div id="count"></div>
+  <div id="left"><span class="chip" id="chip"></span><h1 id="title"></h1><h2 id="sub"></h2><div id="points"></div></div>
+  <div id="shot"><div class="bar"><b></b><b></b><b></b><span>127.0.0.1 · Bowers</span></div><div class="view"></div></div>
+  <div id="hero"><div id="orbit"></div><div id="checks"></div><h1 id="htitle"></h1><h2 id="hsub"></h2><div id="cta">Download Bowers</div></div>
+  <div id="ring"></div>
+  <img id="bowie" alt="">
+  <div id="cap"></div>
+  <div id="fade"></div>
+</div>
+<script>
+let S = null, ORB = [], CHECKS = [];
+function setup(scene) {
+  S = scene;
+  document.body.classList.toggle('hero', !(scene.shots && scene.shots.length));
+  document.getElementById('count').textContent = `${scene.index} / ${scene.total}`;
+  document.getElementById('chip').textContent = scene.chip;
+  document.getElementById('title').textContent = scene.title;
+  document.getElementById('sub').textContent = scene.sub;
+  document.getElementById('htitle').textContent = scene.title;
+  document.getElementById('hsub').textContent = scene.sub;
+  document.getElementById('bowie').src = `assets/bowie/${scene.sticker}.webp`;
+  const pts = document.getElementById('points'); pts.innerHTML = '';
+  for (const p of scene.points || []) { const d = document.createElement('div'); d.className = 'pt'; d.innerHTML = '<i></i>'; d.appendChild(document.createTextNode(p)); pts.appendChild(d); }
+  const view = document.querySelector('#shot .view'); view.innerHTML = '';
+  for (const name of scene.shots || []) { const im = document.createElement('img'); im.src = `shots/${name}.png`; view.appendChild(im); }
+  const orbit = document.getElementById('orbit'); orbit.innerHTML = ''; ORB = [];
+  for (const o of scene.orbit || []) { const d = document.createElement('div'); d.className = 'orb'; d.textContent = o; orbit.appendChild(d); ORB.push(d); }
+  const checks = document.getElementById('checks'); checks.innerHTML = ''; CHECKS = [];
+  for (const c of scene.checks || []) { const d = document.createElement('div'); d.className = 'pt'; d.innerHTML = '<i></i>'; d.appendChild(document.createTextNode(c)); checks.appendChild(d); CHECKS.push(d); }
+  document.getElementById('cta').style.display = scene.cta ? 'block' : 'none';
+  if (!(scene.shots && scene.shots.length)) {  // hero layout: Bowie big in the middle
+    Object.assign(document.getElementById('bowie').style, { width: '400px', height: '400px', left: '760px', top: '150px' });
+    Object.assign(document.getElementById('ring').style, { width: '470px', height: '470px', left: '725px', top: '115px' });
+    if (scene.checks) { Object.assign(document.getElementById('bowie').style, { left: '360px' }); Object.assign(document.getElementById('ring').style, { left: '325px' });
+      document.getElementById('htitle').style.cssText = 'left:120px;right:auto;width:960px;'; document.getElementById('hsub').style.cssText = 'left:120px;right:auto;width:960px;'; }
+  }
+  return true;
+}
+const ease = x => x <= 0 ? 0 : x >= 1 ? 1 : 1 - Math.pow(1 - x, 3);
+function render(t, amp, cue) {
+  const D = S.duration, $ = id => document.getElementById(id);
+  // background drift
+  $('glow').style.transform = `translate(${300 + Math.sin(t / 7) * 160}px, ${-300 + Math.cos(t / 9) * 120}px)`;
+  $('glow2').style.transform = `translate(${1100 + Math.cos(t / 8) * 140}px, ${300 + Math.sin(t / 6) * 120}px)`;
+  $('grid').style.backgroundPosition = `${t * 6}px ${t * 4}px`;
+  // text in
+  const a = ease(t / 0.9);
+  for (const id of ['chip', 'title', 'sub']) { $(id).style.opacity = a; $(id).style.transform = `translateY(${(1 - a) * 30}px)`; }
+  [...$('points').children].forEach((el, i) => { const k = ease((t - 1.2 - i * 0.5) / 0.6); el.style.opacity = k; el.style.transform = `translateX(${(1 - k) * -40}px)`; });
+  // screenshot: rise in, then a slow push-in and pan
+  if (S.shots && S.shots.length) {
+    const k = ease((t - 0.3) / 1.1);
+    $('shot').style.opacity = k; $('shot').style.transform = `translateY(${(1 - k) * 60}px) scale(${0.96 + 0.04 * k})`;
+    const ims = [...document.querySelectorAll('#shot .view img')], seg = D / ims.length;
+    ims.forEach((im, i) => {
+      const q = Math.max(0, Math.min(1, (t - i * seg) / seg));
+      im.style.opacity = t >= i * seg ? (i === 0 ? 1 : ease((t - i * seg) / 0.6)) : 0;
+      im.style.transform = `translateX(${-(S.pan || 0) * q * 40}px) scale(${1 + 0.07 * q})`;
+    });
+  }
+  // hero extras
+  ORB.forEach((el, i) => {
+    const ang = i / ORB.length * Math.PI * 2 + t * 0.12, k = ease((t - 0.6 - i * 0.18) / 0.7);
+    el.style.left = Math.cos(ang) * 620 + 'px'; el.style.top = Math.sin(ang) * 250 + 'px'; el.style.opacity = k * (0.55 + 0.45 * (Math.sin(ang) + 1) / 2);
+  });
+  CHECKS.forEach((el, i) => { const k = ease((t - (S.checkAt?.[i] ?? 1 + i)) / 0.6); el.style.opacity = k; el.style.transform = `translateX(${(1 - k) * 50}px)`; });
+  if (S.cta) { const k = ease((t - 2) / 0.8); $('cta').style.opacity = k; $('cta').style.transform = `translateX(-50%) scale(${0.9 + 0.1 * k + Math.sin(t * 3) * 0.012})`; }
+  // Bowie talks: bounce and squash with his voice
+  const bob = Math.sin(t * 2.2) * 8, talk = Math.min(1, amp * 3.2);
+  const bk = ease((t - 0.2) / 0.8);
+  $('bowie').style.opacity = bk;
+  $('bowie').style.transform = `translateY(${bob - talk * 14 + (1 - bk) * 80}px) scale(${1 + talk * 0.06}, ${1 + talk * 0.09}) rotate(${Math.sin(t * 1.3) * 3}deg)`;
+  $('ring').style.opacity = 0.15 + talk * 0.75; $('ring').style.transform = `scale(${1 + talk * 0.12})`;
+  $('cap').textContent = cue || '';
+  // fade from and to black
+  $('fade').style.opacity = Math.max(0, 1 - t / 0.45, (t - (D - 0.45)) / 0.45);
+}
+</script>
+</body></html>

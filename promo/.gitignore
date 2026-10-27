@@ -1,0 +1,10 @@
+shots/
+audio/
+scenes/
+*.mp4
+*.wav
+timings.json
+list.txt
+assets
+demo/
+home/
