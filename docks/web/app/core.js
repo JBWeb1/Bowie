@@ -113,17 +113,19 @@ function md(src) {
   for (const para of s.split(/\n{2,}/)) {
     const lines = para.split('\n').filter(l => l.trim() !== '');
     if (!lines.length) continue;
-    let list = null, buf = [];
-    const flush = () => { if (buf.length) { out.push(`<p>${buf.map(inline).join('<br>')}</p>`); buf = []; } };
+    let list = null, buf = [], quote = [];
+    const flushQuote = () => { if (quote.length) { out.push(`<blockquote>${quote.map(inline).join('<br>')}</blockquote>`); quote = []; } };
+    const flush = () => { flushQuote(); if (buf.length) { out.push(`<p>${buf.map(inline).join('<br>')}</p>`); buf = []; } };
     const closeList = () => { if (list) { out.push(`<${list.tag}>${list.items.map(i => `<li>${inline(i)}</li>`).join('')}</${list.tag}>`); list = null; } };
     for (const line of lines) {
       let m;
       if ((m = line.match(/^\u0000(\d+)\u0000$/))) { flush(); closeList(); out.push(blocks[m[1]]); }
+      else if ((m = line.match(/^&gt;\s?(.*)$/))) { if (buf.length) { out.push(`<p>${buf.map(inline).join('<br>')}</p>`); buf = []; } closeList(); quote.push(m[1]); }
       else if ((m = line.match(/^#{1,6}\s+(.*)$/))) { flush(); closeList(); out.push(`<h3>${inline(m[1])}</h3>`); }
       else if ((m = line.match(/^\s*[-*]\s+(.*)$/))) { flush(); if (list?.tag !== 'ul') { closeList(); list = { tag: 'ul', items: [] }; } list.items.push(m[1]); }
       else if ((m = line.match(/^\s*\d+[.)]\s+(.*)$/))) { flush(); if (list?.tag !== 'ol') { closeList(); list = { tag: 'ol', items: [] }; } list.items.push(m[1]); }
       else if (list && /^\s{2,}/.test(line)) { list.items[list.items.length - 1] += ' ' + line.trim(); }
-      else { closeList(); buf.push(line); }
+      else { closeList(); flushQuote(); buf.push(line); }
     }
     flush(); closeList();
   }

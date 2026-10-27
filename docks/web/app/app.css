@@ -114,6 +114,7 @@ svg { flex: none; }
 .prose { min-width: 0; flex: 1; overflow-wrap: anywhere; line-height: 1.65; }
 .prose > :first-child { margin-top: 0; } .prose > :last-child { margin-bottom: 0; }
 .prose p { margin: 0 0 10px; }
+.prose blockquote { margin: 0 0 10px; padding: 10px 14px; border-left: 3px solid var(--accent); background: var(--surface-2); border-radius: 0 10px 10px 0; color: var(--fg); }
 .prose h3 { font-size: 15.5px; margin: 16px 0 6px; }
 .prose ul, .prose ol { margin: 0 0 10px; padding-left: 22px; }
 .prose li { margin: 3px 0; }

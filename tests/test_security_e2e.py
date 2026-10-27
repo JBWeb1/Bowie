@@ -87,6 +87,7 @@ def test_every_page_loads_in_a_real_browser(tmp_path):
             page.evaluate(f"showPage('{name}')")
             page.wait_for_timeout(250)
             assert not page.locator(f"#page-{name}").is_hidden(), name
+        assert page.evaluate("md('> **Hi**\\n> there')") == "<blockquote><strong>Hi</strong><br>there</blockquote>"
         page.keyboard.press("Control+k")
         assert page.locator("#cmdk").is_visible()
         browser.close()
