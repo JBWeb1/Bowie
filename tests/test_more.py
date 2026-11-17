@@ -670,4 +670,4 @@ def test_bowers_models_are_tuned_profiles(tmp_path):
     assert agent.profile == "" and "You are Bowers Solace" not in agent.system
     pinned = Agent(root=tmp_path, client=FakeClient([]), display=Display(), model="syntra", effort="low")
     assert pinned.effort == "low" and pinned.model == models.current("opus")  # an explicit effort wins
-    assert [c["label"] for c in models.choices() if c["group"] == "Bowers"] == ["Bowers Syntra 1", "Bowers Aether 1", "Bowers Solace 1"]
+    assert [c["label"] for c in models.choices() if c["group"] == "Bowers"] == ["Bowers Syntra 1", "Bowers Aether 1", "Bowers Solace 1", "Bowers Local 1"]

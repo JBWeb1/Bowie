@@ -91,6 +91,12 @@ def load(path: Path | None = None) -> dict:
                 cfg[key].update(value)
             else:
                 cfg[key] = value
+    # Local model servers at the addresses Bowers Local uses (OLLAMA_HOST, LMSTUDIO_URL), unless router.json says
+    from .. import local
+    if not cfg["providers"].get("ollama", {}).get("base_url"):
+        cfg["providers"]["ollama"] = {**cfg["providers"].get("ollama", {}), "base_url": local.ollama_url() + "/v1"}
+    if not cfg["providers"].get("lmstudio", {}).get("base_url"):
+        cfg["providers"]["lmstudio"] = {**cfg["providers"].get("lmstudio", {}), "base_url": local.lmstudio_url() + "/v1"}
     # Model routes Bowers offers by name; a route of the same name in your router.json wins.
     from .. import models
     opus = models.current("opus")

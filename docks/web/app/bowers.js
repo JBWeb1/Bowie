@@ -380,7 +380,7 @@ const LAB_UI = {
     b.querySelector('#sk-go').onclick = () => { const v = b.querySelector('#sk-src').value.trim(); if (v) install(v); };
   },
   resources(b) {
-    b.innerHTML = `<p class="muted">Thousands of free things, from three community lists: free tiers for developers (free-for-dev), apps you can host yourself (awesome-selfhosted), and free programming books and courses (free-programming-books). Searchable offline.</p>
+    b.innerHTML = `<p class="muted">Thousands of free things, from four community lists: free tiers for developers (free-for-dev), apps you can host yourself (awesome-selfhosted), free programming books and courses (free-programming-books), and over a thousand APIs that need no key at all (public-apis). Searchable offline.</p>
       <div class="row"><input class="input" id="rs-q" type="search" placeholder="e.g. email API, password manager, rust book, postgres hosting" style="flex:1"><select class="input" id="rs-s" style="max-width:240px"><option value="">All lists</option></select></div>
       <div id="rs-out" class="rs-out"></div><div class="row"><button class="btn" id="rs-ask">Ask Bowie to pick the best one for…</button></div>`;
     let timer = null;

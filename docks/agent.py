@@ -42,7 +42,8 @@ MAX_STOP_HOOK_ROUNDS = 3
 MODES = ("ask", "auto", "plan", "yolo")
 NO_KEY = ("No API key was found, so Bowers can't reach Claude. Get a key at https://console.anthropic.com, "
           "then set it before starting Bowers: export ANTHROPIC_API_KEY=sk-ant-...  (or point ANTHROPIC_BASE_URL "
-          "at Bowers Router).")
+          "at Bowers Router). Or use Bowers Local, free on this computer with no key: run `bowers local setup`, "
+          "then pick Bowers Local.")
 MAX_JSON_RETRIES = 2
 MAX_MENTION_BYTES = 100_000
 
@@ -294,8 +295,8 @@ class Agent:
             except anthropic.AnthropicError as e:  # bad credentials setup: report it when a task runs
                 self.client_error = e
         self.claude_client = self.client  # for Claude models; Codex and others go through the router
-        self.profile = ""  # a Bowers model (syntra, aether, solace), or "" for an engine chosen directly
-        self._apply_profile(self.model, keep_effort=self.effort is not None)
+        self.profile = ""  # a Bowers model (syntra, aether, solace, local), or "" for an engine chosen directly
+        self._apply_profile(models.starting_model(self.model), keep_effort=self.effort is not None)
         self.effort = self.effort or "high"
         self._use_client_for_model()
         if self.ext is None:
@@ -1023,6 +1024,9 @@ class Agent:
                     time.sleep(min(0.2, max(0.0, end - time.monotonic())))
 
     def _stream_once(self):
+        if self.model == models.LOCAL:  # Ollama may have started since: look again
+            self._apply_profile(self.profile or models.LOCAL, keep_effort=True)
+            self._use_client_for_model()
         if self.model_error:
             raise TurnAborted(f"{self.model_error} (or switch models with /model)")
         if self.client is None:

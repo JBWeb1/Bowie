@@ -6,9 +6,26 @@
 
 (Bowers was called Docks. The `docks` command, `DOCKS_*` settings and the `~/.docks` folder still work.)
 
+### Use it free, with no API key: Bowers Local
+Bowers can run on an AI model on your own computer instead of a paid cloud one. It's free, private, and needs no key or sign-up.
+
+```bash
+bowers local setup      # installs a coding model with Ollama (about 2-9 GB, sized to your memory)
+bowers local            # what's running and what Bowers will use
+```
+
+Or go to Integrations → **Ollama (Bowers Local)** → Install. Then pick **Bowers Local** in the model menu. With no Claude key set, Bowers starts on it by itself. It works with [Ollama](https://ollama.com) or [LM Studio](https://lmstudio.ai)'s local server, through Bowers Router (Bowers' own API, which speaks both the Anthropic and OpenAI formats).
+
+The honest tradeoff: a model that fits on a home computer is much smaller than Claude. It's good for everyday coding, questions and small projects. Big, many-step jobs go better on a cloud model. 16 GB of memory or more is recommended. Bowers never quietly switches a local request to a paid model.
+
+Also free and key-free:
+- Bowie's voice (Kokoro) and listening (faster-whisper) run on your computer.
+- **Labs → Free Resources** includes 1,100+ APIs that need no key (weather, maps, currency, books, space and more), and Bowers looks there first when it builds you an app.
+- Integrations add **Open WebUI** and **NextChat** (chat apps for your local models), **ComfyUI** (images and video on your own graphics card), **browser-use**, **Agent Reach** (reading the web, YouTube and GitHub with no keys), the **Pi** coding agent and **FastAPI** (build your own APIs).
+
 ### More connected apps and free resources
 - **Connect apps** (Explore or Settings → Tools & safety) now lists 155 MCP apps: the featured ones plus all 141 remote servers from the community list [awesome-remote-mcp-servers](https://github.com/ovladon/awesome-remote-mcp-servers), with search and a category filter. Sign-in apps open a browser window; API-key apps read their key from an environment variable (the card names it, for example `PLAID_API_KEY`). Older SSE-transport servers work too.
-- **Labs → Free Resources** searches 5,000+ entries offline: free tiers for developers (free-for-dev), apps to host yourself (awesome-selfhosted), and free programming books and courses (free-programming-books). From the terminal: `bowers resources password manager`.
+- **Labs → Free Resources** searches 6,000+ entries offline: free tiers for developers (free-for-dev), apps to host yourself (awesome-selfhosted), free programming books and courses (free-programming-books), and APIs that need no key (public-apis). From the terminal: `bowers resources password manager`, or `bowers resources weather --source=public-apis`.
 
 ## Bowers models
 

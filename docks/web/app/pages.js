@@ -63,8 +63,8 @@ function renderHomeExtra() {
 renderHomeExtra();
 
 // The model chip and the model picker
-const MODEL_ART = { syntra: 'focused', aether: 'thinking', solace: 'relaxed' };
-const MODEL_BADGE = { syntra: ['Recommended', ''], aether: ['Most capable', ''], solace: ['Calm and clear', 'mint'] };
+const MODEL_ART = { syntra: 'focused', aether: 'thinking', solace: 'relaxed', local: 'chilling' };
+const MODEL_BADGE = { syntra: ['Recommended', ''], aether: ['Most capable', ''], solace: ['Calm and clear', 'mint'], local: ['Free · no key', 'mint'] };
 function modelCard(m, current, onPick) {
   const art = MODEL_ART[m.id] || 'happy', [badge, tone] = MODEL_BADGE[m.id] || [m.group === 'Engines' ? 'Engine' : '', 'mint'];
   const c = h('button', 'mcard' + (m.id === current ? ' on' : ''), `<img src="${BOWIE(art)}" alt=""><b></b><p></p>${badge ? `<span class="badge-soft ${tone}">${esc(badge)}</span>` : ''}`);

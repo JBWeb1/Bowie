@@ -32,8 +32,14 @@ def check(root: Path, ext=None, mcp=None, agent=None, online: bool = True) -> li
 
     key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")
     base = os.environ.get("ANTHROPIC_BASE_URL")
-    if not key and not base:
-        out.append((FAIL, "API key", "ANTHROPIC_API_KEY isn't set; get a key at https://console.anthropic.com"))
+    from . import local
+    local_problem = local.problem()
+    if not key and not base and not local_problem:
+        out.append((WARN, "API key", f"no Claude key, so Bowers uses Bowers Local ({local.detect()['target']}): free, "
+                                     "on this computer. Set ANTHROPIC_API_KEY for Claude"))
+    elif not key and not base:
+        out.append((FAIL, "API key", "ANTHROPIC_API_KEY isn't set; get a key at https://console.anthropic.com, "
+                                     "or run `bowers local setup` for a free model on this computer"))
     elif online:
         try:
             import anthropic
@@ -53,6 +59,8 @@ def check(root: Path, ext=None, mcp=None, agent=None, online: bool = True) -> li
     else:
         out.append((OK, "API key", "set (not tested)"))
 
+    out.append((OK if not local_problem else WARN, "Bowers Local",
+                f"ready: {local.detect()['target']}" if not local_problem else local_problem))
     from . import models
     problem = models.check_openai("codex")
     out.append((WARN if problem else OK, "Codex / ChatGPT", problem or

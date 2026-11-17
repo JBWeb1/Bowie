@@ -113,6 +113,15 @@ def grep(root: Path, pattern: str, path: str = ".", file_glob: str = "*") -> str
 
 
 # name -> (function, mutates?, schema)
+def find_free_api(root: Path, query: str) -> str:
+    """APIs that need no key, from the public-apis list built into Bowers."""
+    from . import resources
+    hits = resources.search(query, "public-apis", limit=12)
+    if not hits:
+        return "No key-free API matched. Try other words, or search the web for one."
+    return "\n".join(f"{h['name']} ({h['category']}): {h['description']}  {h['url']}" for h in hits)
+
+
 TOOLS = {
     "bash": (bash, True, {
         "description": "Run a shell command in the project directory. Use for builds, tests, git, installing packages, running code.",
@@ -199,6 +208,13 @@ TOOLS = {
         "description": "Find files by glob pattern, e.g. '**/*.py' or '*.md'.",
         "properties": {"pattern": {"type": "string"}, "path": {"type": "string"}},
         "required": ["pattern"],
+    }),
+    "find_free_api": (find_free_api, False, {
+        "description": "Find free public APIs that need no API key or sign-up (weather, maps, currency, books, "
+                       "jokes, space, sports and more). Use it before suggesting an API that needs a key, so the "
+                       "person doesn't have to sign up anywhere.",
+        "properties": {"query": {"type": "string", "description": "What the API is for, e.g. 'weather forecast'"}},
+        "required": ["query"],
     }),
     "grep": (grep, False, {
         "description": "Search file contents with a regex. Returns path:line: text.",

@@ -1,5 +1,6 @@
 """Free resources, searchable offline: free tiers for developers (free-for-dev), apps you can host yourself (awesome-selfhosted),
-and free programming books and courses (free-programming-books). Built from those community lists; see data/free_resources.json.gz."""
+free programming books and courses (free-programming-books), and APIs that need no key at all (public-apis). Built
+from those community lists; see data/free_resources.json.gz and data/free_apis.json.gz."""
 
 import gzip
 import json
@@ -8,13 +9,16 @@ from functools import lru_cache
 from pathlib import Path
 
 SOURCES = {"free-for-dev": "Free tiers for developers", "awesome-selfhosted": "Apps to host yourself",
-           "free-programming-books": "Free books and courses"}
+           "free-programming-books": "Free books and courses", "public-apis": "Free APIs, no key needed"}
 
 
 @lru_cache(maxsize=1)
 def _rows() -> list[dict]:
-    with gzip.open(Path(__file__).parent / "data" / "free_resources.json.gz") as f:
-        return json.load(f)
+    rows = []
+    for name in ("free_resources.json.gz", "free_apis.json.gz"):
+        with gzip.open(Path(__file__).parent / "data" / name) as f:
+            rows += json.load(f)
+    return rows
 
 
 def count() -> int:

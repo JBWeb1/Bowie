@@ -183,6 +183,8 @@ class Engine:
             prefix = next((p for p in self.cfg["model_prefixes"] if model.startswith(p)), None)
             provider = self.providers.get(self.cfg["model_prefixes"][prefix]) if prefix else None
             targets = [Target(provider, model)] if provider else []
+        if targets and all(t.provider.local for t in targets):
+            return [t for t in targets if t.provider.available]  # a local model never fails over to a paid cloud one
         default = self.routes.get(self.cfg.get("default_route", ""))
         if default and (self.cfg.get("fallback_to_default", True) or not targets):
             seen = {t.label for t in targets}

@@ -143,6 +143,30 @@ add("act", "act (GitHub Actions locally)", "system", "ci-runner", "nektos/act", 
 add("blender", "Blender", "system", "game-3d-builder", "blender/blender", license="GPL", check="blender",
     steps=[{"win": "winget install --id BlenderFoundation.Blender -e", "mac": "brew install --cask blender", "linux": "sudo snap install blender --classic"}])
 
+add("ollama", "Ollama (Bowers Local)", "system", "local-model-engineer", "ollama/ollama", license="MIT", check="call:docks.local:ready",
+    steps=[{"win": "winget install --id Ollama.Ollama -e", "mac": "brew install --cask ollama",
+            "linux": "curl -fsSL https://ollama.com/install.sh | sh"},
+           {"call": "docks.local:setup", "say": "download a free coding model that fits this computer and make bowers-coder from it (about 2-9 GB)"}],
+    size="2-9 GB", notes="Runs AI models on this computer: free, private, no API key. Bowers uses it as Bowers Local "
+                         "(pick it in the model menu; with no Claude key Bowers starts on it by itself). Smaller than "
+                         "Claude, so best for everyday coding and questions; 16 GB of memory or more recommended.")
+add("lm-studio", "LM Studio", "link", "local-model-engineer", url="https://lmstudio.ai",
+    notes="A desktop app for running models on this computer. Start its local server (port 1234) and Bowers Local finds it.")
+add("comfyui", "ComfyUI", "tool", "video-producer", "Comfy-Org/ComfyUI", license="GPL-3.0", check="comfy", size="large",
+    steps=[{"uv": "--python 3.12 comfy-cli", "pip": "comfy-cli"}, "comfy --skip-prompt install"],
+    notes="Make images and video on your own computer with node workflows (Stable Diffusion, Flux, Wan and more): no "
+          "API key. Start it with `comfy launch` and open http://localhost:8188. Needs a good graphics card (NVIDIA "
+          "with 8 GB+ is best); models download separately and are several GB each.")
+add("agent-reach", "Agent Reach", "tool", "growth-marketer", "Panniantong/Agent-Reach", license="MIT", check="agent-reach", needs=["uv"],
+    steps=["uv tool install https://github.com/Panniantong/Agent-Reach/releases/latest/download/agent-reach.zip", "agent-reach setup"],
+    notes="Lets Bowers read the web, YouTube, GitHub, V2EX and Bilibili with no API keys; Reddit, X, LinkedIn, "
+          "Xiaohongshu and others are optional and reuse a login from your Chrome. Use a second account for those: "
+          "sites can restrict accounts used by automation, and it's their rules you're under.")
+add("pi", "Pi coding agent", "tool", "autonomous-engineer", "earendil-works/pi", license="MIT", check="pi", needs=["node"],
+    steps=["npm install -g --ignore-scripts @earendil-works/pi-coding-agent"],
+    notes="A small coding agent in the terminal that you shape with extensions, skills and themes. Needs Node 22.19+. "
+          "It can use Ollama too, so it also runs free on this computer.")
+
 # ---------------------------------------------------------------- apps (cloned into ~/Bowers Apps and set up there)
 add("mirofish", "MiroFish", "app", "scenario-simulator", "666ghj/MiroFish", license="AGPL-3.0", needs=["git", "docker"],
     steps=[{"env": ".env.example"}, "docker compose up -d"], run="docker compose up -d", open_url="http://localhost:3000", keys=["LLM API key in .env"])
@@ -171,6 +195,15 @@ add("open-higgsfield", "Open Higgsfield", "app", "video-producer", "wide-trace/o
     notes="One studio for 38 image and video models (Kling 3, Seedance, Wan, LTX, MiniMax, Soul and more), with a gallery of every run. "
           "Generating uses your own Higgsfield Cloud key, which is paid; the studio is free. Uploading start frames also needs a "
           "Vercel Blob token (OPEN_HIGGSFIELD_READ_WRITE_TOKEN in .env.local). The repository has no licence file yet.")
+add("open-webui", "Open WebUI", "tool", "local-model-engineer", "open-webui/open-webui", license="Open WebUI License (BSD-3 based, keep its branding)",
+    check="open-webui", needs=["uv"], steps=[{"uv": "--python 3.11 open-webui", "pip": "open-webui"}], size="large",
+    notes="A ChatGPT-style chat app for the models on this computer: it finds Ollama by itself, no key. Start it with "
+          "`open-webui serve` and open http://localhost:8080. Installed with its own Python 3.11 (it doesn't run on newer ones).")
+add("nextchat", "NextChat", "app", "local-model-engineer", "ChatGPTNextWeb/NextChat", license="MIT", needs=["git", "node"],
+    steps=["npx --yes yarn install", {"write": ".env.local", "text": "OPENAI_API_KEY=ollama\nBASE_URL=http://localhost:11434\nCUSTOM_MODELS=+bowers-coder\n"}],
+    run="npx --yes yarn dev", open_url="http://localhost:3000",
+    notes="A light, fast chat app. Bowers sets it up to talk to Ollama on this computer, so it's free with no key "
+          "(change BASE_URL and OPENAI_API_KEY in its .env.local for a cloud provider).")
 add("realestateos", "RealEstateOS", "app", "property-visualizer", "engrtitooo/RealEstateOS", license="MIT", needs=["git", "node"],
     steps=["npm install"], run="npm run dev", open_url="http://localhost:3000", keys=["GOOGLE_API_KEY"])
 add("ai-real-estate-stager", "AI Real Estate Stager", "app", "property-visualizer", "SamurAIGPT/ai-real-estate-stager", needs=["git", "node"],
@@ -186,6 +219,15 @@ add("three-editor", "three-editor", "app", "game-3d-builder", "z2586300277/three
     steps=["npm install"], run="npm run dev")
 add("stemstudio", "StemStudio Engine", "app", "game-3d-builder", "Stem-Studio/Engine", license="MIT", needs=["git", "bun"],
     steps=["git submodule update --init --recursive", "bun install"], run="bun run dev")
+add("browser-use", "browser-use", "library", "autonomous-engineer", "browser-use/browser-use", license="MIT",
+    steps=["pip install browser-use"],
+    notes="Let an AI drive a real browser from your own Python code. Free with a local model: "
+          "ChatOpenAI(model='bowers-coder', base_url='http://localhost:11434/v1', api_key='ollama').")
+add("fastapi", "FastAPI", "library", "autonomous-engineer", "fastapi/fastapi", license="MIT", steps=['pip install "fastapi[standard]"'],
+    notes="Build your own APIs in Python, with docs pages made for you (`fastapi dev main.py`). Ask Bowers to make one.")
+add("public-apis", "Public APIs list", "link", None, "public-apis/public-apis", license="MIT",
+    notes="Hundreds of free APIs. The ones that need no key at all are built into Bowers: Labs > Free Resources, "
+          "or `bowers resources --source=public-apis`.")
 add("playcanvas", "PlayCanvas engine", "library", "game-3d-builder", "playcanvas/engine", license="MIT", steps=["npm install playcanvas"])
 add("vibra-code", "Vibra Code", "app", "mobile-app-builder", "sa4hnd/vibra-code", license="AGPL-3.0", needs=["git", "node"],
     steps=["npm install"], run="npm run dev", open_url="http://localhost:3000", keys=["E2B, Convex and model keys (see its README)"])

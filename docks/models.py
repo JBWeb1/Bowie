@@ -5,6 +5,7 @@ Engines: short names pick a model family, and Bowers keeps each one pointing at 
     opus     Claude Opus (the default)          fable    Claude Fable: Anthropic's most capable
     sonnet   Claude Sonnet: quicker, cheaper    haiku    Claude Haiku: fastest, cheapest
     codex    OpenAI's Codex coding model        chatgpt  OpenAI's flagship GPT model
+    local    a model running on this computer with Ollama or LM Studio: free, private, no key (see local.py)
 
 Claude models go straight to the Anthropic API. OpenAI's go through Bowers Router, which translates the requests:
 Bowers uses the router at DOCKS_ROUTER_URL if you run one, or starts one inside its own process (needs
@@ -35,7 +36,8 @@ INFO = {
     "codex": ("Codex (OpenAI)", "OpenAI's coding model through Bowers Router; needs OPENAI_API_KEY"),
     "chatgpt": ("ChatGPT model (OpenAI)", "OpenAI's flagship GPT model through Bowers Router; needs OPENAI_API_KEY"),
 }
-EXTRA_ALIASES = {"gpt": "chatgpt", "gpt-codex": "codex", "openai": "chatgpt"}
+EXTRA_ALIASES = {"gpt": "chatgpt", "gpt-codex": "codex", "openai": "chatgpt", "ollama": "local", "offline": "local"}
+LOCAL = "local"  # Bowers Local: resolved to the model running here (e.g. "ollama/bowers-coder:latest")
 UPDATE_EVERY = 24 * 3600
 
 # models that take the newest web search / fetch tools; others get the basic versions
@@ -76,7 +78,28 @@ PROFILES = {
                    "jargon, keep the person in the loop, and make complex things feel simple."),
     },
 }
+PROFILES["local"] = {
+    "name": "Bowers Local 1", "engine": LOCAL, "effort": "medium",
+    "tagline": "Free and private: runs on your computer with Ollama, no key needed",
+    "prompt": ("You are Bowers Local, running on the person's own computer. Work in small, careful steps: read the "
+               "files you need, make one change at a time, and run it to check. Keep answers short and clear. If a "
+               "task is too big for you, say so plainly and suggest a cloud model."),
+}
 DEFAULT_PROFILE = "syntra"
+
+
+def has_cloud_key() -> bool:
+    """Whether a Claude key (or your own endpoint) is set up."""
+    return any(os.environ.get(k) for k in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL"))
+
+
+def starting_model(asked: str) -> str:
+    """With no key at all but a local model running, start on Bowers Local instead of failing."""
+    if asked == DEFAULT_PROFILE and not has_cloud_key() and not os.environ.get("DOCKS_ROUTER_URL"):
+        from . import local
+        if local.problem() is None:
+            return "local"
+    return asked
 
 
 def profile_of(name: str) -> str | None:
@@ -114,7 +137,7 @@ def codex_model() -> str:
 
 def choices() -> list[dict]:
     out = [{"id": key, "alias": key, "label": p["name"], "note": p["tagline"], "group": "Bowers",
-            "engine": current(p["engine"])} for key, p in PROFILES.items()]
+            "engine": resolve(p["engine"])} for key, p in PROFILES.items()]
     for family in DEFAULTS:
         name, note = INFO[family]
         model = current(family)
@@ -137,6 +160,9 @@ def resolve(name: str) -> str:
     key = EXTRA_ALIASES.get(key, key)
     if key in OPENAI_FAMILIES:
         return key
+    if key == LOCAL:
+        from . import local
+        return local.detect()["target"] or LOCAL
     if key in DEFAULTS:
         return current(key)
     return (name or "").strip()
@@ -153,7 +179,13 @@ def is_direct_anthropic(client) -> bool:
     return base.startswith("https://api.anthropic.com")
 
 
+def is_local(model: str) -> bool:
+    return model == LOCAL or model.startswith(("ollama/", "lmstudio/"))
+
+
 def label(model: str) -> str:
+    if is_local(model):
+        return "Bowers Local" + (f" ({model.split('/', 1)[1]})" if "/" in model else "")
     for c in choices():
         if c["id"] == model:
             return c["label"]
@@ -311,7 +343,11 @@ check_codex = check_openai
 def router_client(model: str):
     """An Anthropic-format client that reaches `model` through Bowers Router."""
     import anthropic
-    if model in OPENAI_FAMILIES or not model.startswith("claude-"):
+    if is_local(model):
+        if model == LOCAL and not os.environ.get("DOCKS_ROUTER_URL"):
+            from . import local
+            raise ModelError(local.problem() or "Bowers Local couldn't find a model")
+    elif model in OPENAI_FAMILIES or not model.startswith("claude-"):
         problem = check_openai(model)
         if problem:
             raise ModelError(problem)

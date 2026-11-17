@@ -847,6 +847,31 @@ def context_main(argv) -> int:
     return 0
 
 
+def local_main(argv) -> int:
+    """bowers local [status|setup [MODEL]]: Bowers Local, a free model on this computer (Ollama or LM Studio)."""
+    import subprocess
+    from . import local
+    if argv[:1] == ["setup"]:
+        try:
+            if not local.ollama_exe():  # install Ollama first (winget, Homebrew or its install script)
+                from . import integrations
+                step = integrations.find("ollama")["steps"][0]
+                cmd = integrations._pick(step)
+                print(f"installing Ollama: {cmd}")
+                if subprocess.run(cmd, shell=True).returncode or not local.ollama_exe():
+                    raise RuntimeError("Ollama didn't install; get it from https://ollama.com/download and run this again")
+            target = local.setup(base=argv[1] if len(argv) > 1 else None)
+        except Exception as e:
+            print(f"Couldn't set up Bowers Local: {e}")
+            return 1
+        print(f"Bowers Local is ready ({target}). Pick it with /model local, or in the model menu.")
+        return 0
+    for line in local.status_lines():
+        print(line)
+    print(f"Recommended for this computer: {local.recommended()}  (bowers local setup [MODEL])")
+    return 0
+
+
 def voices_main(argv) -> int:
     """bowers voices [list|install|say TEXT]: Bowie's local Kokoro voice."""
     import argparse
@@ -1326,6 +1351,8 @@ def main(argv=None) -> int:
         return image_main(argv[1:])
     if argv[:1] in (["voices"], ["voice"]):
         return voices_main(argv[1:])
+    if argv[:1] in (["local"], ["ollama"]):
+        return local_main(argv[1:])
     if argv[:1] == ["resources"]:
         from . import resources
         words = [a for a in argv[1:] if not a.startswith("--")]
