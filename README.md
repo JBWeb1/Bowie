@@ -6,6 +6,13 @@
 
 (Bowers was called Docks. The `docks` command, `DOCKS_*` settings and the `~/.docks` folder still work.)
 
+### Talk to Bowie
+Bowers Aether's voice mode (the mic button) now does what Grok's companion and voice apps do, with Bowie:
+- **Bowie talks.** His mouth moves with his voice: it follows the real sound with Kokoro or ElevenLabs, and moves in time with the browser voice.
+- **Personalities.** Pick how Bowie talks in voice mode, or in Settings → Model → Output style: Bowie (default), Storyteller, Coach, Playful, Explanatory, Learning or Concise. Personality never changes the facts or the code.
+- **Show him something.** The eye button turns on your camera; while it's on, each question includes what the camera sees ("what's this plant?", "why won't this board boot?").
+- **Deep Search.** `/deep-search QUESTION` (or the Deep search button) searches the web from several angles, checks facts against two sources, and writes a sourced report into `research/`.
+
 ### Use it free, with no API key: Bowers Local
 Bowers can run on an AI model on your own computer instead of a paid cloud one. It's free, private, and needs no key or sign-up.
 

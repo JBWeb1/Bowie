@@ -343,13 +343,15 @@
 <div class="hud hidden" id="hud" role="dialog" aria-label="Bowers Aether">
   <div class="hud-top"><img src="/assets/art/aether-icon.webp" alt=""><div><b>Bowers Aether</b><small>IDEAS · CONTEXT · ACTION</small></div><span class="spacer"></span>
     <label class="hands"><input type="checkbox" id="hud-hands"> Hands-free ("Hey Bowie")</label>
+    <select class="input hud-persona" id="hud-persona" title="Bowie's personality" aria-label="Bowie's personality"></select>
     <button class="btn" id="hud-brief">Brief me</button><button class="btn" id="hud-graph">Knowledge Graph</button><button class="btn icon-only" id="hud-close" aria-label="Close">✕</button></div>
-  <div class="hud-core"><div class="ring"></div><div class="ring"></div><div class="ring"></div><img id="hud-bowie" src="/assets/art/aether-hero.webp" alt="Bowie Aether"></div>
+  <div class="hud-core"><div class="ring"></div><div class="ring"></div><div class="ring"></div><span class="hud-face face-hero" id="hud-face"><img id="hud-bowie" src="/assets/art/aether-hero.webp" alt="Bowie Aether"><span class="hud-mouth" id="hud-mouth" aria-hidden="true"><svg class="mc" viewBox="0 0 22 10"><path d="M2 2 Q11 9 20 2"/></svg><i class="mo"><b></b></i></span></span></div>
+  <div class="hud-cam hidden" id="hud-cam-box"><video id="hud-video" autoplay playsinline muted></video><small>Bowie sees this with each question</small></div>
   <div class="hud-status" id="hud-status">Hi! Tap the mic and talk to me, or type below.</div>
   <div class="hud-wave"><i></i><i></i><i></i><i></i><i></i></div>
   <div class="hud-chips" id="hud-chips"></div>
   <div class="hud-log" id="hud-log"></div>
-  <div class="hud-ctrl"><button class="hud-mic" id="hud-mic" aria-label="Talk to Bowie"><span data-icon="mic"></span></button><input id="hud-input" placeholder="Ask Aether anything…"><button class="btn" id="hud-send">Send</button><button class="btn" id="hud-mute" title="Bowie speaks replies">🔊</button></div>
+  <div class="hud-ctrl"><button class="hud-mic" id="hud-mic" aria-label="Talk to Bowie"><span data-icon="mic"></span></button><input id="hud-input" placeholder="Ask Aether anything…"><button class="btn icon-only" id="hud-cam" title="Show Bowie something with your camera" aria-label="Camera"><span data-icon="eye"></span></button><button class="btn" id="hud-send">Send</button><button class="btn" id="hud-mute" title="Bowie speaks replies">🔊</button></div>
 </div>
 <script src="/app/core.js"></script>
 <script src="/app/chat.js"></script>

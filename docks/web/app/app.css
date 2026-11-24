@@ -946,6 +946,18 @@ canvas.plot { width: 100%; height: 320px; border-radius: 14px; border: 1px solid
 .hud-core .ring:nth-child(2) { inset: -26px; border-style: dashed; border-color: rgba(255,120,60,.28); animation-duration: 30s; animation-direction: reverse; }
 .hud-core .ring:nth-child(3) { inset: 26px; border-color: rgba(255,170,120,.25); border-top-color: #ff6b2c; animation-duration: 3s; }
 .hud-core img { width: 230px; height: 230px; object-fit: cover; border-radius: 50%; -webkit-mask-image: radial-gradient(circle, #000 58%, transparent 71%); mask-image: radial-gradient(circle, #000 58%, transparent 71%); filter: drop-shadow(0 0 50px rgba(255,107,44,.5)); transition: transform .3s; }
+.hud-face { position: relative; display: block; width: 230px; height: 230px; }
+.hud-face img { display: block; }
+.hud-mouth { position: absolute; left: 62.9%; top: 37%; width: 4.4%; height: 4.6%; transform: translate(-50%, -50%) rotate(3deg); display: none; pointer-events: none; }
+.hud-face.face-hero .hud-mouth { display: block; }
+.hud-mouth .mc { position: absolute; inset: 0; width: 100%; height: 100%; } .hud-mouth .mc path { fill: none; stroke: #46201a; stroke-width: 2.4; stroke-linecap: round; }
+.hud-mouth .mo { position: absolute; left: 14%; right: 14%; top: 0; height: 190%; border-radius: 50% 50% 48% 48%; background: #46201a; overflow: hidden; transform: scaleY(calc(0.25 + 0.75 * var(--open, 0))); transform-origin: 50% 0; opacity: 0; }
+.hud-mouth .mo b { position: absolute; left: 18%; right: 18%; bottom: -8%; height: 42%; border-radius: 50%; background: #d8706a; }
+.hud-mouth.open .mo { opacity: 1; } .hud-mouth.open .mc { opacity: 0; }
+.hud-cam { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 8px; } .hud-cam video { width: 220px; border-radius: 12px; border: 2px solid rgba(255,107,44,.6); }
+.hud-cam small { color: rgba(255,255,255,.7); font-size: 11.5px; }
+#hud-cam.on { background: rgba(255,107,44,.25); border-color: #ff6b2c; }
+.hud-persona { height: 34px; max-width: 190px; background: rgba(255,255,255,.08); color: inherit; border-color: rgba(255,255,255,.2); }
 .hud.listening .hud-core img { transform: scale(1.06); } .hud.speaking .hud-core .ring:nth-child(3) { animation-duration: .9s; }
 .hud-status { font-size: 15px; color: #ffb38a; min-height: 22px; text-align: center; }
 .hud-wave { display: flex; gap: 4px; height: 26px; align-items: center; margin: 8px 0; } .hud-wave i { width: 4px; height: 6px; border-radius: 4px; background: #ff6b2c; opacity: .4; }
@@ -977,7 +989,7 @@ canvas.plot { width: 100%; height: 320px; border-radius: 14px; border: 1px solid
   .mo-modes { grid-template-columns: 1fr; } .mo-opts { grid-template-columns: 1fr 1fr; } .mo-go { grid-column: 1 / -1; }
   .arena { grid-template-columns: 1fr; } .kg { min-height: 0; } .kg .kg-node { position: static; transform: none; width: auto; margin: 8px; } .kg > svg { display: none; }
   .kg .kg-core { position: relative; left: auto; top: auto; transform: none; margin: 40px auto 30px; width: 160px; height: 160px; } .kg .kg-core img { width: 140px; height: 140px; }
-  .hud-core { width: 200px; height: 200px; } .hud-core img { width: 170px; height: 170px; }
+  .hud-core { width: 200px; height: 200px; } .hud-core img, .hud-face { width: 170px; height: 170px; } .hud-persona { max-width: 130px; }
 }
 
 .apps-bar { flex-basis:100%; grid-column:1 / -1; display:flex; gap:10px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }

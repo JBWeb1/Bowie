@@ -566,7 +566,11 @@ const VOICE = { get engine() { return store.get('bowie-voice-engine', '') || (vo
   get local() { return store.get('bowie-voice-local', 'am_puck'); }, get localSpeed() { return +store.get('bowie-voice-local-speed', '1'); } };
 let voiceAudio = null, voiceInfo = null;
 async function loadVoiceInfo() { try { voiceInfo = await (await api('/api/voice')).json(); } catch (e) { voiceInfo = { available: false, voices: [] }; } return voiceInfo; }
-function playVoice(blob, onEnd) { voiceAudio = new Audio(URL.createObjectURL(blob)); voiceAudio.onended = () => onEnd?.(); voiceAudio.play().catch(() => onEnd?.()); }
+function playVoice(blob, onEnd) {
+  voiceAudio = new Audio(URL.createObjectURL(blob)); voiceAudio.onended = () => { mouthStop(); onEnd?.(); };
+  if (HUD.open) mouthFollow(voiceAudio);
+  voiceAudio.play().catch(() => { mouthStop(); onEnd?.(); });
+}
 function speakable(text) { return text.replace(/```[\s\S]*?```/g, ' (code on screen) ').replace(/`([^`]+)`/g, '$1').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[#*_>|~-]{1,3}/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 1200); }
 async function speak(text, onEnd) {
   text = speakable(text); if (!text) { onEnd?.(); return; }
@@ -582,9 +586,10 @@ async function speak(text, onEnd) {
   }
   if (!('speechSynthesis' in window)) { onEnd?.(); return; }
   const u = new SpeechSynthesisUtterance(text); const v = speechSynthesis.getVoices().find(x => x.name === VOICE.name) || bowieDefaultVoice();
-  if (v) u.voice = v; u.pitch = VOICE.pitch; u.rate = VOICE.rate; u.onend = () => onEnd?.(); u.onerror = () => onEnd?.(); speechSynthesis.speak(u);
+  if (v) u.voice = v; u.pitch = VOICE.pitch; u.rate = VOICE.rate;
+  u.onstart = () => { if (HUD.open) mouthPulse(); }; u.onend = () => { mouthStop(); onEnd?.(); }; u.onerror = () => { mouthStop(); onEnd?.(); }; speechSynthesis.speak(u);
 }
-function stopSpeaking() { try { speechSynthesis.cancel(); } catch (e) {} if (voiceAudio) { voiceAudio.pause(); voiceAudio = null; } }
+function stopSpeaking() { try { speechSynthesis.cancel(); } catch (e) {} if (voiceAudio) { voiceAudio.pause(); voiceAudio = null; } mouthStop(); }
 function bowieDefaultVoice() {  // a bright, friendly voice in the page's language
   const vs = speechSynthesis.getVoices(), lang = (navigator.language || 'en').slice(0, 2);
   return vs.find(v => /aria|jenny|samantha|google us english|zira|ava|karen/i.test(v.name) && v.lang.startsWith(lang)) || vs.find(v => v.lang.startsWith(lang)) || vs[0];
@@ -622,40 +627,86 @@ if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => { if (d
 // ---------------------------------------------------------------- Bowers Aether: voice assistant (Jarvis-style)
 const HUD = { open: false, listening: false, rec: null, hands: false, muted: store.get('hud-muted', '0') === '1', reply: {}, last: null, waiting: false };
 function hudStatus(text) { $('hud-status').textContent = text; }
+function hudFace(src) { $('hud-bowie').src = src; $('hud-face').classList.toggle('face-hero', src.includes('aether-hero')); }
+
+// Bowie talks: his mouth follows the loudness of his voice (like Grok's companions, but Bowie)
+const MOUTH = { ctx: null, raf: 0 };
+function setMouth(v) { const m = $('hud-mouth'); m.style.setProperty('--open', v.toFixed(2)); m.classList.toggle('open', v > 0.08); }
+function mouthStop() { cancelAnimationFrame(MOUTH.raf); MOUTH.raf = 0; setMouth(0); }
+function mouthPulse() {  // browser voices give no sound to measure: move gently while speaking
+  cancelAnimationFrame(MOUTH.raf); const t0 = performance.now();
+  const tick = t => { const p = (t - t0) / 1000; setMouth(Math.max(0, Math.sin(p * 11) * 0.5 + Math.sin(p * 4.3) * 0.3 + 0.2)); MOUTH.raf = requestAnimationFrame(tick); };
+  MOUTH.raf = requestAnimationFrame(tick);
+}
+function mouthFollow(audio) {
+  if (!MOUTH.ctx || MOUTH.ctx.state !== 'running') return mouthPulse();  // never route audio through a stopped context
+  try {
+    const an = MOUTH.ctx.createAnalyser(); an.fftSize = 512; MOUTH.ctx.createMediaElementSource(audio).connect(an); an.connect(MOUTH.ctx.destination);
+    const buf = new Uint8Array(an.fftSize); cancelAnimationFrame(MOUTH.raf);
+    const tick = () => { an.getByteTimeDomainData(buf); let s = 0; for (const b of buf) s += ((b - 128) / 128) ** 2; setMouth(Math.min(1, Math.max(0, (Math.sqrt(s / buf.length) - 0.02) * 6))); MOUTH.raf = requestAnimationFrame(tick); };
+    tick();
+  } catch (e) { mouthPulse(); }
+}
+
+// Show Bowie something: while the camera is on, each question carries what it sees
+let camStream = null;
+async function openCam() {
+  try { camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); } catch (e) { hudStatus('Camera: ' + e.message); return; }
+  $('hud-video').srcObject = camStream; $('hud-cam-box').classList.remove('hidden'); $('hud-cam').classList.add('on');
+  hudStatus('Point the camera at something, then ask me about it.');
+}
+function closeCam() { camStream?.getTracks().forEach(t => t.stop()); camStream = null; $('hud-cam-box').classList.add('hidden'); $('hud-cam').classList.remove('on'); }
+function camFrame() {
+  const v = $('hud-video'); if (!camStream || !v.videoWidth) return null;
+  const s = Math.min(1, 1024 / Math.max(v.videoWidth, v.videoHeight)), c = document.createElement('canvas');
+  c.width = Math.round(v.videoWidth * s); c.height = Math.round(v.videoHeight * s); c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.85).split(',')[1];
+}
+function fillPersonas() {
+  const sel = $('hud-persona'); const styles = state.output_styles || [];
+  sel.innerHTML = styles.map(o => `<option value="${esc(o.name)}">${esc(o.name === 'default' ? 'Personality: Bowie' : o.name[0].toUpperCase() + o.name.slice(1))}</option>`).join('');
+  sel.value = state.output_style || 'default'; sel.classList.toggle('hidden', !styles.length);
+}
 function hudLine(text, cls = '') { const l = h('div', 'hl ' + cls); l.textContent = text; $('hud-log').appendChild(l); while ($('hud-log').children.length > 30) $('hud-log').firstChild.remove(); l.scrollIntoView({ block: 'end' }); return l; }
 async function openHud() {
   if (!isAether() && !(await pickModel('aether'))) return;
   if (!voiceInfo) loadVoiceInfo();
   HUD.open = true; $('hud').classList.remove('hidden');
-  $('hud-bowie').src = '/assets/art/aether-hero.webp';
-  if (!$('hud-chips').children.length) for (const [label, prompt] of [["What's next?", 'Looking at this project and what we did recently, what should I do next? Give me the top three.'],
+  hudFace('/assets/art/aether-hero.webp'); fillPersonas();
+  try { MOUTH.ctx = MOUTH.ctx || new (window.AudioContext || window.webkitAudioContext)(); MOUTH.ctx.resume?.(); } catch (e) {}
+  if (!$('hud-chips').children.length) for (const [label, prompt] of [["What's next?", 'Looking at this project and what we did recently, what should I do next? Give me the top three.'], ['Deep search', ''],
     ['Check my computer', 'Check my computer\'s health with system_check and tell me if anything needs attention.'], ['Make a video', null],
     ['Summarize my week', 'Summarize what I worked on this week from our recent conversations and the git history.']]) {
-    const b = h('button', null, esc(label)); b.onclick = () => prompt ? hudAsk(prompt, label) : (closeHud(), showPage('motion')); $('hud-chips').appendChild(b); }
+    const b = h('button', null, esc(label));
+    b.onclick = () => prompt ? hudAsk(prompt, label) : prompt === '' ? ($('hud-input').value = '/deep-search ', $('hud-input').focus(), hudStatus('What should I research? I\'ll search the web, check sources and write a report.')) : (closeHud(), showPage('motion'));
+    $('hud-chips').appendChild(b); }
   $('hud-mute').textContent = HUD.muted ? '🔇' : '🔊';
   hudStatus(`${greetWord()}${profileName ? ', ' + profileName : ''}. Tap the mic and talk to me, or type below.`);
   $('hud-input').focus();
 }
-function closeHud() { HUD.open = false; $('hud').classList.add('hidden'); stopListening(); stopSpeaking(); HUD.hands = false; $('hud-hands').checked = false; }
+function closeHud() { HUD.open = false; $('hud').classList.add('hidden'); stopListening(); stopSpeaking(); closeCam(); HUD.hands = false; $('hud-hands').checked = false; }
 async function hudAsk(text, shown) {
   if (!text.trim()) return;
-  hudLine(shown || text, 'you'); hudStatus('Thinking…'); $('hud-bowie').src = '/assets/aether/thinking.webp'; HUD.waiting = true; HUD.reply = {};
-  const r = await api('/api/chat', { message: text, voice: true });
+  const frame = camFrame();
+  hudLine((shown || text) + (frame ? '  (with camera)' : ''), 'you'); hudStatus('Thinking…'); hudFace('/assets/aether/thinking.webp'); HUD.waiting = true; HUD.reply = {};
+  const r = await api('/api/chat', { message: text, voice: true, images: frame ? [{ media_type: 'image/jpeg', data: frame }] : [] });
   if (!r.ok) { hudStatus((await r.json()).error); HUD.waiting = false; }
 }
 function hudEvent(ev) {
   if (!HUD.open || !HUD.waiting) return;
-  if (ev.type === 'tool_call') { hudLine('· ' + (ev.summary || ev.name), 'step'); hudStatus('Working on it…'); $('hud-bowie').src = '/assets/aether/focused.webp'; }
+  if (ev.type === 'tool_call') { hudLine('· ' + (ev.summary || ev.name), 'step'); hudStatus('Working on it…'); hudFace('/assets/aether/focused.webp'); }
   if (ev.type === 'text') { HUD.reply[ev.id] = (HUD.reply[ev.id] || '') + ev.text; HUD.last = ev.id; }
   if (ev.type === 'approval') hudStatus('I need your OK in the chat window for that step.');
   if (ev.type === 'idle') {
     HUD.waiting = false; const text = HUD.last ? HUD.reply[HUD.last] : '';
-    $('hud-bowie').src = '/assets/aether/celebrating.webp';
     if (text) hudLine(text);
     hudStatus(text ? 'Done.' : 'Done. Details are in the chat.');
-    if (text && !HUD.muted) { $('hud').classList.add('speaking'); speak(text, () => { $('hud').classList.remove('speaking'); if (HUD.hands) startListening(true); }); }
-    else if (HUD.hands) startListening(true);
-    setTimeout(() => { if (!HUD.waiting) $('hud-bowie').src = '/assets/art/aether-hero.webp'; }, 4000);
+    if (text && !HUD.muted) { hudFace('/assets/art/aether-hero.webp'); $('hud').classList.add('speaking'); speak(text, () => { $('hud').classList.remove('speaking'); if (HUD.hands) startListening(true); }); }
+    else {
+      hudFace('/assets/aether/celebrating.webp');
+      setTimeout(() => { if (!HUD.waiting) hudFace('/assets/art/aether-hero.webp'); }, 4000);
+      if (HUD.hands) startListening(true);
+    }
   }
 }
 function startListening(handsFree = false) {
@@ -698,6 +749,8 @@ $('hud-mic').onclick = () => HUD.listening ? stopListening() : startListening(fa
 $('hud-send').onclick = () => { const v = $('hud-input').value; $('hud-input').value = ''; hudAsk(v); };
 $('hud-input').onkeydown = e => { if (e.key === 'Enter') $('hud-send').click(); if (e.key === 'Escape') closeHud(); };
 $('hud-close').onclick = closeHud;
+$('hud-cam').onclick = () => camStream ? closeCam() : openCam();
+$('hud-persona').onchange = async () => { const r = await api('/api/settings', { output_style: $('hud-persona').value }); if (r.ok) { applyState(await r.json()); hudStatus('OK, I\'ll talk like that now.'); } };
 $('hud-mute').onclick = () => { HUD.muted = !HUD.muted; store.set('hud-muted', HUD.muted ? '1' : '0'); $('hud-mute').textContent = HUD.muted ? '🔇' : '🔊'; if (HUD.muted) stopSpeaking(); };
 $('hud-hands').onchange = e => { HUD.hands = e.target.checked; if (HUD.hands) startListening(true); else stopListening(); };
 $('hud-brief').onclick = () => hudAsk("Give me a short spoken briefing: what's going on in this project (git status and recent work), any open pull requests, any computer health warnings (system_check overview), and what you suggest I do next.", 'Brief me');

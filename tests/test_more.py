@@ -328,7 +328,11 @@ def test_context_report_and_output_styles(tmp_path):
     agent, _, _ = run_calls(tmp_path, [("bash", {"command": "echo " + "x" * 4000})], mode="yolo")
     report = agent.context_report()
     assert report["parts"]["Tool results"] > 900 and report["measured"] > 0
-    assert set(agent.ext.output_styles) >= {"explanatory", "learning", "concise"}
+    assert set(agent.ext.output_styles) >= {"explanatory", "learning", "concise", "storyteller", "coach", "playful"}
+    agent.set_output_style("playful")
+    assert "drop the" in agent.system and "jokes entirely" in agent.system  # personality, never at the cost of accuracy
+    body, _ = agent.ext.expand("/deep-search best free weather API")
+    assert "best free weather API" in body and "research/" in body and "no web search" in body
     agent.set_output_style("learning")
     assert "TODO(human)" in agent.system
     with pytest.raises(ValueError):

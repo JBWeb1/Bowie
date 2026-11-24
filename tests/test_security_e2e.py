@@ -93,6 +93,14 @@ def test_every_page_loads_in_a_real_browser(tmp_path):
         page.keyboard.press("Escape")
         page.click("#side-search")  # the simple sidebar: search opens the same palette
         assert page.locator("#cmdk").is_visible()
+        page.keyboard.press("Escape")
+        page.evaluate("openHud()")  # voice mode: Bowie's mouth moves while he speaks, and opens a personality picker
+        page.wait_for_timeout(600)
+        page.evaluate("mouthPulse()")
+        page.wait_for_timeout(250)
+        assert page.locator("#hud-mouth").is_visible() and page.evaluate("getComputedStyle(document.getElementById('hud-mouth')).getPropertyValue('--open')") != ""
+        assert page.locator("#hud-persona option").count() >= 6
+        page.evaluate("mouthStop(); closeHud()")
         browser.close()
     assert errors == []
 
