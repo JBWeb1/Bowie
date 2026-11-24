@@ -41,6 +41,7 @@ Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; Value
   Tasks: addtopath; Check: NeedsAddPath(ExpandConstant('{app}'))
 
 [Run]
+Filename: "{app}\bowers-cli.exe"; Parameters: "local setup --pause"; Description: "Set up Bowie's own free model on this PC (Ollama, about 5 GB download, no key needed)"; Flags: nowait postinstall skipifsilent
 Filename: "{app}\Bowers.exe"; Description: "Open Bowers"; Flags: nowait postinstall skipifsilent
 
 [Code]

@@ -144,9 +144,10 @@ add("blender", "Blender", "system", "game-3d-builder", "blender/blender", licens
     steps=[{"win": "winget install --id BlenderFoundation.Blender -e", "mac": "brew install --cask blender", "linux": "sudo snap install blender --classic"}])
 
 add("ollama", "Ollama (Bowers Local)", "system", "local-model-engineer", "ollama/ollama", license="MIT", check="call:docks.local:ready",
-    steps=[{"win": "winget install --id Ollama.Ollama -e", "mac": "brew install --cask ollama",
+    steps=[{"win": "winget install --id Ollama.Ollama -e --silent --accept-package-agreements --accept-source-agreements",
+            "mac": "brew install --cask ollama",
             "linux": "curl -fsSL https://ollama.com/install.sh | sh"},
-           {"call": "docks.local:setup", "say": "download a free coding model that fits this computer and make bowers-coder from it (about 2-9 GB)"}],
+           {"call": "docks.local:setup", "say": "download a free open model that fits this computer and make Bowie's own model, `bowie`, from it (about 2-9 GB)"}],
     size="2-9 GB", notes="Runs AI models on this computer: free, private, no API key. Bowers uses it as Bowers Local "
                          "(pick it in the model menu; with no Claude key Bowers starts on it by itself). Smaller than "
                          "Claude, so best for everyday coding and questions; 16 GB of memory or more recommended.")

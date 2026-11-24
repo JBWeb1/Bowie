@@ -860,11 +860,17 @@ def local_main(argv) -> int:
                 print(f"installing Ollama: {cmd}")
                 if subprocess.run(cmd, shell=True).returncode or not local.ollama_exe():
                     raise RuntimeError("Ollama didn't install; get it from https://ollama.com/download and run this again")
-            target = local.setup(base=argv[1] if len(argv) > 1 else None)
+            pick = [a for a in argv[1:] if not a.startswith("--")]
+            target = local.setup(base=pick[0] if pick else None)
         except Exception as e:
             print(f"Couldn't set up Bowers Local: {e}")
+            if "--pause" in argv:
+                input("\nPress Enter to close this window.")
             return 1
-        print(f"Bowers Local is ready ({target}). Pick it with /model local, or in the model menu.")
+        print(f"Bowie's own model is ready ({target}). Bowers uses it when there's no Claude key; pick it any time "
+              "with /model local or in the model menu.")
+        if "--pause" in argv:
+            input("\nPress Enter to close this window.")
         return 0
     for line in local.status_lines():
         print(line)

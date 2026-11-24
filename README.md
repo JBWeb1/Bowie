@@ -6,6 +6,10 @@
 
 (Bowers was called Docks. The `docks` command, `DOCKS_*` settings and the `~/.docks` folder still work.)
 
+### Bowie speaks your language, and has his own model
+- **Any language.** Bowie answers in the language you write or speak, and the mic listens for the language you pick in Settings → Voice (26 to choose from, including Afrikaans, isiZulu, isiXhosa and Sesotho). His offline voice speaks English, Spanish, French, Italian, Portuguese, Hindi, Japanese and Mandarin; other languages use your computer's voices (Microsoft Edge has natural ones for many). Japanese, Chinese, Korean, Hindi, Arabic, Russian, Greek, Hebrew and Thai replies are recognised from their alphabet and spoken in the right voice automatically.
+- **Bowie's own model.** The Windows installer's last page offers to set up Bowie's own free model on your PC (Ollama plus an open model, about 5 GB). Bowers names it `bowie`, gives it his personality and a 32k context, and uses it whenever there's no Claude key. It's an open model made into Bowie, not a model trained from scratch.
+
 ### Run your business, your keys, Microsoft 365
 - **How should Bowie think?** First run (and a Set up button on the home screen when nothing is ready) offers two working choices: **free on this computer** (Bowers Local, one click installs it) or **Claude** (paste your key once). Bowers Cloud, sign in with no key, is coming.
 - **Your keys, kept safe.** Settings → Account → Your keys saves keys in Windows Credential Manager, the macOS Keychain or your Linux keyring, so there's no `setx` and no key in a chat. From the terminal: `bowers keys save ANTHROPIC_API_KEY`.

@@ -87,6 +87,23 @@ LOCAL_VOICES = {  # the friendliest English voices; any other Kokoro voice name 
     "af_sky": "Sky (soft)", "bm_george": "George (British)", "bf_emma": "Emma (British)",
 }
 DEFAULT_LOCAL = "am_puck"
+# Kokoro speaks these languages: a voice's first letter is its language
+KOKORO_LANG = {"a": "en-us", "b": "en-gb", "e": "es", "f": "fr-fr", "h": "hi", "i": "it", "j": "ja", "p": "pt-br", "z": "cmn"}
+LANG_VOICES = {"es": ("em_alex", "ef_dora"), "fr": ("ff_siwis", "ff_siwis"), "it": ("im_nicola", "if_sara"),  # (male, female)
+               "pt": ("pm_alex", "pf_dora"), "hi": ("hm_omega", "hf_alpha"), "ja": ("jm_kumo", "jf_alpha"), "zh": ("zm_yunxi", "zf_xiaobei")}
+LOCAL_LANGUAGES = ["en"] + list(LANG_VOICES)
+
+
+def voice_for(lang: str, voice: str = DEFAULT_LOCAL) -> str:
+    """The Kokoro voice for a language (BCP 47, e.g. 'es-ES'), keeping the chosen voice's gender. VoiceError if none."""
+    base = (lang or "en").split("-")[0].lower()
+    voice = voice or DEFAULT_LOCAL
+    if base == "en":
+        return voice if voice[0] in "ab" else DEFAULT_LOCAL
+    if base not in LANG_VOICES:
+        raise VoiceError(f"no offline voice for {lang}: Bowie uses your browser's voice for it")
+    male, female = LANG_VOICES[base]
+    return female if voice[1:2] == "f" else male
 _kokoro = None
 _kokoro_lock = threading.Lock()
 
@@ -111,14 +128,16 @@ def local_voices() -> list[dict]:
     return [{"id": k, "name": v} for k, v in LOCAL_VOICES.items()] if local_available() else []
 
 
-def speak_local(text: str, voice: str = DEFAULT_LOCAL, speed: float = 1.0) -> bytes:
-    """WAV audio of text in a Kokoro voice, made on this computer."""
+def speak_local(text: str, voice: str = DEFAULT_LOCAL, speed: float = 1.0, lang: str = "") -> bytes:
+    """WAV audio of text in a Kokoro voice, made on this computer; with `lang`, in that language's voice."""
     global _kokoro
     if not local_available():
         raise VoiceError("install the Kokoro voice first (Integrations > Kokoro voice, or `bowers voices install`)")
     voice = voice or DEFAULT_LOCAL
-    if not voice.replace("_", "").isalnum():
+    if not voice.replace("_", "").isalnum() or voice[0] not in KOKORO_LANG:
         raise VoiceError("unknown voice")
+    if lang:
+        voice = voice_for(lang, voice)
     text = text.strip()[:MAX_CHARS]
     if not text:
         raise VoiceError("nothing to say")
@@ -127,7 +146,7 @@ def speak_local(text: str, voice: str = DEFAULT_LOCAL, speed: float = 1.0) -> by
             from kokoro_onnx import Kokoro
             _kokoro = Kokoro(*map(str, _kokoro_files()))
         try:
-            samples, rate = _kokoro.create(text, voice=voice, speed=max(0.5, min(2.0, speed)), lang="en-gb" if voice[0] == "b" else "en-us")
+            samples, rate = _kokoro.create(text, voice=voice, speed=max(0.5, min(2.0, speed)), lang=KOKORO_LANG[voice[0]])
         except (KeyError, ValueError) as e:
             raise VoiceError(f"Kokoro couldn't speak that: {e}")
     import numpy as np

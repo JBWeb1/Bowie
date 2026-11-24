@@ -722,7 +722,8 @@ def make_handler(session: Session, token: str, preview: dict, allowed_hosts: set
                                         "items": resources.search(q.get("q", [""])[0][:200], q.get("s", [""])[0])})
             if path == "/api/voice":
                 from .. import voice
-                local = {"local": voice.local_available(), "local_voices": voice.local_voices(), "stt": voice.stt_available()}
+                local = {"local": voice.local_available(), "local_voices": voice.local_voices(), "stt": voice.stt_available(),
+                         "local_languages": voice.LOCAL_LANGUAGES}
                 try:
                     return self._json(200, {"available": voice.available(), "voices": voice.voices() if voice.available() else [], **local})
                 except voice.VoiceError as e:
@@ -1058,7 +1059,8 @@ def make_handler(session: Session, token: str, preview: dict, allowed_hosts: set
                 from .. import voice
                 local = body.get("engine") == "local"
                 try:
-                    audio = (voice.speak_local(str(body.get("text", "")), str(body.get("voice", "")), float(body.get("speed") or 1))
+                    audio = (voice.speak_local(str(body.get("text", "")), str(body.get("voice", "")), float(body.get("speed") or 1),
+                                               str(body.get("lang", ""))[:20])
                              if local else voice.speak(str(body.get("text", "")), str(body.get("voice", ""))))
                 except (voice.VoiceError, ValueError) as e:
                     return self._json(400, {"error": str(e)})

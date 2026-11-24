@@ -5,9 +5,10 @@ Bowers talks to a local model server through Bowers Router, the same way it reac
     Ollama      http://localhost:11434   (OLLAMA_HOST to change it)   https://ollama.com
     LM Studio   http://localhost:1234    (LMSTUDIO_URL to change it)  https://lmstudio.ai
 
-`bowers local setup` downloads a coding model with Ollama and makes `bowers-coder` from it: the same model with a
-32k context window, so Bowers' instructions, tools and your conversation fit (Ollama's default is much smaller and
-it drops what doesn't fit without saying so). Pick a model yourself with BOWERS_LOCAL_MODEL, e.g. "qwen3-coder:30b"
+`bowers local setup` downloads an open model with Ollama and makes `bowie` from it: Bowie's own model on your
+computer, with his personality and a 32k context window, so Bowers' instructions, tools and your conversation fit
+(Ollama's default is much smaller and it drops what doesn't fit without saying so). You can also talk to him
+directly with `ollama run bowie`. Pick a model yourself with BOWERS_LOCAL_MODEL, e.g. "qwen3-coder:30b"
 or "lmstudio/qwen2.5-coder-7b-instruct".
 """
 
@@ -19,9 +20,11 @@ import time
 import urllib.request
 
 CONTEXT = 32768
-OWN = "bowers-coder"
-# Ollama models in the order Bowers prefers them: good at code and at calling tools
-PREFER = ("bowers-coder", "qwen3-coder", "qwen2.5-coder", "devstral", "gpt-oss", "qwen3", "llama3.1", "mistral-small",
+OWN = "bowie"
+PERSONA = ("You are Bowie, the friendly orange mascot and AI helper of Bowers, running on this person's own computer. "
+           "Be warm, clear and practical. Answer in the language the person uses. Say plainly when you're unsure.")
+# Ollama models in the order Bowers prefers them: Bowie's own, then good at code and at calling tools
+PREFER = ("bowie", "bowers-coder", "qwen3-coder", "qwen2.5-coder", "devstral", "gpt-oss", "qwen3", "llama3.1", "mistral-small",
           "llama3.2", "gemma3")
 _cache = {"at": 0.0, "found": None}
 
@@ -135,7 +138,7 @@ def _ram_gb() -> float | None:
 
 
 def modelfile(base: str) -> str:
-    return f"FROM {base}\nPARAMETER num_ctx {CONTEXT}\n"
+    return f'FROM {base}\nPARAMETER num_ctx {CONTEXT}\nSYSTEM """{PERSONA}"""\n'
 
 
 def setup(log=print, base: str | None = None) -> str:

@@ -563,7 +563,20 @@ document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.ke
 // ---------------------------------------------------------------- Bowie's voice (voice studio)
 const VOICE = { get engine() { return store.get('bowie-voice-engine', '') || (voiceInfo?.local ? 'local' : 'browser'); }, get name() { return store.get('bowie-voice-name', ''); },
   get pitch() { return +store.get('bowie-voice-pitch', '1.35'); }, get rate() { return +store.get('bowie-voice-rate', '1.05'); }, get eleven() { return store.get('bowie-voice-eleven', ''); },
-  get local() { return store.get('bowie-voice-local', 'am_puck'); }, get localSpeed() { return +store.get('bowie-voice-local-speed', '1'); } };
+  get local() { return store.get('bowie-voice-local', 'am_puck'); }, get localSpeed() { return +store.get('bowie-voice-local-speed', '1'); },
+  get lang() { const l = store.get('bowie-lang', 'auto'); return l === 'auto' ? (navigator.language || 'en-US') : l; } };
+// Bowie speaks the reply's language: its alphabet tells most of them; otherwise the language you set (or your computer's)
+const SCRIPTS = [[/[\u3040-\u30ff]/, 'ja-JP'], [/[\uac00-\ud7af]/, 'ko-KR'], [/[\u4e00-\u9fff]/, 'zh-CN'], [/[\u0900-\u097f]/, 'hi-IN'],
+  [/[\u0600-\u06ff]/, 'ar-SA'], [/[\u0400-\u04ff]/, 'ru-RU'], [/[\u0370-\u03ff]/, 'el-GR'], [/[\u0590-\u05ff]/, 'he-IL'], [/[\u0e00-\u0e7f]/, 'th-TH']];
+function speechLang(text) {
+  const sample = (text || '').slice(0, 400), set = VOICE.lang;
+  for (const [rx, lang] of SCRIPTS) if ((sample.match(new RegExp(rx.source, 'g')) || []).length > 3) return set.startsWith(lang.slice(0, 2)) ? set : lang;
+  return set;
+}
+const LANG_CHOICES = [['auto', 'Match my computer'], ['en-US', 'English (US)'], ['en-GB', 'English (UK)'], ['en-ZA', 'English (South Africa)'], ['af-ZA', 'Afrikaans'],
+  ['zu-ZA', 'isiZulu'], ['xh-ZA', 'isiXhosa'], ['st-ZA', 'Sesotho'], ['es-ES', 'Spanish'], ['fr-FR', 'French'], ['pt-BR', 'Portuguese'], ['de-DE', 'German'],
+  ['it-IT', 'Italian'], ['nl-NL', 'Dutch'], ['sw-KE', 'Swahili'], ['ar-SA', 'Arabic'], ['hi-IN', 'Hindi'], ['zh-CN', 'Chinese (Mandarin)'], ['ja-JP', 'Japanese'],
+  ['ko-KR', 'Korean'], ['ru-RU', 'Russian'], ['tr-TR', 'Turkish'], ['pl-PL', 'Polish'], ['id-ID', 'Indonesian'], ['vi-VN', 'Vietnamese'], ['th-TH', 'Thai']];
 let voiceAudio = null, voiceInfo = null;
 async function loadVoiceInfo() { try { voiceInfo = await (await api('/api/voice')).json(); } catch (e) { voiceInfo = { available: false, voices: [] }; } return voiceInfo; }
 function playVoice(blob, onEnd) {
@@ -575,18 +588,23 @@ function speakable(text) { return text.replace(/```[\s\S]*?```/g, ' (code on scr
 async function speak(text, onEnd) {
   text = speakable(text); if (!text) { onEnd?.(); return; }
   stopSpeaking();
+  const lang = speechLang(text);
   if (VOICE.engine === 'local') {
-    const r = await api('/api/voice/speak', { text, engine: 'local', voice: VOICE.local, speed: VOICE.localSpeed });
+    const r = await api('/api/voice/speak', { text, engine: 'local', voice: VOICE.local, speed: VOICE.localSpeed, lang });
     if (r.ok) return playVoice(await r.blob(), onEnd);
-    toast((await r.json()).error + ' (using the built-in voice)');
+    const err = (await r.json()).error || '';
+    if (!/no offline voice/.test(err)) toast(err + ' (using the built-in voice)');  // other languages: the browser's voices
   } else if (VOICE.engine === 'eleven' && VOICE.eleven) {
     const r = await api('/api/voice/speak', { text, voice: VOICE.eleven });
     if (r.ok) return playVoice(await r.blob(), onEnd);
     toast((await r.json()).error + ' (using the built-in voice)');
   }
   if (!('speechSynthesis' in window)) { onEnd?.(); return; }
-  const u = new SpeechSynthesisUtterance(text); const v = speechSynthesis.getVoices().find(x => x.name === VOICE.name) || bowieDefaultVoice();
-  if (v) u.voice = v; u.pitch = VOICE.pitch; u.rate = VOICE.rate;
+  const u = new SpeechSynthesisUtterance(text), all = speechSynthesis.getVoices(), base = lang.slice(0, 2).toLowerCase();
+  const chosen = all.find(x => x.name === VOICE.name);
+  const v = (chosen && chosen.lang.toLowerCase().startsWith(base)) ? chosen
+    : all.find(x => x.lang.toLowerCase() === lang.toLowerCase() && /natural|online/i.test(x.name)) || all.find(x => x.lang.toLowerCase().startsWith(base)) || chosen || bowieDefaultVoice();
+  u.lang = lang; if (v) u.voice = v; u.pitch = VOICE.pitch; u.rate = VOICE.rate;
   u.onstart = () => { if (HUD.open) mouthPulse(); }; u.onend = () => { mouthStop(); onEnd?.(); }; u.onerror = () => { mouthStop(); onEnd?.(); }; speechSynthesis.speak(u);
 }
 function stopSpeaking() { try { speechSynthesis.cancel(); } catch (e) {} if (voiceAudio) { voiceAudio.pause(); voiceAudio = null; } mouthStop(); }
@@ -599,6 +617,8 @@ async function renderVoiceStudio() {
   const vs = ('speechSynthesis' in window) ? speechSynthesis.getVoices() : [];
   const ev = await loadVoiceInfo();
   p.innerHTML = `<div class="set-card"><div class="voice-hero"><img src="${STICKER('listening')}" alt=""><div><b>Bowie's voice</b><br><small class="muted">Used by Bowers Aether voice mode and "Read aloud". Pick a voice that suits Bowie: small, warm and friendly.</small></div></div>
+    <label>Bowie's language<select class="input" id="vs-lang">${LANG_CHOICES.map(([v, n]) => `<option value="${v}">${esc(n)}</option>`).join('')}</select>
+      <small class="set-note">Bowie answers in the language you write or speak, and listens for it. Offline voices: ${(ev.local_languages || ['en']).map(l => esc(new Intl.DisplayNames([navigator.language || 'en'], { type: 'language' }).of(l) || l)).join(', ')}; other languages use your computer's voices (Microsoft Edge has natural voices for many).</small></label>
     <label>Voice engine<select class="input" id="vs-engine"><option value="browser">Built-in browser voice (free)</option><option value="local" ${ev.local ? '' : 'disabled'}>Kokoro on this computer (free, offline, natural)${ev.local ? '' : ' (install in Integrations)'}</option><option value="eleven" ${ev.available ? '' : 'disabled'}>ElevenLabs ${ev.available ? '' : '(add ELEVENLABS_API_KEY)'}</option></select></label>
     <div id="vs-local" class="hidden"><label>Kokoro voice<select class="input" id="vs-lv">${(ev.local_voices || []).map(v => `<option value="${esc(v.id)}" ${v.id === VOICE.local ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}</select></label>
       <div class="voice-row"><label>Speed <input type="range" id="vs-lspeed" min="0.7" max="1.4" step="0.05" value="${VOICE.localSpeed}"></label></div>
@@ -618,6 +638,7 @@ async function renderVoiceStudio() {
   p.querySelector('#vs-lv').onchange = e => store.set('bowie-voice-local', e.target.value);
   p.querySelector('#vs-lspeed').oninput = e => store.set('bowie-voice-local-speed', e.target.value);
   if (ev.available && !VOICE.eleven && ev.voices?.[0]) store.set('bowie-voice-eleven', ev.voices[0].id);
+  const langSel = p.querySelector('#vs-lang'); langSel.value = store.get('bowie-lang', 'auto'); langSel.onchange = () => store.set('bowie-lang', langSel.value);
   p.querySelector('#vs-test').onclick = () => speak(`Hi${profileName ? ' ' + profileName : ''}! I'm Bowie. I can build apps, make videos, fix your computer, and remember what matters to you.`);
   p.querySelector('#vs-stop').onclick = stopSpeaking;
 }
@@ -713,7 +734,7 @@ function startListening(handsFree = false) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { if (voiceInfo?.stt && navigator.mediaDevices && window.MediaRecorder) return recordAndTranscribe(); hudStatus('Voice input needs Chrome or Edge, or the faster-whisper integration. You can still type.'); return; }
   stopSpeaking(); stopListening();
-  const rec = new SR(); HUD.rec = rec; rec.lang = navigator.language || 'en-US'; rec.interimResults = true; rec.continuous = handsFree;
+  const rec = new SR(); HUD.rec = rec; rec.lang = VOICE.lang; rec.interimResults = true; rec.continuous = handsFree;
   let finalText = '';
   rec.onstart = () => { HUD.listening = true; $('hud').classList.add('listening'); hudStatus(handsFree ? 'Listening for "Hey Bowie"…' : 'Listening…'); };
   rec.onresult = e => {

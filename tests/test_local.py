@@ -104,11 +104,11 @@ def test_a_local_model_never_fails_over_to_a_paid_one(no_keys, tmp_path):
 
 def test_picks_a_good_model_and_sizes_it():
     assert local.best(["llama3.2:3b", "qwen2.5-coder:7b", "gemma3:4b"]) == "qwen2.5-coder:7b"
-    assert local.best(["bowers-coder:latest", "qwen3-coder:30b"]) == "bowers-coder:latest"
+    assert local.best(["bowers-coder:latest", "qwen3-coder:30b", "bowie:latest"]) == "bowie:latest"
     assert local.best(["something-else:1b"]) == "something-else:1b"
     assert local.recommended(8) == "qwen2.5-coder:3b" and local.recommended(16) == "qwen2.5-coder:7b"
     assert local.recommended(64) == "qwen2.5-coder:14b"
-    assert local.modelfile("qwen2.5-coder:7b") == "FROM qwen2.5-coder:7b\nPARAMETER num_ctx 32768\n"
+    assert local.modelfile("qwen2.5-coder:7b").startswith("FROM qwen2.5-coder:7b\nPARAMETER num_ctx 32768\nSYSTEM") and "You are Bowie" in local.modelfile("x")
     assert models.resolve("ollama") in ("local",) or models.is_local(models.resolve("ollama"))
 
 
@@ -119,3 +119,14 @@ def test_free_apis_need_no_key(tmp_path):
     assert "public-apis" in resources.SOURCES and resources.count() > 6000
     out = tools.run_tool(tmp_path, "find_free_api", {"query": "currency exchange"})
     assert "Currency" in out and "http" in out
+
+
+def test_bowie_speaks_more_languages_offline():
+    from docks import voice
+    assert voice.voice_for("es-ES", "am_puck") == "em_alex" and voice.voice_for("ja", "af_heart") == "jf_alpha"
+    assert voice.voice_for("en-GB", "bm_george") == "bm_george" and voice.voice_for("en", "zm_yunxi") == voice.DEFAULT_LOCAL
+    with pytest.raises(voice.VoiceError, match="no offline voice"):
+        voice.voice_for("af-ZA")  # Afrikaans: the browser's voices speak it
+    assert {"en", "es", "fr", "it", "pt", "hi", "ja", "zh"} <= set(voice.LOCAL_LANGUAGES)
+    if voice.local_available():  # real audio when the Kokoro model is installed
+        assert voice.speak_local("Hola, soy Bowie.", "am_puck", lang="es-ES")[:4] == b"RIFF"
