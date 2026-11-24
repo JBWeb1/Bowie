@@ -116,6 +116,7 @@ function applyState(s) {
   }
   if (s.permissions) renderPermissions(s.permissions);
   showUsage(s.usage); setBusy(s.busy);
+  if (s.brain && typeof renderBrainBanner === 'function') renderBrainBanner();
 }
 function renderPermissions(p) {
   const box = $('perm-info'); box.innerHTML = '';

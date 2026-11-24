@@ -43,6 +43,16 @@ APPS = [
     {"id": "github-mcp", "name": "GitHub (full)", "category": "Developer tools", "auth": "github",
      "description": "GitHub's own MCP server: issues, PRs, Actions, code search, using your connected account.",
      "spec": {"type": "http", "url": "https://api.githubcopilot.com/mcp/", "auth": "github"}},
+    # Microsoft 365 through Microsoft Graph (Softeria's open-source server, MIT): sign in with a code in your browser,
+    # no key; the sign-in is kept in your computer's credential store
+    {"id": "microsoft-365", "name": "Microsoft 365 (personal)", "category": "Office & email", "auth": "none", "needs": "npx",
+     "description": "Outlook mail and calendar, OneDrive, Excel, Word files and To Do for a personal Microsoft account. "
+                    "Bowie gives you a sign-in code the first time; nothing is sent without your OK.",
+     "spec": {"command": "npx", "args": ["-y", "@softeria/ms-365-mcp-server"]}},
+    {"id": "microsoft-365-work", "name": "Microsoft 365 (work or school)", "category": "Office & email", "auth": "none", "needs": "npx",
+     "description": "Everything in personal, plus Teams chats and channels and SharePoint, for a work or school account. "
+                    "Your organization's admin may need to allow it.",
+     "spec": {"command": "npx", "args": ["-y", "@softeria/ms-365-mcp-server", "--org-mode"]}},
     # tools that run on your computer
     {"id": "filesystem", "name": "Folder access", "category": "On your computer", "auth": "none", "needs": "npx",
      "description": "Let Bowers read and write another folder outside this project.",

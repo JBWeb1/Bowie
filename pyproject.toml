@@ -8,7 +8,7 @@ version = "1.0.0"
 description = "Bowers: an AI agent that thinks, creates and builds with you."
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["anthropic>=1.15"]
+dependencies = ["anthropic>=1.15", "keyring>=24"]  # keyring: saved keys go in the OS secure store
 
 [project.optional-dependencies]
 browser = ["playwright>=1.40"]  # the browser tool (then: playwright install chromium)

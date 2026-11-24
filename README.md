@@ -6,6 +6,14 @@
 
 (Bowers was called Docks. The `docks` command, `DOCKS_*` settings and the `~/.docks` folder still work.)
 
+### Run your business, your keys, Microsoft 365
+- **How should Bowie think?** First run (and a Set up button on the home screen when nothing is ready) offers two working choices: **free on this computer** (Bowers Local, one click installs it) or **Claude** (paste your key once). Bowers Cloud, sign in with no key, is coming.
+- **Your keys, kept safe.** Settings → Account → Your keys saves keys in Windows Credential Manager, the macOS Keychain or your Linux keyring, so there's no `setx` and no key in a chat. From the terminal: `bowers keys save ANTHROPIC_API_KEY`.
+- **Bowers access keys** (`bwk_…`) are Bowers' own keys: give one to another device, app or script so it can use your Bowers Router; revoke it any time (`bowers keys new "My phone"`). They unlock Bowers, not Claude.
+- **Run my business.** Tell Bowie the goal ("get 10 new customers this month"): he plans it, does the research, writing, numbers and building, saves it under `business/`, and asks before he spends money, sends, posts or deletes. Also `/business GOAL` and the business-operator helper.
+- **Microsoft 365.** `/office` makes real Word, Excel and PowerPoint files (install Office files in Integrations). Connect apps → Microsoft 365 (personal, or work or school) lets Bowie work in your Outlook mail and calendar, OneDrive, Excel, Teams and SharePoint; you sign in with a code in your browser, no key.
+- **Build an app** is on the home screen next to Build a website.
+
 ### Talk to Bowie
 Bowers Aether's voice mode (the mic button) now does what Grok's companion and voice apps do, with Bowie:
 - **Bowie talks.** His mouth moves with his voice: it follows the real sound with Kokoro or ElevenLabs, and moves in time with the browser voice.

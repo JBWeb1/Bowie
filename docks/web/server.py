@@ -353,7 +353,15 @@ class Session:
                 "sandbox": {"on": a.sandbox is not None, "available": sandbox_engine() is not None,
                             "reason": "" if sandbox_engine() else sandbox_reason()},
                 "permissions": a.ext.permissions.summary(), "context_used": a.context_used,
-                "observer": a.ext.settings.get("observer", True) is not False}
+                "observer": a.ext.settings.get("observer", True) is not False, "brain": brain_status()}
+
+
+def brain_status() -> dict:
+    """What Bowie can think with right now: a Claude key, and/or a model on this computer."""
+    from .. import local
+    problem = local.problem()
+    return {"claude": models.has_cloud_key(), "local": problem is None, "local_target": local.detect()["target"],
+            "local_problem": problem or ""}
 
 
 def history_from_messages(messages: list, turns: list) -> list[dict]:
@@ -703,6 +711,9 @@ def make_handler(session: Session, token: str, preview: dict, allowed_hosts: set
                 from .. import graph
                 from . import profile as prof
                 return self._json(200, graph.overview(root, session.agent, prof.load().get("name", "")))
+            if path == "/api/keys":
+                from .. import accesskeys, vault
+                return self._json(200, {"keys": vault.status(), "store": vault.where(), "access": accesskeys.listing()})
             if path == "/api/resources":
                 from urllib.parse import parse_qs
                 from .. import resources
@@ -948,6 +959,26 @@ def make_handler(session: Session, token: str, preview: dict, allowed_hosts: set
                 return self._json(200, {"ok": True})
             if path == "/api/profile":
                 return self._json(200, profile.save(name=str(body.get("name", ""))))
+            if path.startswith("/api/keys/"):
+                from .. import accesskeys, vault
+                action = path.rsplit("/", 1)[1]
+                try:
+                    if action == "save":  # the value goes to the OS secure store; it is never sent back
+                        vault.save(str(body.get("name", "")), str(body.get("value", "")))
+                    elif action == "forget":
+                        vault.forget(str(body.get("name", "")))
+                    elif action == "access-new":
+                        return self._json(200, {"key": accesskeys.create(str(body.get("name", "")))})
+                    elif action == "access-revoke":
+                        accesskeys.revoke(str(body.get("id", "")))
+                    else:
+                        return self._json(404, {"error": "unknown action"})
+                except vault.VaultError as e:
+                    return self._json(400, {"error": str(e)})
+                if action in ("save", "forget") and str(body.get("name")) == "ANTHROPIC_API_KEY":
+                    session.agent.refresh_client()
+                return self._json(200, {"keys": vault.status(), "store": vault.where(), "access": accesskeys.listing(),
+                                        "state": session.state()})
             if path in ("/api/projects/open", "/api/projects/new"):
                 try:
                     target = library.new_project(str(body.get("name", ""))) if path.endswith("/new") else Path(str(body.get("root", "")))

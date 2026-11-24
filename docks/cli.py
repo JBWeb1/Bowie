@@ -1328,8 +1328,46 @@ def github_task_main(argv) -> int:
     return 0
 
 
+def keys_main(argv) -> int:
+    """bowers keys [list | save NAME | forget NAME | new NAME | revoke ID]: your saved keys and Bowers access keys."""
+    from . import accesskeys, vault
+    cmd, rest = (argv[0] if argv else "list"), argv[1:]
+    try:
+        if cmd == "save" and rest:
+            import getpass
+            vault.save(rest[0], getpass.getpass(f"Paste {rest[0]} (hidden, stays on this computer): "))
+            print(f"Saved {rest[0]} in {vault.where()}.")
+        elif cmd == "forget" and rest:
+            vault.forget(rest[0])
+            print(f"Removed {rest[0]}.")
+        elif cmd == "new":
+            key = accesskeys.create(" ".join(rest))
+            print(f"New Bowers access key (shown only now, copy it somewhere safe):\n\n  {key}\n")
+            print("Use it as the API key when another app or device connects to your Bowers Router.")
+        elif cmd == "revoke" and rest:
+            print("Revoked." if accesskeys.revoke(rest[0]) else f"No access key {rest[0]}.")
+        else:
+            print(f"Saved keys ({vault.where()}):")
+            for k in vault.status():
+                print(f"  {'set ' if k['set'] else '--- '} {k['name']:20} {k['label']}" + (f"  [{k['source']}]" if k["source"] else ""))
+            print("\nBowers access keys:" if accesskeys.listing() else "\nNo Bowers access keys yet (bowers keys new NAME).")
+            for k in accesskeys.listing():
+                print(f"  {k['id']}…  {k['name']}")
+    except vault.VaultError as e:
+        print(e)
+        return 1
+    return 0
+
+
 def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else argv
+    try:
+        from . import vault
+        vault.load_into_env()  # keys saved in Settings > Keys or `bowers keys save`
+    except Exception:
+        pass
+    if argv[:1] == ["keys"]:
+        return keys_main(argv[1:])
     if argv[:1] == ["router"]:
         from .router.cli import main as router_main
         return router_main(argv[1:])

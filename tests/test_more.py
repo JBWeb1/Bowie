@@ -333,6 +333,14 @@ def test_context_report_and_output_styles(tmp_path):
     assert "drop the" in agent.system and "jokes entirely" in agent.system  # personality, never at the cost of accuracy
     body, _ = agent.ext.expand("/deep-search best free weather API")
     assert "best free weather API" in body and "research/" in body and "no web search" in body
+    body, _ = agent.ext.expand("/business get 10 new customers")
+    assert "get 10 new customers" in body and "Ask me first" in body and "spends money" in body
+    body, _ = agent.ext.expand("/office a quote as Word")
+    assert "python-docx" in body and "openpyxl" in body and "python-pptx" in body and "ask before sending" in body
+    assert "business-operator" in agent.ext.agents
+    from docks import mcp_catalog
+    ms = {a["id"]: a for a in mcp_catalog.APPS}
+    assert "@softeria/ms-365-mcp-server" in ms["microsoft-365"]["spec"]["args"] and "--org-mode" in ms["microsoft-365-work"]["spec"]["args"]
     agent.set_output_style("learning")
     assert "TODO(human)" in agent.system
     with pytest.raises(ValueError):

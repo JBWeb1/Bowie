@@ -352,6 +352,15 @@ class Agent:
         if self.agent_type is not None:
             self.system += f"\nYour role ({self.agent_type.name}):\n{self.agent_type.prompt}\n"
 
+    def refresh_client(self) -> None:
+        """Pick up a key saved since Bowers started (Settings > Keys)."""
+        try:
+            self.client, self.client_error = anthropic.Anthropic(), None
+        except anthropic.AnthropicError as e:
+            self.client, self.client_error = None, e
+        self.claude_client = self.client
+        self._use_client_for_model()
+
     def _use_client_for_model(self) -> None:
         self.model_error = None
         self.__dict__.pop("_window", None)  # context window size differs per model

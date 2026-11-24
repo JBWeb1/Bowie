@@ -219,6 +219,12 @@ add("three-editor", "three-editor", "app", "game-3d-builder", "z2586300277/three
     steps=["npm install"], run="npm run dev")
 add("stemstudio", "StemStudio Engine", "app", "game-3d-builder", "Stem-Studio/Engine", license="MIT", needs=["git", "bun"],
     steps=["git submodule update --init --recursive", "bun install"], run="bun run dev")
+add("office-files", "Office files (Word, Excel, PowerPoint)", "tool", "business-operator", "python-openxml/python-docx", license="MIT",
+    check="py:openpyxl", steps=[{"py": "python-docx", "module": "docx"}, {"py": "openpyxl", "module": "openpyxl"},
+                               {"py": "python-pptx", "module": "pptx"}],
+    notes="Lets Bowie make real .docx, .xlsx and .pptx files (formulas, charts, slides, speaker notes) that open in "
+          "Microsoft 365, Word, Excel and PowerPoint. Try /office. To work in your Microsoft 365 account (Outlook, "
+          "OneDrive, Teams), connect Microsoft 365 in Connect apps.")
 add("browser-use", "browser-use", "library", "autonomous-engineer", "browser-use/browser-use", license="MIT",
     steps=["pip install browser-use"],
     notes="Let an AI drive a real browser from your own Python code. Free with a local model: "

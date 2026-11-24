@@ -11,9 +11,13 @@ sys.path.insert(0, ROOT)  # build from this checkout, not some other installed c
 datas = collect_data_files("docks", includes=["data/*.json", "data/*.json.gz", "web/*.html", "web/app/*", "web/assets/*", "web/assets/*/*",
                                               "builtin/*/*.md", "router/*"])
 datas += copy_metadata("anthropic")  # `bowers doctor` reads its version
+try:
+    datas += copy_metadata("keyring")  # keyring finds its backends (Windows Credential Manager) through its metadata
+except Exception:
+    pass
 hidden = collect_submodules("docks") + collect_submodules("anthropic") + ["sympy", "PIL"]
 binaries = []
-for pkg in ("kokoro_onnx", "espeakng_loader", "phonemizer", "onnxruntime", "language_tags", "segments", "csvw"):  # the offline voice, when installed
+for pkg in ("keyring", "win32ctypes", "jaraco", "kokoro_onnx", "espeakng_loader", "phonemizer", "onnxruntime", "language_tags", "segments", "csvw"):  # the key vault; the offline voice, when installed
     try:
         d, b, h = collect_all(pkg)
         datas += d; binaries += b; hidden += h

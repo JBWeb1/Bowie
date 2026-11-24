@@ -49,16 +49,16 @@ function setHome(on) {
 }
 const HOME_CHIPS = [
   ['globe', 'Build a website', () => prefill('Build a website for ')],
+  ['chart', 'Run my business', () => openBusiness()],
   ['image', 'Create an image', () => openStudioTool('image')],
-  ['code', 'Write code', () => prefill('Write code that ')],
-  ['book', 'Plan a project', () => { setMode('plan'); prefill('Help me plan a project: '); }],
+  ['smartphone', 'Build an app', () => prefill('Build an app that ')],
 ];
 function prefill(text) { showPage('home'); const t = $('input'); t.value = text; autosize(); t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
 function renderHomeExtra() {
   const box = $('home-extra'); box.innerHTML = '';
   const chips = h('div', 'quick-chips');
   for (const [ic, label, fn] of HOME_CHIPS) { const b = h('button', 'chip', `${icon(ic, 14)}${esc(label)}`); b.onclick = fn; chips.appendChild(b); }
-  box.append(chips);
+  box.append(h('div', 'brain-banner hidden', ''), chips);
 }
 renderHomeExtra();
 
@@ -420,7 +420,7 @@ document.querySelectorAll('.set-tabs button').forEach(b => b.onclick = () => {
   if (b.dataset.st === 'voice') renderVoiceStudio();
 });
 async function openSettings() { $('profile-name').value = profileName; }
-async function renderAccount() { const card = $('account-card'); const g = await (await api('/api/git')).json().catch(() => ({})); card.replaceChildren(await accountCard(g)); }
+async function renderAccount() { renderKeys(); const card = $('account-card'); const g = await (await api('/api/git')).json().catch(() => ({})); card.replaceChildren(await accountCard(g)); }
 $('profile-name').addEventListener('change', async () => { const r = await api('/api/profile', { name: $('profile-name').value }); if (r.ok) { setProfile((await r.json()).name); toast('Saved'); } });
 $('run-doctor').onclick = async () => {
   const out = $('doctor-out'); out.innerHTML = '<div class="muted">Checking…</div>';
@@ -444,12 +444,9 @@ async function onboarding() {
     const name = $('splash-name').value.trim();
     if (name) { await api('/api/profile', { name }); setProfile(name); }
     const st = await (await api('/api/onboarding')).json();
-    const row = (ok, ic, title, sub, fix) => `<div class="ob-item">${icon(ic, 20)}<span><b>${title}</b><small>${sub}</small></span><span class="${ok ? 'ok' : 'no'}">${ok ? 'Ready' : fix}</span></div>`;
-    copy.innerHTML = `${dots(1)}<h1 style="font-size:34px">Connect your tools</h1><p>Bowers runs on your computer. These connect it to the services it uses.</p><div class="ob-list">
-      ${row(st.claude, 'sparkle', 'Claude', 'Powers the Bowers models', 'Add ANTHROPIC_API_KEY')}
-      ${row(st.openai, 'image', 'OpenAI', 'Image generation, Codex and ChatGPT models (optional)', 'Optional')}
-      ${row(st.github, 'github', 'GitHub', 'Repos, branches and pull requests (optional)', 'Connect later')}</div>
+    copy.innerHTML = `${dots(1)}<h1 style="font-size:34px">How should Bowie think?</h1><p>Pick one now; you can add the other any time in Settings.</p><div class="brain-pick"></div>
       <button class="btn primary splash-go" id="ob-next">Next ${icon('arrow-right')}</button>`;
+    copy.querySelector('.brain-pick').replaceChildren(brainChoices());
     copy.querySelector('#ob-next').onclick = () => {
       copy.innerHTML = `${dots(2)}<h1 style="font-size:34px">Choose your Bowers</h1><p>You can switch any time.</p><div class="ob-models"></div><button class="btn primary splash-go" id="ob-done">Start creating ${icon('arrow-right')}</button>`;
       const grid = copy.querySelector('.ob-models');
@@ -490,3 +487,104 @@ function liveCard(info) {
   await loadFiles(); loadGit(); connect();
 })();
 
+
+
+// ================================================================ How Bowie thinks: free on this PC, or Claude with a key
+const STORE_NAMES = { WinVaultKeyring: 'Windows Credential Manager', Keyring: 'the macOS Keychain', SecretServiceKeyring: 'your system keyring' };
+const storeName = s => STORE_NAMES[s] || (s?.startsWith('a private file') ? 'a private file only you can read' : s || 'this computer');
+function brainChoices() {
+  const b = state.brain || {}, box = h('div', 'brain-cards');
+  const local = h('div', 'brain-card' + (b.local ? ' ready' : ''), `<img src="${STICKER('chilling')}" alt=""><div><b>Free, on this computer</b>
+    <small>Bowers Local: no key, no account, nothing leaves your PC. Good for everyday work; needs about 5 GB and 16 GB of memory.</small>
+    <div class="brain-act"></div></div>`);
+  const act = local.querySelector('.brain-act');
+  if (b.local) act.innerHTML = `<span class="pill ok">Ready: ${esc((b.local_target || '').split('/').pop())}</span> <button class="btn">Use it</button>`;
+  else act.innerHTML = `<button class="btn primary">Set it up</button><small class="muted"></small>`;
+  act.querySelector('button').onclick = async e => {
+    if (b.local) { await pickModel('local'); toast('Bowie is using Bowers Local'); return; }
+    e.target.disabled = true; e.target.textContent = 'Setting up…';
+    const r = await api('/api/integrations/install', { id: 'ollama', prereqs: true });
+    act.querySelector('small').textContent = r.ok ? ' Installing Ollama and a free model. This can take 10 to 30 minutes; you can keep going.' : ' ' + ((await r.json()).error || 'Could not start');
+  };
+  const claude = h('div', 'brain-card' + (b.claude ? ' ready' : ''), `<img src="${STICKER('excited')}" alt=""><div><b>Claude, the best quality</b>
+    <small>Paste your Anthropic key once. Bowers keeps it in your computer's secure store, not in a file or a chat. <a href="https://console.anthropic.com" target="_blank" rel="noopener">Get a key</a></small>
+    <div class="brain-act">${b.claude ? '<span class="pill ok">Key saved</span>' : '<input class="input" type="password" placeholder="sk-ant-…" autocomplete="off" aria-label="Anthropic key"><button class="btn primary">Save key</button>'}</div><small class="muted brain-msg"></small></div>`);
+  const save = claude.querySelector('button');
+  if (save) save.onclick = async () => {
+    const inp = claude.querySelector('input'), r = await api('/api/keys/save', { name: 'ANTHROPIC_API_KEY', value: inp.value }); const d = await r.json(); inp.value = '';
+    if (!r.ok) { claude.querySelector('.brain-msg').textContent = d.error; return; }
+    applyState(d.state); claude.querySelector('.brain-act').innerHTML = '<span class="pill ok">Key saved</span>';
+    claude.querySelector('.brain-msg').textContent = 'Saved in ' + storeName(d.store) + '.';
+    claude.classList.add('ready'); if (state.brain?.claude && (state.model === 'local')) pickModel('syntra');
+  };
+  const cloud = h('div', 'brain-card soon', `<img src="${STICKER('flying')}" alt=""><div><b>Bowers Cloud</b><small>Sign in and go, with no key at all. Coming soon.</small></div>`);
+  box.append(local, claude, cloud); return box;
+}
+function openBrainSetup() {
+  const modal = h('div', 'modal', `<div class="modal-box" style="width:min(640px,100%)"><div class="page-head"><h2>How should Bowie think?</h2><span class="spacer"></span><button class="btn ghost icon-only" aria-label="Close">✕</button></div></div>`);
+  modal.querySelector('.modal-box').appendChild(brainChoices());
+  modal.onclick = e => { if (e.target === modal || e.target.closest('.page-head .icon-only')) modal.remove(); };
+  document.body.appendChild(modal);
+}
+function renderBrainBanner() {
+  const el = document.querySelector('.brain-banner'); if (!el) return;
+  const b = state.brain || {}, none = !b.claude && !b.local;
+  el.classList.toggle('hidden', !none);
+  if (none) {
+    el.innerHTML = `<img src="${STICKER('sad')}" alt=""><span><b>Bowie needs a brain to think with.</b> Use a free one on this computer, or add a Claude key.</span><button class="btn primary">Set up</button>`;
+    el.querySelector('button').onclick = openBrainSetup;
+  }
+}
+
+// ================================================================ Run my business
+const BUSINESS_IDEAS = ['Get 10 new customers this month', 'Make a website and a Google Business listing', "Write this week's social media posts",
+  'Check my prices against competitors', 'Write a business plan for a bank loan', 'Chase my unpaid invoices'];
+function openBusiness() {
+  const modal = h('div', 'modal', `<div class="modal-box" style="width:min(600px,100%)"><div class="page-head"><img src="${STICKER('planning')}" alt="" style="width:44px;height:44px"><h2>Run my business</h2><span class="spacer"></span><button class="btn ghost icon-only" aria-label="Close">✕</button></div>
+    <p class="muted" style="margin-top:-6px">Tell Bowie the goal. He plans it, does the research, writing, numbers and building himself, and saves everything in your project.</p>
+    <div class="studio-form biz-form"><label>Your business<input class="input" id="biz-what" placeholder="e.g. Karoo Coffee Roasters, a coffee roaster in Cape Town selling to cafés"></label>
+    <label>What should Bowie get done?<textarea class="input" id="biz-goal" rows="3" placeholder="e.g. Get 10 new café customers this month"></textarea></label>
+    <div class="chip-row" id="biz-ideas"></div>
+    <label class="img-check"><input type="checkbox" id="biz-auto" checked> Let Bowie work on his own. He still asks you before he spends money, sends a message, posts in public or deletes anything.</label>
+    <div class="img-actions"><span class="spacer"></span><button class="btn primary" id="biz-go">Start ${icon('arrow-right')}</button></div></div></div>`);
+  const what = modal.querySelector('#biz-what'), goal = modal.querySelector('#biz-goal');
+  what.value = store.get('bowers-business', '');
+  for (const idea of BUSINESS_IDEAS) { const c = h('button', 'chip', esc(idea)); c.onclick = () => { goal.value = idea; goal.focus(); }; modal.querySelector('#biz-ideas').appendChild(c); }
+  modal.querySelector('#biz-go').onclick = async () => {
+    const g = goal.value.trim(); if (!g) return goal.focus();
+    const w = what.value.trim(); store.set('bowers-business', w);
+    if (modal.querySelector('#biz-auto').checked) await setMode('auto');
+    modal.remove(); showPage('home');
+    send(`/business ${w ? 'My business: ' + w + '. ' : ''}Goal: ${g}`);
+  };
+  modal.onclick = e => { if (e.target === modal || e.target.closest('.page-head .icon-only')) modal.remove(); };
+  document.body.appendChild(modal); (what.value ? goal : what).focus();
+}
+
+// ================================================================ Settings > Account: your keys, and Bowers access keys
+async function renderKeys() {
+  const card = $('keys-card'); if (!card) return;
+  const d = await (await api('/api/keys')).json().catch(() => null); if (!d) return;
+  card.innerHTML = `<div class="set-label">Your keys</div><p class="muted" style="margin:0 0 8px;font-size:12.5px">Kept in ${esc(storeName(d.store))}. Bowers never shows a saved key again or sends it anywhere except its own service.</p><div class="key-rows"></div>
+    <div class="set-label" style="margin-top:14px">Bowers access keys</div><p class="muted" style="margin:0 0 8px;font-size:12.5px">Bowers' own keys (bwk_…) for letting another device or app use your Bowers Router. They unlock Bowers, not Claude.</p><div class="key-rows" id="access-rows"></div>
+    <div class="key-row"><input class="input" id="access-name" placeholder="Name, e.g. My phone"><button class="btn" id="access-new">Make a key</button></div><div id="access-made"></div>`;
+  const rows = card.querySelector('.key-rows');
+  for (const k of d.keys) {
+    const r = h('div', 'key-row', `<span><b>${esc(k.label)}</b><small>${esc(k.name)}${k.source ? ' · from ' + esc(k.source) : ''}</small></span>${k.set ? '<span class="pill ok">Set</span>' : '<input class="input" type="password" autocomplete="off" placeholder="Paste key">'}<button class="btn">${k.set ? (k.source === 'environment' ? 'In environment' : 'Remove') : 'Save'}</button>`);
+    const btn = r.querySelector('button'); if (k.source === 'environment') btn.disabled = true;
+    btn.onclick = async () => {
+      const inp = r.querySelector('input');
+      const res = await api(k.set ? '/api/keys/forget' : '/api/keys/save', k.set ? { name: k.name } : { name: k.name, value: inp.value });
+      const out = await res.json(); if (!res.ok) return toast(out.error); applyState(out.state); toast(k.set ? 'Removed ' + k.name : 'Saved ' + k.name); renderKeys();
+    };
+    rows.appendChild(r);
+  }
+  const ar = card.querySelector('#access-rows');
+  for (const a of d.access) { const r = h('div', 'key-row', `<span><b>${esc(a.name)}</b><small>${esc(a.id)}… · ${a.last_used ? 'used ' + ago(a.last_used) : 'never used'}</small></span><button class="btn danger">Revoke</button>`); r.querySelector('button').onclick = async () => { await api('/api/keys/access-revoke', { id: a.id }); renderKeys(); }; ar.appendChild(r); }
+  card.querySelector('#access-new').onclick = async () => {
+    const res = await api('/api/keys/access-new', { name: card.querySelector('#access-name').value }); const { key } = await res.json();
+    await renderKeys(); const m = $('access-made');
+    m.innerHTML = `<div class="key-made"><b>Copy it now: it won't be shown again.</b><code></code><button class="btn">Copy</button></div>`; m.querySelector('code').textContent = key;
+    m.querySelector('button').onclick = () => { navigator.clipboard.writeText(key); toast('Copied'); };
+  };
+}

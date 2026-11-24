@@ -42,7 +42,8 @@ def tap_usage(payloads, usage: dict):
         yield p
 
 
-def make_handler(engine: Engine, client_key: str | None):
+def make_handler(engine: Engine, client_key: str | None, access_keys: bool = False):
+    """client_key: one shared key (or None). access_keys: also accept Bowers access keys (`bowers keys new`)."""
     class Handler(BaseHTTPRequestHandler):
         server_version = "BowersRouter/0.1"
 
@@ -67,10 +68,13 @@ def make_handler(engine: Engine, client_key: str | None):
                 self._send_json(status, {"error": {"message": message, "type": "router_error"}})
 
         def _authorized(self) -> bool:
-            if not client_key:
+            if not client_key and not access_keys:
                 return True
             given = self.headers.get("x-api-key") or self.headers.get("authorization", "").removeprefix("Bearer ").strip()
-            return hmac.compare_digest(given.encode(), client_key.encode())
+            if client_key and hmac.compare_digest(given.encode(), client_key.encode()):
+                return True
+            from .. import accesskeys
+            return access_keys and accesskeys.verify(given)
 
         def _start_sse(self) -> None:
             self.send_response(200)
@@ -206,9 +210,12 @@ def serve(cfg: dict) -> None:
     engine = Engine(cfg)
     client_key = os.environ.get(cfg.get("client_key_env") or "", "") or None
     host, port = cfg.get("host", "127.0.0.1"), cfg.get("port", 8787)
-    if host not in ("127.0.0.1", "localhost", "::1") and not client_key:
-        raise SystemExit(f"refusing to listen on {host} without a client key; set {cfg.get('client_key_env')}")
-    server = ThreadingHTTPServer((host, port), make_handler(engine, client_key))
+    from .. import accesskeys
+    keys = accesskeys.any_keys()
+    if host not in ("127.0.0.1", "localhost", "::1") and not client_key and not keys:
+        raise SystemExit(f"refusing to listen on {host} without a key: make one with `bowers keys new NAME` "
+                         f"(or set {cfg.get('client_key_env')})")
+    server = ThreadingHTTPServer((host, port), make_handler(engine, client_key, access_keys=keys))
     available = [n for n, p in engine.providers.items() if p.available and not p.local]
     print(f"Bowers router listening on http://{host}:{port}")
     print(f"  providers with keys: {', '.join(available) or 'none'}  (+ local: ollama, lmstudio)")
