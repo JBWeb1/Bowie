@@ -517,8 +517,34 @@ function brainChoices() {
     claude.querySelector('.brain-msg').textContent = 'Saved in ' + storeName(d.store) + '.';
     claude.classList.add('ready'); if (state.brain?.claude && (state.model === 'local')) pickModel('syntra');
   };
-  const cloud = h('div', 'brain-card soon', `<img src="${STICKER('flying')}" alt=""><div><b>Bowers Cloud</b><small>Sign in and go, with no key at all. Coming soon.</small></div>`);
-  box.append(local, claude, cloud); return box;
+  const cloud = h('div', 'brain-card' + (b.cloud ? ' ready' : ''), `<img src="${STICKER('flying')}" alt=""><div><b>Bowers Cloud</b>
+    <small>Sign in and go, like Claude or ChatGPT: no key and nothing to download. Uses credits from your Bowers Cloud account.</small>
+    <div class="brain-act"></div><small class="muted brain-msg"></small></div>`);
+  const cact = cloud.querySelector('.brain-act'), cmsg = cloud.querySelector('.brain-msg');
+  const showAccount = async () => {
+    const d = await (await api('/api/cloud')).json().catch(() => ({}));
+    cact.innerHTML = `<span class="pill ok">Signed in${d.account ? ' · ' + esc(d.account.email) : ''}</span> <button class="btn">Sign out</button>`;
+    cmsg.textContent = d.account ? `${d.account.credits} credits left (1 credit = 1 US cent of use).` : 'Signed in (the account details load when the server answers).';
+    cact.querySelector('button').onclick = async () => { const r = await api('/api/cloud/logout', {}); applyState((await r.json()).state); cloud.classList.remove('ready'); drawSignIn(); };
+  };
+  const drawSignIn = () => {
+    cact.innerHTML = '<input class="input" placeholder="Bowers Cloud address, https://…" aria-label="Bowers Cloud address"><button class="btn primary">Sign in</button>';
+    const inp = cact.querySelector('input'); inp.value = store.get('bowers-cloud-url', '');
+    cact.querySelector('button').onclick = async () => {
+      store.set('bowers-cloud-url', inp.value.trim());
+      const r = await api('/api/cloud/login', { url: inp.value.trim() }); const d = await r.json();
+      if (!r.ok) { cmsg.textContent = d.error; return; }
+      window.open(d.verify_url, '_blank', 'noopener');
+      cmsg.innerHTML = `Confirm the code <b>${esc(d.user_code)}</b> in the page that opened (<a href="${esc(d.verify_url)}" target="_blank" rel="noopener">open it again</a>). Waiting…`;
+      const tick = setInterval(async () => {
+        const st = await (await api('/api/cloud')).json().catch(() => ({}));
+        if (st.signed_in) { clearInterval(tick); await syncState(); cloud.classList.add('ready'); showAccount(); if (state.model === 'local') pickModel('syntra'); toast('Signed in to Bowers Cloud'); }
+        else if (st.pending?.error) { clearInterval(tick); cmsg.textContent = st.pending.error; }
+      }, 2000);
+    };
+  };
+  b.cloud ? showAccount() : drawSignIn();
+  box.append(cloud, local, claude); return box;
 }
 function openBrainSetup() {
   const modal = h('div', 'modal', `<div class="modal-box" style="width:min(640px,100%)"><div class="page-head"><h2>How should Bowie think?</h2><span class="spacer"></span><button class="btn ghost icon-only" aria-label="Close">✕</button></div></div>`);
@@ -528,10 +554,10 @@ function openBrainSetup() {
 }
 function renderBrainBanner() {
   const el = document.querySelector('.brain-banner'); if (!el) return;
-  const b = state.brain || {}, none = !b.claude && !b.local;
+  const b = state.brain || {}, none = !b.claude && !b.local && !b.cloud;
   el.classList.toggle('hidden', !none);
   if (none) {
-    el.innerHTML = `<img src="${STICKER('sad')}" alt=""><span><b>Bowie needs a brain to think with.</b> Use a free one on this computer, or add a Claude key.</span><button class="btn primary">Set up</button>`;
+    el.innerHTML = `<img src="${STICKER('sad')}" alt=""><span><b>Bowie needs a brain to think with.</b> Sign in to Bowers Cloud, use a free one on this computer, or add a Claude key.</span><button class="btn primary">Set up</button>`;
     el.querySelector('button').onclick = openBrainSetup;
   }
 }

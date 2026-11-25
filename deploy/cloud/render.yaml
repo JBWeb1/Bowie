@@ -1,0 +1,20 @@
+# One-click Bowers Cloud on Render (render.com): New > Blueprint, pick this repository and this file.
+# Then set ANTHROPIC_API_KEY in the service's Environment page (never in a file or chat), and make invite codes from
+# the service's Shell: bowers cloud invite --credits 5
+services:
+  - type: web
+    name: bowers-cloud
+    runtime: docker
+    dockerfilePath: ./deploy/cloud/Dockerfile
+    dockerContext: .
+    plan: starter          # always on; the free plan sleeps, which breaks long Bowie tasks
+    healthCheckPath: /health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false        # you type it in Render's dashboard
+      - key: BOWERS_CLOUD_DB
+        value: /data/cloud.db
+    disk:
+      name: bowers-cloud-data
+      mountPath: /data     # accounts and credits survive restarts
+      sizeGB: 1

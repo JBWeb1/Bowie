@@ -90,7 +90,8 @@ DEFAULT_PROFILE = "syntra"
 
 def has_cloud_key() -> bool:
     """Whether a Claude key (or your own endpoint) is set up."""
-    return any(os.environ.get(k) for k in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL"))
+    return any(os.environ.get(k) for k in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL",
+                                            "BOWERS_CLOUD_TOKEN"))
 
 
 def starting_model(asked: str) -> str:

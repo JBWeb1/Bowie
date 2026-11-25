@@ -6,6 +6,14 @@
 
 (Bowers was called Docks. The `docks` command, `DOCKS_*` settings and the `~/.docks` folder still work.)
 
+### Bowers Cloud: Bowie like Claude or ChatGPT, nothing to download
+Claude and ChatGPT need no download because the AI runs on their servers. Bowers Cloud does the same for Bowie: **you** run one small server with your Anthropic key, and the people you invite just sign in.
+
+- **For them:** How should Bowie think? → Bowers Cloud → type the address → Sign in → confirm the code in the browser page that opens. No key, no 5 GB download. From a terminal: `bowers login https://your-address`.
+- **For you, the owner:** deploy `deploy/cloud/` (a Dockerfile, plus `render.yaml` for one-click Render), put `ANTHROPIC_API_KEY` in the host's secret settings, then run `bowers cloud invite --credits 5` for each person. `bowers cloud users`, `bowers cloud credit EMAIL 10`, and `bowers cloud pause` / `resume` (the kill switch) do the rest.
+- **What it checks on every request:** the person's sign-in, their credits (charged at Claude's real price, including cached input), 40 requests a minute, and Bowers' models only (Anthropic's terms allow products built on Claude, not resale of plain API access). Prompts and code pass through and are never stored; only token counts are.
+- **Still to come before charging the public** (see the Bowers Cloud plan): Paystack top-ups, email verification, terms and a privacy policy.
+
 ### Bowie speaks your language, and has his own model
 - **Any language.** Bowie answers in the language you write or speak, and the mic listens for the language you pick in Settings → Voice (26 to choose from, including Afrikaans, isiZulu, isiXhosa and Sesotho). His offline voice speaks English, Spanish, French, Italian, Portuguese, Hindi, Japanese and Mandarin; other languages use your computer's voices (Microsoft Edge has natural ones for many). Japanese, Chinese, Korean, Hindi, Arabic, Russian, Greek, Hebrew and Thai replies are recognised from their alphabet and spoken in the right voice automatically.
 - **Bowie's own model.** The Windows installer's last page offers to set up Bowie's own free model on your PC (Ollama plus an open model, about 5 GB). Bowers names it `bowie`, gives it his personality and a 32k context, and uses it whenever there's no Claude key. It's an open model made into Bowie, not a model trained from scratch.

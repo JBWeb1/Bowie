@@ -73,6 +73,7 @@ class Session:
         self.mcp_logins = {}  # app sign-ins in progress, by server name
         self.motion_jobs = {}  # Bowers Motion videos being made, by job id
         self.installing = {}   # integrations being installed: id -> recent log lines
+        self.cloud_login = None  # a Bowers Cloud sign-in waiting for the browser
         from ..pr_watch import Watcher
         self.pr_watcher = Watcher(lambda u: self.publish({"type": "pr_update", "text": "; ".join(u["changes"]),
                                                            "url": u["url"], "title": u["title"]}))
@@ -360,8 +361,9 @@ def brain_status() -> dict:
     """What Bowie can think with right now: a Claude key, and/or a model on this computer."""
     from .. import local
     problem = local.problem()
-    return {"claude": models.has_cloud_key(), "local": problem is None, "local_target": local.detect()["target"],
-            "local_problem": problem or ""}
+    from .. import cloud
+    return {"claude": models.has_cloud_key(), "cloud": cloud.signed_in(), "local": problem is None,
+            "local_target": local.detect()["target"], "local_problem": problem or ""}
 
 
 def history_from_messages(messages: list, turns: list) -> list[dict]:
@@ -711,6 +713,11 @@ def make_handler(session: Session, token: str, preview: dict, allowed_hosts: set
                 from .. import graph
                 from . import profile as prof
                 return self._json(200, graph.overview(root, session.agent, prof.load().get("name", "")))
+            if path == "/api/cloud":
+                from .. import cloud
+                import os
+                return self._json(200, {"signed_in": cloud.signed_in(), "url": os.environ.get("BOWERS_CLOUD_URL", ""),
+                                        "account": cloud.account(), "pending": session.cloud_login})
             if path == "/api/keys":
                 from .. import accesskeys, vault
                 return self._json(200, {"keys": vault.status(), "store": vault.where(), "access": accesskeys.listing()})
@@ -960,6 +967,27 @@ def make_handler(session: Session, token: str, preview: dict, allowed_hosts: set
                 return self._json(200, {"ok": True})
             if path == "/api/profile":
                 return self._json(200, profile.save(name=str(body.get("name", ""))))
+            if path in ("/api/cloud/login", "/api/cloud/logout"):
+                from .. import cloud
+                if path.endswith("logout"):
+                    cloud.logout()
+                    session.agent.refresh_client()
+                    return self._json(200, {"state": session.state()})
+                try:
+                    info = cloud.start_login(str(body.get("url", "")))
+                except cloud.CloudError as e:
+                    return self._json(400, {"error": str(e)})
+                session.cloud_login = {"user_code": info["user_code"], "verify_url": info["verify_url"], "error": ""}
+
+                def finish():
+                    try:
+                        cloud.login(info["url"], log=lambda m: None, info=info)
+                        session.agent.refresh_client()
+                        session.cloud_login = None
+                    except Exception as e:
+                        session.cloud_login = {**(session.cloud_login or {}), "error": str(e)}
+                threading.Thread(target=finish, daemon=True).start()
+                return self._json(200, session.cloud_login)
             if path.startswith("/api/keys/"):
                 from .. import accesskeys, vault
                 action = path.rsplit("/", 1)[1]

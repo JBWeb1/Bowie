@@ -292,8 +292,9 @@ class Agent:
         self.context_used = 0  # tokens in the latest request, as the API counted them
         self.model_error = None
         if self.client is None:
+            from . import cloud
             try:
-                self.client = anthropic.Anthropic()
+                self.client = anthropic.Anthropic(**cloud.client_settings())  # your key, else Bowers Cloud
             except anthropic.AnthropicError as e:  # bad credentials setup: report it when a task runs
                 self.client_error = e
         self.claude_client = self.client  # for Claude models; Codex and others go through the router
@@ -356,8 +357,9 @@ class Agent:
 
     def refresh_client(self) -> None:
         """Pick up a key saved since Bowers started (Settings > Keys)."""
+        from . import cloud
         try:
-            self.client, self.client_error = anthropic.Anthropic(), None
+            self.client, self.client_error = anthropic.Anthropic(**cloud.client_settings()), None
         except anthropic.AnthropicError as e:
             self.client, self.client_error = None, e
         self.claude_client = self.client

@@ -1365,8 +1365,65 @@ def keys_main(argv) -> int:
     return 0
 
 
+def cloud_main(argv) -> int:
+    """bowers cloud serve|invite|users|credit|pause|resume: run your own Bowers Cloud (see docks/cloud.py)."""
+    import argparse
+    from . import cloud
+    p = argparse.ArgumentParser(prog="bowers cloud", description="Run Bowers Cloud: Bowie with no key, for people you invite")
+    p.add_argument("cmd", choices=["serve", "invite", "users", "credit", "pause", "resume"])
+    p.add_argument("args", nargs="*")
+    p.add_argument("--db", default=os.environ.get("BOWERS_CLOUD_DB", "cloud.db"))
+    p.add_argument("--host", default="127.0.0.1")
+    p.add_argument("--port", type=int, default=int(os.environ.get("PORT", 8790)))
+    p.add_argument("--credits", type=float, default=5.0, help="US dollars of usage on an invite")
+    a = p.parse_args(argv)
+    if a.cmd == "serve":
+        cloud.serve(a.host, a.port, a.db)
+        return 0
+    store = cloud.Store(a.db)
+    if a.cmd == "invite":
+        print(f"Invite code (worth US${a.credits:.2f} of usage): {store.invite(a.credits)}")
+    elif a.cmd == "users":
+        for u in store.q("select email, name, balance_micro, status, (select count(*) from usage where user_id = users.id) n from users order by id"):
+            print(f"  {u['email']:32} {u['name'] or '':20} ${u['balance_micro'] / 1e6:8.2f}  {u['n']:5} requests  {u['status']}")
+    elif a.cmd == "credit":
+        if len(a.args) != 2:
+            print("usage: bowers cloud credit EMAIL DOLLARS")
+            return 1
+        store.credit(a.args[0], float(a.args[1]))
+        print(f"Added ${float(a.args[1]):.2f} to {a.args[0]}.")
+    else:
+        store.set_paused(a.cmd == "pause")
+        print("Bowers Cloud paused: requests are refused until `bowers cloud resume`." if a.cmd == "pause" else "Bowers Cloud is taking requests.")
+    return 0
+
+
+def login_main(argv) -> int:
+    """bowers login URL | bowers logout: use Bowie through a Bowers Cloud, with no key on this computer."""
+    from . import cloud
+    url = argv[0] if argv else os.environ.get("BOWERS_CLOUD_URL", "")
+    if not url:
+        print("usage: bowers login https://your-bowers-cloud-address")
+        return 1
+    try:
+        import webbrowser
+        who = cloud.login(url, open_browser=webbrowser.open)
+    except cloud.CloudError as e:
+        print(e)
+        return 1
+    print(f"Signed in to Bowers Cloud as {who['email']}. Bowie now works with no key on this computer.")
+    return 0
+
+
 def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else argv
+    if argv[:1] == ["cloud"]:
+        return cloud_main(argv[1:])
+    if argv[:1] == ["logout"]:
+        from . import cloud
+        cloud.logout()
+        print("Signed out of Bowers Cloud.")
+        return 0
     try:
         from . import vault
         vault.load_into_env()  # keys saved in Settings > Keys or `bowers keys save`
@@ -1374,6 +1431,8 @@ def main(argv=None) -> int:
         pass
     if argv[:1] == ["keys"]:
         return keys_main(argv[1:])
+    if argv[:1] == ["login"]:
+        return login_main(argv[1:])
     if argv[:1] == ["router"]:
         from .router.cli import main as router_main
         return router_main(argv[1:])
